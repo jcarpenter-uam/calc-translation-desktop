@@ -4,8 +4,8 @@ import log from "electron-log/main";
 import { getMainWindow } from "./windowmanager";
 
 export function setupAutoUpdaterListeners() {
-  autoUpdater.channel = "desktop";
-  autoUpdater.allowPrerelease = true;
+  autoUpdater.channel = "latest";
+  autoUpdater.allowPrerelease = false;
   autoUpdater.autoDownload = true;
 
   autoUpdater.on("update-available", (info) => {
@@ -53,14 +53,12 @@ export function checkForUpdates() {
 
 export function setUpdateChannel(isBetaEnabled) {
   if (isBetaEnabled) {
-    autoUpdater.channel = "desktop-beta";
-    log.info("Switched to BETA update channel (desktop-beta).");
+    autoUpdater.allowPrerelease = true;
+    log.info("Switched to BETA update channel (allowPrerelease: true).");
   } else {
-    autoUpdater.channel = "desktop";
-    log.info("Switched to STABLE update channel (desktop).");
+    autoUpdater.allowPrerelease = false;
+    log.info("Switched to STABLE update channel (allowPrerelease: false).");
   }
-
-  autoUpdater.allowPrerelease = true;
 
   checkForUpdates();
 }
