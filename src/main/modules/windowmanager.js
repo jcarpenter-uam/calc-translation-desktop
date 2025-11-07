@@ -1,6 +1,7 @@
 import { BrowserWindow } from "electron";
 import { join } from "path";
 import log from "electron-log/main";
+import { is } from "@electron-toolkit/utils";
 
 let mainWindow;
 
@@ -25,7 +26,12 @@ export function createMainWindow() {
     mainWindow.show();
   });
 
-  mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  // Works best for dev server
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  } else {
+    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
 
   return mainWindow;
 }

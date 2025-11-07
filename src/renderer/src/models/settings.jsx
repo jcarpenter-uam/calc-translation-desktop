@@ -65,17 +65,17 @@ export default function SettingsModal({ isOpen, onClose }) {
           <SettingsRow label={language === "english" ? "Language" : "语言"}>
             <LanguageToggle />
           </SettingsRow>
-          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow
-            label={language === "english" ? "Beta Updates" : "测试版更新"}
-          >
-            <BetaToggle />
-          </SettingsRow>
         </main>
-        <footer className="px-6 py-3 text-center border-t border-zinc-200/80 dark:border-zinc-700/80">
+        <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
             {language === "english" ? "Version" : "版本"} {appVersion}
           </span>
+          <div className="app-region-no-drag flex items-center gap-2">
+            <span className="text-xs text-zinc-500 dark:text-zinc-4out">
+              {language === "english" ? "Beta Channel" : "测试频道"}
+            </span>
+            <BetaToggle />
+          </div>
         </footer>
       </div>
     </div>
