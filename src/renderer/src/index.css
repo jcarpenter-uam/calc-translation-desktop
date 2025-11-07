@@ -20,7 +20,14 @@
 
 /* Hides the vertical scrollbar */
 @layer base {
-  html,
+  html {
+    background-color: #ffffff;
+    color: #18181b;
+  }
+  html.dark {
+    background-color: #18181b;
+    color: #f4f4f5;
+  }
   body {
     -ms-overflow-style: none;
     scrollbar-width: none;

@@ -16,7 +16,7 @@ export default function App() {
   const notification = useSmartScroll(transcripts, lastTopTextRef);
 
   return (
-    <div className="min-h-screen bg-white/90 dark:bg-zinc-900/85 text-zinc-900 dark:text-zinc-100 transition-colors">
+    <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Titlebar status={transcriptionStatus} isDownloadable={isDownloadable} />
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
