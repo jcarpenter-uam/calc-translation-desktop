@@ -55,7 +55,6 @@
     ],
     "publish": {
       "provider": "github",
-      "channel": "latest",
       "owner": "jcarpenter-uam",
       "repo": "calc-translation-desktop"
     }

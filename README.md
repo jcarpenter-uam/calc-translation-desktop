@@ -2,7 +2,7 @@
 
 ## TODO:
 
-- Fix auto updates
+- Fix auto updates with github actions to auto publish
 - Ugly resize
 - Widget idea
 - Auth
