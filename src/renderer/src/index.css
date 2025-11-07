@@ -1,15 +1,25 @@
 @import "tailwindcss";
 @config "../../../tailwind.config.mjs";
 
+/* Makes any theme transitions less painful to look at */
 :root * {
-  /* transition-property: background-color, color, border-color, fill, stroke; */
-  /* transition-duration: 200ms; */
-  /* transition-timing-function: ease; */
-  /* border-radius: 10px; */
+  transition-property: background-color, color, border-color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
 
+/* Makes titlebar draggable */
+@layer components {
+  .app-region-drag {
+    -webkit-app-region: drag;
+  }
+  .app-region-no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+/* Hides the vertical scrollbar */
 @layer base {
-  /* Apply scrollbar hiding to the whole window */
   html,
   body {
     -ms-overflow-style: none;
