@@ -5,6 +5,8 @@
 - **Stable:** [![Latest Stable Release](https://img.shields.io/github/v/release/jcarpenter-uam/calc-translation-desktop?color=blue&logo=github&style=flat-square)](https://github.com/jcarpenter-uam/calc-translation-desktop/releases/latest)
 - **Pre-release:** [![Latest Pre-Release](https://img.shields.io/github/v/release/jcarpenter-uam/calc-translation-desktop?include_prereleases&color=gray&label=pre-release&logo=github&style=flat-square)](https://github.com/jcarpenter-uam/calc-translation-desktop/releases)
 
+---
+
 ## Installation Instructions
 
 1.  **Go to Releases:** Click the [**Latest Stable Release**](https://github.com/jcarpenter-uam/calc-translation-desktop/releases/latest) (the blue badge at the top of this readme).
