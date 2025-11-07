@@ -55,7 +55,7 @@ export function SettingsProvider({ children }) {
       localStorage.setItem("betaChannelEnabled", isEnabled.toString());
 
       try {
-        await window.electron.setUpdateChannel(isEnabled);
+        await window.electron.setPrereleaseChannel(isEnabled);
       } catch (error) {
         console.error("Failed to sync update channel on load:", error);
       }
@@ -74,7 +74,7 @@ export function SettingsProvider({ children }) {
     setIsBetaEnabled(isEnabled);
     localStorage.setItem("betaChannelEnabled", isEnabled.toString());
     try {
-      await window.electron.setUpdateChannel(isEnabled);
+      await window.electron.setPrereleaseChannel(isEnabled);
     } catch (error) {
       console.error("Failed to set update channel:", error);
     }

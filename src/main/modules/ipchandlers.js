@@ -1,9 +1,7 @@
 import { ipcMain, net, app } from "electron";
 import { getMainWindow } from "./windowmanager";
-import { checkForUpdates } from "./autoupdate";
 import log from "electron-log/main";
-
-import { setUpdateChannel } from "./autoupdate";
+import { setPrereleaseChannel } from "./autoupdate";
 
 export function registerIpcHandlers() {
   const mainWindow = getMainWindow();
@@ -31,8 +29,8 @@ export function registerIpcHandlers() {
     return app.getVersion();
   });
 
-  ipcMain.handle("set-update-channel", (event, isBetaEnabled) => {
-    setUpdateChannel(isBetaEnabled);
+  ipcMain.handle("set-prerelease-channel", (event, isBetaEnabled) => {
+    setPrereleaseChannel(isBetaEnabled);
   });
 
   ipcMain.handle("toggle-always-on-top", () => {

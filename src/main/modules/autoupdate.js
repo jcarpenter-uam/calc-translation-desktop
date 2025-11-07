@@ -51,7 +51,7 @@ export function checkForUpdates() {
   autoUpdater.checkForUpdates();
 }
 
-export function setUpdateChannel(isBetaEnabled) {
+export function setPrereleaseChannel(isBetaEnabled) {
   if (isBetaEnabled) {
     autoUpdater.allowPrerelease = true;
     log.info("Switched to BETA update channel (allowPrerelease: true).");
@@ -59,6 +59,4 @@ export function setUpdateChannel(isBetaEnabled) {
     autoUpdater.allowPrerelease = false;
     log.info("Switched to STABLE update channel (allowPrerelease: false).");
   }
-
-  checkForUpdates();
 }
