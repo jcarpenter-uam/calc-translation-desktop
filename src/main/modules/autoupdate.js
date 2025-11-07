@@ -59,4 +59,5 @@ export function setPrereleaseChannel(isBetaEnabled) {
     autoUpdater.allowPrerelease = false;
     log.info("Switched to STABLE update channel (allowPrerelease: false).");
   }
+  checkForUpdates();
 }

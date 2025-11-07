@@ -2,6 +2,7 @@
 
 ## TODO:
 
+- Fix auto updates
 - Ugly resize
 - Widget idea
 - Auth
