@@ -5,6 +5,8 @@ import { getMainWindow } from "./windowmanager";
 
 const autoUpdateLog = log.scope("autoupdate");
 
+let isRollingBack = false;
+
 export function setupAutoUpdaterListeners() {
   autoUpdater.channel = "latest";
   autoUpdater.allowPrerelease = false;
@@ -16,6 +18,7 @@ export function setupAutoUpdaterListeners() {
 
   autoUpdater.on("error", (err) => {
     autoUpdateLog.error("Error during update:", err);
+    isRollingBack = false;
   });
 
   autoUpdater.on("update-downloaded", (info) => {
@@ -23,29 +26,40 @@ export function setupAutoUpdaterListeners() {
 
     const window = getMainWindow() || BrowserWindow.getAllWindows()[0];
 
+    const dialogOptions = {
+      type: "info",
+      buttons: ["Install Now", "Install on Next Start"],
+      defaultId: 0,
+      cancelId: 1,
+    };
+
+    if (isRollingBack) {
+      dialogOptions.title = "Rollback to Stable";
+      dialogOptions.message =
+        "The latest stable version of CALC Translation has been downloaded.";
+      dialogOptions.detail = `Do you want to roll back to the stable version (${info.version}) now?`;
+    } else {
+      dialogOptions.title = "Update Available";
+      dialogOptions.message =
+        "A new version of CALC Translation has been downloaded.";
+      dialogOptions.detail = `Do you want to install version ${info.version} now or on the next app start?`;
+    }
+
+    isRollingBack = false;
+
     if (window) {
-      dialog
-        .showMessageBox(window, {
-          type: "info",
-          title: "Update Available",
-          message: "A new version of CALC Translation has been downloaded.",
-          detail: "Do you want to install it now or on the next app start?",
-          buttons: ["Install Now", "Install on Next Start"],
-          defaultId: 0,
-          cancelId: 1,
-        })
-        .then((result) => {
-          if (result.response === 0) {
-            autoUpdateLog.info(
-              "User chose 'Install Now'. Quitting and installing.",
-            );
-            autoUpdater.quitAndInstall(true);
-          } else {
-            autoUpdateLog.info(
-              "User chose 'Install on Next Start'. Update will be installed on next launch.",
-            );
-          }
-        });
+      dialog.showMessageBox(window, dialogOptions).then((result) => {
+        if (result.response === 0) {
+          autoUpdateLog.info(
+            "User chose 'Install Now'. Quitting and installing.",
+          );
+          autoUpdater.quitAndInstall(true);
+        } else {
+          autoUpdateLog.info(
+            "User chose 'Install on Next Start'. Update will be installed on next launch.",
+          );
+        }
+      });
     }
   });
 }
@@ -61,14 +75,18 @@ export function setPrereleaseChannel(isBetaEnabled) {
   if (isBetaEnabled) {
     autoUpdater.allowPrerelease = true;
     autoUpdater.channel = "beta";
+    autoUpdater.allowDowngrade = false;
+    isRollingBack = false;
     autoUpdateLog.info(
       "Switched to BETA update channel (allowPrerelease: true).",
     );
   } else {
     autoUpdater.allowPrerelease = false;
     autoUpdater.channel = "latest";
+    autoUpdater.allowDowngrade = true;
+    isRollingBack = true;
     autoUpdateLog.info(
-      "Switched to STABLE update channel (allowPrerelease: false).",
+      "Switched to STABLE update channel (allowDowngrade: true).",
     );
   }
   checkForUpdates();
