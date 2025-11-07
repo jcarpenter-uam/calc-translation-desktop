@@ -1,5 +1,8 @@
 name: Publish Draft Release
 
+# This trigger does not work for draft releases.
+# Will need to play with this later to fix
+
 on:
   release:
     types: [unpublished]
