@@ -3,21 +3,23 @@ import { autoUpdater } from "electron-updater";
 import log from "electron-log/main";
 import { getMainWindow } from "./windowmanager";
 
+const autoUpdateLog = log.scope("autoupdate");
+
 export function setupAutoUpdaterListeners() {
   autoUpdater.channel = "latest";
   autoUpdater.allowPrerelease = false;
   autoUpdater.autoDownload = true;
 
   autoUpdater.on("update-available", (info) => {
-    log.info("An update is available:", info.version);
+    autoUpdateLog.info("An update is available:", info.version);
   });
 
   autoUpdater.on("error", (err) => {
-    log.error("Error during update:", err);
+    autoUpdateLog.error("Error during update:", err);
   });
 
   autoUpdater.on("update-downloaded", (info) => {
-    log.info("Update downloaded. Prompting user...", info);
+    autoUpdateLog.info("Update downloaded. Prompting user...", info);
 
     const window = getMainWindow() || BrowserWindow.getAllWindows()[0];
 
@@ -34,10 +36,12 @@ export function setupAutoUpdaterListeners() {
         })
         .then((result) => {
           if (result.response === 0) {
-            log.info("User chose 'Install Now'. Quitting and installing.");
+            autoUpdateLog.info(
+              "User chose 'Install Now'. Quitting and installing.",
+            );
             autoUpdater.quitAndInstall(true);
           } else {
-            log.info(
+            autoUpdateLog.info(
               "User chose 'Install on Next Start'. Update will be installed on next launch.",
             );
           }
@@ -47,7 +51,9 @@ export function setupAutoUpdaterListeners() {
 }
 
 export function checkForUpdates() {
-  log.info(`Checking for updates on channel: ${autoUpdater.channel}...`);
+  autoUpdateLog.info(
+    `Checking for updates on channel: ${autoUpdater.channel}...`,
+  );
   autoUpdater.checkForUpdates();
 }
 
@@ -55,11 +61,15 @@ export function setPrereleaseChannel(isBetaEnabled) {
   if (isBetaEnabled) {
     autoUpdater.allowPrerelease = true;
     autoUpdater.channel = "beta";
-    log.info("Switched to BETA update channel (allowPrerelease: true).");
+    autoUpdateLog.info(
+      "Switched to BETA update channel (allowPrerelease: true).",
+    );
   } else {
     autoUpdater.allowPrerelease = false;
     autoUpdater.channel = "latest";
-    log.info("Switched to STABLE update channel (allowPrerelease: false).");
+    autoUpdateLog.info(
+      "Switched to STABLE update channel (allowPrerelease: false).",
+    );
   }
   checkForUpdates();
 }

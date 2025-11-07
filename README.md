@@ -3,6 +3,6 @@
 ## TODO:
 
 - Fix auto updates with github actions to auto publish
-- Ugly resize
+- Can see the white background when resizing in dark mode
 - Widget idea
 - Auth

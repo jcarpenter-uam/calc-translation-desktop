@@ -10,14 +10,18 @@ import { setupAutoUpdaterListeners } from "./modules/autoupdate";
 log.initialize();
 log.errorHandler.startCatching();
 
+const mainLog = log.scope("main");
+
 app.whenReady().then(() => {
-  log.info("App is ready.");
+  mainLog.info("App is ready.");
 
   setupAutoUpdaterListeners();
+  mainLog.info("Auto updater listeners set up.");
 
   createMainWindow();
 
   registerIpcHandlers();
+  mainLog.info("IPC handlers registered.");
 
   createApplicationMenu();
 
@@ -28,13 +32,18 @@ app.whenReady().then(() => {
   });
 
   app.on("activate", function () {
-    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      mainLog.info("App activated, creating main window.");
+      createMainWindow();
+    }
   });
 });
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    log.info("All windows closed, quitting application.");
+    mainLog.info("All windows closed, quitting application.");
     app.quit();
+  } else {
+    mainLog.info("All windows closed, app will remain active on macOS.");
   }
 });

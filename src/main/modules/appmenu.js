@@ -2,6 +2,8 @@ import { Menu } from "electron";
 import { getMainWindow } from "./windowmanager";
 import log from "electron-log/main";
 
+const appMenuLog = log.scope("appmenu");
+
 export function createApplicationMenu() {
   const menuTemplate = [
     {
@@ -24,12 +26,16 @@ export function createApplicationMenu() {
                 currentBounds.width !== defaultWidth ||
                 currentBounds.height !== defaultHeight
               ) {
-                log.info("Resetting window size to default");
+                appMenuLog.info("Resetting window size to default");
                 mainWindow.setBounds({
                   width: defaultWidth,
                   height: defaultHeight,
                 });
               }
+            } else {
+              appMenuLog.warn(
+                "Could not reset window size, main window not found.",
+              );
             }
           },
         },
@@ -37,6 +43,7 @@ export function createApplicationMenu() {
     },
   ];
 
+  appMenuLog.info("Creating application menu.");
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 }

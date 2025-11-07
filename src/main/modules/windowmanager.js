@@ -3,10 +3,12 @@ import { join } from "path";
 import log from "electron-log/main";
 import { is } from "@electron-toolkit/utils";
 
+const windowLog = log.scope("window");
+
 let mainWindow;
 
 export function createMainWindow() {
-  log.info("Creating main window...");
+  windowLog.info("Creating main window...");
 
   mainWindow = new BrowserWindow({
     width: 800,
@@ -26,10 +28,11 @@ export function createMainWindow() {
     mainWindow.show();
   });
 
-  // Works best for dev server
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    windowLog.info("Loading renderer from dev URL...");
     mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
   } else {
+    windowLog.info("Loading renderer from file...");
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
 
