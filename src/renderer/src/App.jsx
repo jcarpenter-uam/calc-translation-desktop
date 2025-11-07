@@ -19,18 +19,16 @@ export default function App() {
     <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Titlebar status={transcriptionStatus} isDownloadable={isDownloadable} />
 
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-3xl mx-auto">
-          {transcripts.map((t, index) => (
-            <Transcript
-              key={t.id}
-              {...t}
-              topTextRef={
-                index === transcripts.length - 1 ? lastTopTextRef : null
-              }
-            />
-          ))}
-        </div>
+      <main className="p-4 sm:p-6 lg:p-8">
+        {transcripts.map((t, index) => (
+          <Transcript
+            key={t.id}
+            {...t}
+            topTextRef={
+              index === transcripts.length - 1 ? lastTopTextRef : null
+            }
+          />
+        ))}
       </main>
 
       <Notification
