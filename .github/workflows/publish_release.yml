@@ -1,34 +1,29 @@
 name: Publish Draft Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [created]
 
 jobs:
   publish-release:
-    name: Publish Release
+    name: Publish Draft Release
+    if: github.event.release.draft == true
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
 
     steps:
-      - name:  checkout
-        uses: actions/checkout@v4
-
-      - name: Publish Release with Auto-Generated Notes
+      - name: Publish Draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           IS_PRERELEASE="false"
-
-          if [[ "${{ github.ref_name }}" == *beta* ]]; then
+          if [[ "${{ github.event.release.tag_name }}" == *beta* ]]; then
             echo "Tag contains 'beta', marking as pre-release."
             IS_PRERELEASE="true"
           fi
 
-          gh release create ${{ github.ref_name }} \
-            --title "Release ${{ github.ref_name }}" \
-            --generate-notes \
+          gh release edit ${{ github.event.release.tag_name }} \
+            --draft=false \
             --prerelease=$IS_PRERELEASE
