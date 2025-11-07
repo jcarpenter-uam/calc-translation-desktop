@@ -17,6 +17,7 @@ jobs:
       - name: Publish Draft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
           IS_PRERELEASE="false"
           if [[ "${{ github.event.release.tag_name }}" == *beta* ]]; then
@@ -24,6 +25,7 @@ jobs:
             IS_PRERELEASE="true"
           fi
 
-          gh release edit ${{ github.event.release.tag_name }} \
-            --draft=false \
-            --prerelease=$IS_PRERELEASE
+          gh release edit $TAG_NAME \
+            --generate-notes \
+            --prerelease=$IS_PRERELEASE \
+            --draft=false
