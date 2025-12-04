@@ -29,22 +29,32 @@ export function createAuthWindow(loginUrl) {
       handleNavigation(url);
     });
 
+    authWindow.webContents.on("did-navigate", (event, url) => {
+      handleNavigation(url);
+    });
+
     function handleNavigation(url) {
       try {
         const parsedUrl = new URL(url);
+
+        authLog.info("Auth Window navigating to:", url);
+
         if (parsedUrl.pathname === "/" && !parsedUrl.searchParams.get("code")) {
-          authLog.info("Authentication successful, detected redirect to root.");
+          authLog.info("Authentication successful, detected landing on root.");
 
           currentSession.cookies
             .get({ name: "app_auth_token" })
             .then((cookies) => {
               if (cookies.length > 0) {
                 authLog.info("Auth token cookie found.");
-                resolve({ status: "success" });
               } else {
-                authLog.warn("Redirected to root but auth cookie missing.");
-                resolve({ status: "success" });
+                authLog.warn(
+                  "Redirected to root but 'app_auth_token' cookie is missing.",
+                );
               }
+
+              resolve({ status: "success" });
+
               if (authWindow) {
                 authWindow.close();
               }
@@ -64,7 +74,7 @@ export function createAuthWindow(loginUrl) {
 
     authWindow.on("closed", () => {
       authWindow = null;
-      reject(new Error("Auth window closed by user"));
+      authLog.info("Auth window closed.");
     });
   });
 }

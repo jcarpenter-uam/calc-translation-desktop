@@ -1,4 +1,4 @@
-import { ipcMain, net, app } from "electron";
+import { ipcMain, net, app, session } from "electron";
 import { getMainWindow } from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
@@ -7,6 +7,12 @@ import { createAuthWindow } from "./auth";
 const ipcHandlerLog = log.scope("ipchandler");
 
 const API_BASE_URL = "https://translator-test.my-uam.com";
+
+function parseCookie(cookieStr) {
+  const parts = cookieStr.split(";");
+  const [name, value] = parts[0].split("=");
+  return { name: name.trim(), value: value.trim() };
+}
 
 function makeApiRequest(endpoint, method, body = null) {
   return new Promise((resolve, reject) => {
@@ -25,7 +31,10 @@ function makeApiRequest(endpoint, method, body = null) {
       response.on("end", () => {
         try {
           if (response.statusCode >= 200 && response.statusCode < 300) {
-            resolve(JSON.parse(data));
+            resolve({
+              data: JSON.parse(data),
+              headers: response.headers,
+            });
           } else {
             const error = JSON.parse(data);
             reject(
@@ -102,8 +111,34 @@ export function registerIpcHandlers() {
   ipcMain.handle("auth:request-login", async (event, email) => {
     ipcHandlerLog.info(`Requesting login URL for: ${email}`);
     try {
-      const result = await makeApiRequest("/api/auth/login", "POST", { email });
-      return { status: "ok", data: result };
+      const { data, headers } = await makeApiRequest(
+        "/api/auth/login",
+        "POST",
+        { email },
+      );
+
+      const rawCookies = headers["set-cookie"] || [];
+
+      if (rawCookies.length > 0) {
+        ipcHandlerLog.info(
+          `Syncing ${rawCookies.length} cookies from API to AuthWindow session.`,
+        );
+
+        const cookiePromises = rawCookies.map((cookieStr) => {
+          const { name, value } = parseCookie(cookieStr);
+          return session.defaultSession.cookies.set({
+            url: API_BASE_URL,
+            name,
+            value,
+            secure: true,
+            sameSite: "no_restriction",
+          });
+        });
+
+        await Promise.all(cookiePromises);
+      }
+
+      return { status: "ok", data: data };
     } catch (error) {
       ipcHandlerLog.error("Login request failed:", error);
       return { status: "error", message: error.message };
