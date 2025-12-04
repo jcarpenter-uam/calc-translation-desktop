@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Titlebar from "../components/title/titlebar.jsx";
+import { SettingsButton } from "../models/settings.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -45,7 +46,11 @@ export default function Login() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Titlebar />
+      <Titlebar>
+        {/* Replaced manual button logic with the reusable component */}
+        <SettingsButton />
+      </Titlebar>
+
       <main className="flex-grow flex items-center justify-center container mx-auto p-2 lg:p-8">
         <div className="max-w-md w-full">
           <div className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 shadow-lg rounded-lg p-6 sm:p-8">
@@ -97,8 +102,6 @@ export default function Login() {
           </div>
         </div>
       </main>
-
-      {/* <Footer /> */}
     </div>
   );
 }
