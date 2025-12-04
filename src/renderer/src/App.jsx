@@ -1,40 +1,41 @@
-import React from "react";
-import Transcript from "./components/transcript.jsx";
-import Notification from "./components/notification.jsx";
-import { useTranscriptStream } from "./hooks/use-transcript-stream.js";
-import { useSmartScroll } from "./hooks/use-smart-scroll.js";
-import Titlebar from "./components/titlebar.jsx";
+import { HashRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/protected-route";
+import Login from "./pages/login";
+import LandingPage from "./pages/landing";
+import SessionPage from "./pages/session";
+// import Support from "./pages/support";
+// import Privacy from "./pages/privacy";
+// import Terms from "./pages/terms";
+// import ScrollToTop from "./util/scroll-to-top";
+import AdminPage from "./pages/admin";
+import NotFound from "./pages/not-found";
 
 export default function App() {
-  const {
-    status: transcriptionStatus,
-    transcripts,
-    isDownloadable,
-  } = useTranscriptStream("wss://translator.my-uam.com/ws/view_transcript");
-
-  const lastTopTextRef = React.useRef(null);
-  const notification = useSmartScroll(transcripts, lastTopTextRef);
-
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
-      <Titlebar status={transcriptionStatus} isDownloadable={isDownloadable} />
+      <HashRouter>
+        {/* <ScrollToTop /> */}
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          {/* <Route path="/support" element={<Support />} /> */}
+          {/* <Route path="/privacy" element={<Privacy />} /> */}
+          {/* <Route path="/terms" element={<Terms />} /> */}
 
-      <main className="p-4 sm:p-6 lg:p-8">
-        {transcripts.map((t, index) => (
-          <Transcript
-            key={t.id}
-            {...t}
-            topTextRef={
-              index === transcripts.length - 1 ? lastTopTextRef : null
-            }
-          />
-        ))}
-      </main>
+          {/* Routes for all authenticated users */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/sessions/:integration/*" element={<SessionPage />} />
+          </Route>
 
-      <Notification
-        message={notification.message}
-        visible={notification.visible}
-      />
+          {/* Routes for admin users only */}
+          <Route element={<ProtectedRoute adminOnly={true} />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </HashRouter>
     </div>
   );
 }

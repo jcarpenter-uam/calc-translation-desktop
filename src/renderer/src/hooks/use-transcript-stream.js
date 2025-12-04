@@ -1,41 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 
-const DOWNLOAD_WINDOW_MS = 10 * 60 * 1000;
-
 /**
  * A custom hook to manage a WebSocket connection for live transcripts.
- * @param {string} url The WebSocket URL to connect to.
+ * @param {string} wsUrl The WebSocket URL to connect to.
+ * @param {string} sessionId The session ID (used for dependencies).
+ * @param {function} onUnauthorized Callback to trigger when auth fails (403/1008).
  * @returns {{
- * status: 'connecting' | 'connected' | 'disconnected';
- * transcripts: Array<{
- * id: string,
- * speaker: string,
- * translation: string,
- * transcription: string,
- * source_language: string,
- * target_language: string,
- * isFinalized: boolean,
- * type: 'update' | 'final' | 'correction' | 'status_update',
- * original?: { translation: string, transcription: string },
- * correctionStatus?: 'correcting' | 'corrected' | null
- * }>;
+ * transcripts: Array<Object>;
+ * isDownloadable: boolean;
  * }}
  */
-export function useTranscriptStream(url) {
-  const [status, setStatus] = useState("connecting");
+export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
   const [transcripts, setTranscripts] = useState([]);
-
   const [isDownloadable, setIsDownloadable] = useState(false);
-  const hideTimerRef = useRef(null);
 
   const ws = useRef(null);
 
   useEffect(() => {
+    if (!wsUrl) {
+      return;
+    }
+
     let reconnectTimeoutId;
 
     function connect() {
-      if (typeof url !== "string") {
-        setStatus("disconnected");
+      if (typeof wsUrl !== "string") {
         return;
       }
       if (ws.current && ws.current.readyState !== WebSocket.CLOSED) {
@@ -43,22 +32,43 @@ export function useTranscriptStream(url) {
       }
 
       setTranscripts([]);
-      ws.current = new WebSocket(url);
-      setStatus("connecting");
+      ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
-        console.log(`WebSocket connected to ${url}`);
-        setStatus("connected");
+        console.log(`WebSocket connected to ${wsUrl}`);
       };
 
-      ws.current.onclose = () => {
-        console.log(`WebSocket disconnected. Reconnecting in 3 seconds...`);
-        setStatus("disconnected");
+      ws.current.onclose = (event) => {
+        const code = event.code;
+
+        if (code === 1008 || code === 1006 || code === 403) {
+          console.warn("WebSocket authorization failed.");
+          if (onUnauthorized) {
+            onUnauthorized();
+          }
+          return;
+        }
+
+        if (code === 4001 || code === 4008) {
+          console.error(
+            `WebSocket connection failed permanently: ${event.reason} (${code})`,
+          );
+          return;
+        }
+
+        if (code === 1000) {
+          console.log("WebSocket closed normally.");
+          return;
+        }
+
+        console.log(
+          `WebSocket disconnected (Code: ${code}). Reconnecting in 3 seconds...`,
+        );
         reconnectTimeoutId = setTimeout(connect, 3000);
       };
 
       ws.current.onerror = (error) => {
-        console.error(`WebSocket error on ${url}:`, error);
+        console.error(`WebSocket error on ${wsUrl}:`, error);
         ws.current.close();
       };
 
@@ -67,15 +77,7 @@ export function useTranscriptStream(url) {
           const data = JSON.parse(event.data);
 
           if (data.type === "session_end") {
-            if (!hideTimerRef.current) {
-              setIsDownloadable(true);
-
-              hideTimerRef.current = setTimeout(() => {
-                setIsDownloadable(false);
-                hideTimerRef.current = null;
-              }, DOWNLOAD_WINDOW_MS);
-            }
-
+            setIsDownloadable(true);
             return;
           }
 
@@ -153,15 +155,12 @@ export function useTranscriptStream(url) {
 
     return () => {
       clearTimeout(reconnectTimeoutId);
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
       if (ws.current) {
         ws.current.onclose = null;
         ws.current.close();
       }
     };
-  }, [url]);
+  }, [wsUrl, sessionId, onUnauthorized]);
 
-  return { status, transcripts, isDownloadable };
+  return { transcripts, isDownloadable };
 }
