@@ -2,8 +2,55 @@ import { ipcMain, net, app } from "electron";
 import { getMainWindow } from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
+import { createAuthWindow } from "./auth";
 
 const ipcHandlerLog = log.scope("ipchandler");
+
+const API_BASE_URL = "https://translator-test.my-uam.com";
+
+function makeApiRequest(endpoint, method, body = null) {
+  return new Promise((resolve, reject) => {
+    const request = net.request({
+      method: method,
+      url: `${API_BASE_URL}${endpoint}`,
+    });
+
+    request.setHeader("Content-Type", "application/json");
+
+    request.on("response", (response) => {
+      let data = "";
+      response.on("data", (chunk) => {
+        data += chunk;
+      });
+      response.on("end", () => {
+        try {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            resolve(JSON.parse(data));
+          } else {
+            const error = JSON.parse(data);
+            reject(
+              new Error(
+                error.detail ||
+                  `Request failed with status ${response.statusCode}`,
+              ),
+            );
+          }
+        } catch (e) {
+          reject(new Error("Failed to parse server response"));
+        }
+      });
+    });
+
+    request.on("error", (error) => {
+      reject(error);
+    });
+
+    if (body) {
+      request.write(JSON.stringify(body));
+    }
+    request.end();
+  });
+}
 
 export function registerIpcHandlers() {
   const mainWindow = getMainWindow();
@@ -52,6 +99,31 @@ export function registerIpcHandlers() {
     return newState;
   });
 
+  ipcMain.handle("auth:request-login", async (event, email) => {
+    ipcHandlerLog.info(`Requesting login URL for: ${email}`);
+    try {
+      const result = await makeApiRequest("/api/auth/login", "POST", { email });
+      return { status: "ok", data: result };
+    } catch (error) {
+      ipcHandlerLog.error("Login request failed:", error);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("start-auth-flow", async (event, loginUrl) => {
+    ipcHandlerLog.info("Starting auth flow with URL:", loginUrl);
+    try {
+      await createAuthWindow(loginUrl);
+      ipcHandlerLog.info("Auth flow completed successfully.");
+
+      return { status: "success" };
+    } catch (error) {
+      ipcHandlerLog.error("Auth flow failed or cancelled:", error);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  // TODO: Use new makeApiRequest function
   ipcMain.handle("download-vtt", async () => {
     const DOWNLOAD_API_URL = "https://translator.my-uam.com/api/download-vtt";
     ipcHandlerLog.info("Handling download-vtt request...");

@@ -1,11 +1,11 @@
 import React from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
-import ThemeToggle from "../components/theme-toggle.jsx";
-import LanguageToggle from "../components/language-toggle.jsx";
-import PinToggle from "../components/pinned-toggle.jsx";
+import ThemeToggle from "../components/settings/theme-toggle.jsx";
+import LanguageToggle from "../components/settings/language-toggle.jsx";
+import PinToggle from "../components/settings/pinned-toggle.jsx";
 import { useLanguage } from "../context/language.jsx";
 import { useSettings } from "../context/settings.jsx";
-import BetaToggle from "../components/beta-toggle.jsx";
+import BetaToggle from "../components/settings/beta-toggle.jsx";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">

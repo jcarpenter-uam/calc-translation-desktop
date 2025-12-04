@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld("electron", {
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   toggleAlwaysOnTop: () => ipcRenderer.invoke("toggle-always-on-top"),
   downloadVtt: () => ipcRenderer.invoke("download-vtt"),
+  requestLogin: (email) => ipcRenderer.invoke("auth:request-login", email),
+  startAuthFlow: (url) => ipcRenderer.invoke("start-auth-flow", url),
 });

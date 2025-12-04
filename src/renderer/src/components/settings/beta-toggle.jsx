@@ -1,5 +1,5 @@
 import React from "react";
-import { useSettings } from "../context/settings.jsx";
+import { useSettings } from "../../context/settings.jsx";
 
 /**
  * This is a small, subtle toggle switch for beta updates.

@@ -1,6 +1,6 @@
 import React from "react";
 import { PushPin, PushPinSlash } from "@phosphor-icons/react";
-import { useSettings } from "../context/settings.jsx";
+import { useSettings } from "../../context/settings.jsx";
 
 /**
  * A component to toggle the window's "always on top" state.

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-// import Header from "../components/header";
-// import Footer from "../components/footer";
-// import ThemeToggle from "../components/theme-toggle.jsx";
-// import LanguageToggle from "../components/language-toggle.jsx";
+import Titlebar from "../components/title/titlebar.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,24 +24,16 @@ export default function Login() {
     setError(null);
 
     try {
-      // This will get blocked by CORS
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await window.electron.requestLogin(email);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "An unknown error occurred.");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "An unknown error occurred.");
       }
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.login_url) {
-        window.location.href = data.login_url;
+        await window.electron.startAuthFlow(data.login_url);
       } else {
         throw new Error("Could not retrieve login URL.");
       }
@@ -56,11 +45,7 @@ export default function Login() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* <Header> */}
-      {/*   <ThemeToggle /> */}
-      {/*   <LanguageToggle /> */}
-      {/* </Header> */}
-
+      <Titlebar />
       <main className="flex-grow flex items-center justify-center container mx-auto p-2 lg:p-8">
         <div className="max-w-md w-full">
           <div className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 shadow-lg rounded-lg p-6 sm:p-8">

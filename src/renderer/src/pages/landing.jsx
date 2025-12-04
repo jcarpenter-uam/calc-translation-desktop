@@ -3,7 +3,7 @@ import Transcript from "../components/transcript.jsx";
 import Notification from "../components/notification.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
-import Titlebar from "../components/titlebar.jsx";
+import Titlebar from "../components/title/titlebar.jsx";
 
 export default function App() {
   const {

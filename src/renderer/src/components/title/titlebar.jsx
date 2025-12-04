@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import ConnectionIndicator from "./connection-indicator.jsx";
 import { Gear } from "@phosphor-icons/react/dist/csr/Gear";
 import DownloadVttButton from "./vtt-download.jsx";
-import SettingsModal from "../models/settings.jsx";
+import SettingsModal from "../../models/settings.jsx";
 import OsControls from "./os-controls.jsx";
 
 export default function Titlebar({ status, isDownloadable }) {
@@ -27,8 +26,6 @@ export default function Titlebar({ status, isDownloadable }) {
               >
                 <Gear className="w-6 h-6" />
               </button>
-
-              <ConnectionIndicator status={status} />
 
               <DownloadVttButton isDownloadable={isDownloadable} />
             </div>

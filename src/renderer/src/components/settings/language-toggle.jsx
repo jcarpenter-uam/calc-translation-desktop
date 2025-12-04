@@ -1,5 +1,5 @@
 import React from "react";
-import { useLanguage } from "../context/language.jsx";
+import { useLanguage } from "../../context/language.jsx";
 
 /**
  * A component to swap primary language.
