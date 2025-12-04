@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
+import { EnvelopeSimple } from "@phosphor-icons/react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,7 +15,6 @@ export default function Login() {
     const reason = searchParams.get("reason");
     if (reason === "zoom_link_required") {
       sessionStorage.setItem("zoom_link_pending", "true");
-
       setInfoMessage("Please log in to finish linking your new Zoom account.");
     }
   }, [searchParams]);
@@ -45,60 +45,116 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Titlebar>
-        {/* Replaced manual button logic with the reusable component */}
         <SettingsButton />
       </Titlebar>
 
-      <main className="flex-grow flex items-center justify-center container mx-auto p-2 lg:p-8">
-        <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 shadow-lg rounded-lg p-6 sm:p-8">
-            <h1 className="text-2xl font-bold text-center text-zinc-900 dark:text-zinc-100 mb-2">
-              Login
-            </h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center mb-2">
-              Enter your work email to be redirected to your company's login
-              page.
-            </p>
-            {infoMessage && (
-              <div className="text-center text-sm text-blue-600 dark:text-blue-400 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-700">
-                {infoMessage}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@your-company.com"
-                  required
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:border-blue-500"
-                />
+      <main className="flex-1 overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-6 sm:p-8">
+          <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 items-center">
+            <div className="text-center sm:text-left space-y-4">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Welcome Back
+                </h1>
+                <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Enter your work email to access your dashboard and manage your
+                  translations securely.
+                </p>
               </div>
 
-              {error && (
-                <div className="text-red-600 dark:text-red-400 text-sm font-medium text-center">
-                  <strong>Error:</strong> {error}
+              {infoMessage && (
+                <div className="mt-4 p-3 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg shadow-sm">
+                  {infoMessage}
                 </div>
               )}
+            </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? "Redirecting..." : "Continue"}
-              </button>
-            </form>
+            {/* Right Column: The Form */}
+            <div className="w-full max-w-sm mx-auto sm:ml-auto">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1"
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-blue-500 transition-colors">
+                      <EnvelopeSimple size={20} weight="duotone" />
+                    </div>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="user@company.com"
+                      required
+                      className="
+                        block w-full pl-10 pr-3 py-2.5 
+                        bg-white dark:bg-zinc-800
+                        border border-zinc-300 dark:border-zinc-600
+                        rounded-xl 
+                        text-zinc-900 dark:text-white 
+                        placeholder-zinc-400 dark:placeholder-zinc-500 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+                        transition-all duration-200 ease-out
+                      "
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="
+                    w-full py-2.5 px-4 
+                    bg-blue-600 hover:bg-blue-700 
+                    text-white font-semibold text-sm
+                    rounded-xl shadow-md shadow-blue-600/10 hover:shadow-blue-600/20
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900
+                    disabled:opacity-70 disabled:cursor-not-allowed 
+                    transition-all duration-200 transform active:scale-[0.98]
+                  "
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg
+                        className="animate-spin h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Redirecting...
+                    </span>
+                  ) : (
+                    "Continue"
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </main>
