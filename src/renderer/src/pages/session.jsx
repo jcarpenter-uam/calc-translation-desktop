@@ -1,16 +1,14 @@
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
-// import Header from "../components/header";
-import UserAvatar from "../components/title/user.jsx";
 import Transcript from "../components/transcript.jsx";
-import ThemeToggle from "../components/settings/theme-toggle.jsx";
-import LanguageToggle from "../components/settings/language-toggle.jsx";
-import DownloadVttButton from "../components/title/vtt-download.jsx";
 import Unauthorized from "../components/unauthorized.jsx";
 import Notification from "../components/notification.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
+import Titlebar from "../components/title/titlebar.jsx";
+import { SettingsButton } from "../models/settings.jsx";
+import UserAvatar from "../components/title/user.jsx";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -46,8 +44,11 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
+  // TODO: import from global var
+  const API_WS_URL = "wss://translator-test.my-uam.com";
+
   const wsUrl = isAuthorized
-    ? `/ws/view/${integration}/${encodedSessionId}?token=${token}`
+    ? `${API_WS_URL}/ws/view/${integration}/${encodedSessionId}?token=${token}`
     : null;
 
   const { transcripts, isDownloadable } = useTranscriptStream(
@@ -71,17 +72,10 @@ export default function SessionPage() {
 
   return (
     <>
-      {/* <Header> */}
-      {/*   <UserAvatar /> */}
-      {/*   <ThemeToggle /> */}
-      {/*   <LanguageToggle /> */}
-      {/*   <DownloadVttButton */}
-      {/*     isDownloadable={isDownloadable} */}
-      {/*     integration={integration} */}
-      {/*     sessionId={sessionId} */}
-      {/*     token={token} */}
-      {/*   /> */}
-      {/* </Header> */}
+      <Titlebar>
+        <UserAvatar />
+        <SettingsButton />
+      </Titlebar>
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">
@@ -103,3 +97,5 @@ export default function SessionPage() {
     </>
   );
 }
+
+// WS connection closes almost as soon as it is opened, but backend indicated sucessful auth attempt
