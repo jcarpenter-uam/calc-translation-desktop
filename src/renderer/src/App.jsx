@@ -3,10 +3,6 @@ import ProtectedRoute from "./components/protected-route";
 import Login from "./pages/login";
 import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
-// import Support from "./pages/support";
-// import Privacy from "./pages/privacy";
-// import Terms from "./pages/terms";
-// import ScrollToTop from "./util/scroll-to-top";
 import AdminPage from "./pages/admin";
 import NotFound from "./pages/not-found";
 
@@ -18,9 +14,6 @@ export default function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
-          {/* <Route path="/support" element={<Support />} /> */}
-          {/* <Route path="/privacy" element={<Privacy />} /> */}
-          {/* <Route path="/terms" element={<Terms />} /> */}
 
           {/* Routes for all authenticated users */}
           <Route element={<ProtectedRoute />}>

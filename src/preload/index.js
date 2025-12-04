@@ -11,4 +11,6 @@ contextBridge.exposeInMainWorld("electron", {
   downloadVtt: () => ipcRenderer.invoke("download-vtt"),
   requestLogin: (email) => ipcRenderer.invoke("auth:request-login", email),
   startAuthFlow: (url) => ipcRenderer.invoke("start-auth-flow", url),
+  getUser: () => ipcRenderer.invoke("auth:get-user"),
+  logout: () => ipcRenderer.invoke("auth:logout"),
 });

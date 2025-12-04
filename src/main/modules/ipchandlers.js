@@ -15,49 +15,66 @@ function parseCookie(cookieStr) {
 }
 
 function makeApiRequest(endpoint, method, body = null) {
-  return new Promise((resolve, reject) => {
-    const request = net.request({
-      method: method,
-      url: `${API_BASE_URL}${endpoint}`,
-    });
-
-    request.setHeader("Content-Type", "application/json");
-
-    request.on("response", (response) => {
-      let data = "";
-      response.on("data", (chunk) => {
-        data += chunk;
+  return new Promise(async (resolve, reject) => {
+    try {
+      const cookies = await session.defaultSession.cookies.get({
+        url: API_BASE_URL,
       });
-      response.on("end", () => {
-        try {
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            resolve({
-              data: JSON.parse(data),
-              headers: response.headers,
-            });
-          } else {
-            const error = JSON.parse(data);
-            reject(
-              new Error(
-                error.detail ||
-                  `Request failed with status ${response.statusCode}`,
-              ),
-            );
+      const cookieHeader = cookies
+        .map((c) => `${c.name}=${c.value}`)
+        .join("; ");
+
+      const request = net.request({
+        method: method,
+        url: `${API_BASE_URL}${endpoint}`,
+      });
+
+      request.setHeader("Content-Type", "application/json");
+
+      if (cookieHeader) {
+        request.setHeader("Cookie", cookieHeader);
+      }
+
+      request.on("response", (response) => {
+        let data = "";
+        response.on("data", (chunk) => {
+          data += chunk;
+        });
+        response.on("end", () => {
+          try {
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+              resolve({
+                data: JSON.parse(data),
+                headers: response.headers,
+              });
+            } else {
+              const errorMsg = data
+                ? JSON.parse(data)
+                : { detail: response.statusMessage };
+              reject(
+                new Error(
+                  errorMsg.detail ||
+                    `Request failed with status ${response.statusCode}`,
+                ),
+              );
+            }
+          } catch (e) {
+            reject(new Error("Failed to parse server response"));
           }
-        } catch (e) {
-          reject(new Error("Failed to parse server response"));
-        }
+        });
       });
-    });
 
-    request.on("error", (error) => {
-      reject(error);
-    });
+      request.on("error", (error) => {
+        reject(error);
+      });
 
-    if (body) {
-      request.write(JSON.stringify(body));
+      if (body) {
+        request.write(JSON.stringify(body));
+      }
+      request.end();
+    } catch (err) {
+      reject(err);
     }
-    request.end();
   });
 }
 
@@ -158,16 +175,45 @@ export function registerIpcHandlers() {
     }
   });
 
-  // TODO: Use new makeApiRequest function
+  ipcMain.handle("auth:get-user", async () => {
+    ipcHandlerLog.info("Fetching current user profile via IPC...");
+    try {
+      const { data } = await makeApiRequest("/api/users/me", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.warn("Failed to fetch user:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("auth:logout", async () => {
+    ipcHandlerLog.info("Logging out via IPC...");
+    try {
+      await makeApiRequest("/api/auth/logout", "POST");
+      return { status: "ok" };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle("download-vtt", async () => {
     const DOWNLOAD_API_URL = "https://translator.my-uam.com/api/download-vtt";
     ipcHandlerLog.info("Handling download-vtt request...");
+
+    const cookies = await session.defaultSession.cookies.get({
+      url: API_BASE_URL,
+    });
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
 
     return new Promise((resolve) => {
       const request = net.request({
         method: "GET",
         url: DOWNLOAD_API_URL,
       });
+
+      if (cookieHeader) {
+        request.setHeader("Cookie", cookieHeader);
+      }
 
       let chunks = [];
 

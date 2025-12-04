@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 import { EnvelopeSimple } from "@phosphor-icons/react";
+import { useAuth } from "../context/auth";
 
 export default function Login() {
+  const { checkAuth, user } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [infoMessage, setInfoMessage] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const reason = searchParams.get("reason");
@@ -35,6 +44,8 @@ export default function Login() {
 
       if (data.login_url) {
         await window.electron.startAuthFlow(data.login_url);
+
+        await checkAuth();
       } else {
         throw new Error("Could not retrieve login URL.");
       }
