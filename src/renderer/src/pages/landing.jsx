@@ -23,13 +23,10 @@ export default function LandingPage() {
           console.log("Found pending Zoom link, attempting to link account...");
           alert("Finishing Zoom account setup...");
 
-          const response = await fetch("/api/auth/zoom/link-pending", {
-            method: "POST",
-          });
+          const response = await window.electron.linkPendingZoom();
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "Failed to link Zoom account.");
+          if (response.status !== "ok") {
+            throw new Error(response.message || "Failed to link Zoom account.");
           }
 
           console.log("Zoom account linked successfully!");
@@ -61,27 +58,21 @@ export default function LandingPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/zoom", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          meetingid: meetingId || null,
-          meetingpass: password || null,
-          join_url: joinUrl || null,
-        }),
+      const response = await window.electron.joinZoom({
+        meetingid: meetingId || null,
+        meetingpass: password || null,
+        join_url: joinUrl || null,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== "ok") {
         throw new Error(
-          errorData.detail ||
+          response.message ||
             "Authentication failed. Please check your inputs.",
         );
       }
 
-      const data = await response.json();
+      const data = response.data;
+      console.log("Server response:", data);
       const sessionId = data.meetinguuid;
       const token = data.token;
 
@@ -105,25 +96,19 @@ export default function LandingPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-        }),
+      const response = await window.electron.joinTest({
+        session_id: sessionId,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (response.status !== "ok") {
         throw new Error(
-          errorData.detail ||
+          response.message ||
             "Test authentication failed. Please check your session ID.",
         );
       }
 
-      const data = await response.json();
+      const data = response.data;
+      console.log("Server response:", data);
       const returnedSessionId = data.meetinguuid;
       const token = data.token;
 

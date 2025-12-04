@@ -13,4 +13,7 @@ contextBridge.exposeInMainWorld("electron", {
   startAuthFlow: (url) => ipcRenderer.invoke("start-auth-flow", url),
   getUser: () => ipcRenderer.invoke("auth:get-user"),
   logout: () => ipcRenderer.invoke("auth:logout"),
+  joinZoom: (payload) => ipcRenderer.invoke("auth:join-zoom", payload),
+  joinTest: (payload) => ipcRenderer.invoke("auth:join-test", payload),
+  linkPendingZoom: () => ipcRenderer.invoke("auth:link-zoom"),
 });

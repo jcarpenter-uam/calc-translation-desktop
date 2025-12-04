@@ -196,6 +196,43 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("auth:join-zoom", async (event, payload) => {
+    ipcHandlerLog.info("Attempting to join Zoom session via IPC...");
+    try {
+      const { data } = await makeApiRequest("/api/auth/zoom", "POST", payload);
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Zoom join failed:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("auth:join-test", async (event, payload) => {
+    ipcHandlerLog.info("Attempting to join Test session via IPC...");
+    try {
+      const { data } = await makeApiRequest("/api/auth/test", "POST", payload);
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Test join failed:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  // NOTE: Not sure if its worth handling this within the desktop application yet
+  ipcMain.handle("auth:link-zoom", async () => {
+    ipcHandlerLog.info("Linking pending Zoom account via IPC...");
+    try {
+      const { data } = await makeApiRequest(
+        "/api/auth/zoom/link-pending",
+        "POST",
+      );
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Zoom linking failed:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle("download-vtt", async () => {
     const DOWNLOAD_API_URL = "https://translator.my-uam.com/api/download-vtt";
     ipcHandlerLog.info("Handling download-vtt request...");
