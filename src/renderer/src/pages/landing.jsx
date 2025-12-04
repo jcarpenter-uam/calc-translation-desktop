@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import UserAvatar from "../components/title/user.jsx";
-import {
-  IntegrationCard,
-  ZoomForm,
-  TestForm,
-} from "../components/integration-card.jsx";
+import { ZoomForm, TestForm } from "../components/integration-card.jsx";
 
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
 import Titlebar from "../components/title/titlebar.jsx";
@@ -86,16 +82,11 @@ export default function LandingPage() {
       }
 
       const data = await response.json();
-      console.log("Server response:", data);
       const sessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!sessionId) {
-        throw new Error("Server did not return a session ID.");
-      }
-
-      if (!token) {
-        throw new Error("Server did not return an auth token.");
+      if (!sessionId || !token) {
+        throw new Error("Server did not return a valid session.");
       }
 
       handleJoin("zoom", sessionId, token);
@@ -133,16 +124,11 @@ export default function LandingPage() {
       }
 
       const data = await response.json();
-      console.log("Server response:", data);
       const returnedSessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!returnedSessionId) {
-        throw new Error("Server did not return a session ID.");
-      }
-
-      if (!token) {
-        throw new Error("Server did not return an auth token.");
+      if (!returnedSessionId || !token) {
+        throw new Error("Server did not return a valid session.");
       }
 
       handleJoin("test", returnedSessionId, token);
@@ -162,45 +148,59 @@ export default function LandingPage() {
     return null;
   };
 
+  const SidebarItem = ({ id, label, icon, activeClass }) => (
+    <button
+      onClick={() => setIntegration(id)}
+      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
+        integration === id
+          ? activeClass
+          : "border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       <Titlebar>
         <UserAvatar />
         <SettingsButton />
       </Titlebar>
 
-      <main className="flex-grow flex items-center justify-center container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-center">
-              Choose your integration
+      <main className="flex-grow flex overflow-hidden">
+        <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+          <div className="px-4 mb-2">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+              Integration
             </h2>
-            <div className="flex flex-wrap justify-center gap-4">
-              <IntegrationCard
-                id="zoom"
-                title="Zoom"
-                icon={<BiLogoZoom className="h-7 w-7 text-blue-500" />}
-                selected={integration}
-                onSelect={setIntegration}
-              />
-              {user?.is_admin && (
-                <IntegrationCard
-                  id="test"
-                  title="Test"
-                  icon={<BiSolidFlask className="h-7 w-7 text-green-500" />}
-                  selected={integration}
-                  onSelect={setIntegration}
-                />
-              )}
-            </div>
           </div>
+          <div className="flex flex-col">
+            <SidebarItem
+              id="zoom"
+              label="Zoom Meeting"
+              icon={<BiLogoZoom className="h-5 w-5" />}
+              activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+            />
+            {user?.is_admin && (
+              <SidebarItem
+                id="test"
+                label="Test Session"
+                icon={<BiSolidFlask className="h-5 w-5" />}
+                activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+              />
+            )}
+          </div>
+        </aside>
 
-          <div className="transition-all">
+        <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
+          <div className="max-w-md mx-auto">
             {renderForm()}
             {error && (
-              <p className="mt-4 text-center text-sm font-medium text-red-600">
+              <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
                 {error}
-              </p>
+              </div>
             )}
           </div>
         </div>
