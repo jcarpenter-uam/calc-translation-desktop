@@ -27,6 +27,7 @@ export default function Login() {
     setError(null);
 
     try {
+      // This will get blocked by CORS
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -60,13 +61,13 @@ export default function Login() {
       {/*   <LanguageToggle /> */}
       {/* </Header> */}
 
-      <main className="flex-grow flex items-center justify-center container mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-grow flex items-center justify-center container mx-auto p-2 lg:p-8">
         <div className="max-w-md w-full">
           <div className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 shadow-lg rounded-lg p-6 sm:p-8">
             <h1 className="text-2xl font-bold text-center text-zinc-900 dark:text-zinc-100 mb-2">
               Login
             </h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center mb-6">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center mb-2">
               Enter your work email to be redirected to your company's login
               page.
             </p>
