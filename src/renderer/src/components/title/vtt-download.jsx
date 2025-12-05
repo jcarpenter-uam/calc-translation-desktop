@@ -33,9 +33,11 @@ function DownloadVttButton({ integration, sessionId, token, isDownloadable }) {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
+
+      const safeSessionId = (sessionId || "").replace(/\//g, "_");
       link.setAttribute(
         "download",
-        `${integration}_${sessionId}_transcript.vtt`,
+        `${integration}_${safeSessionId}_transcript.vtt`,
       );
       document.body.appendChild(link);
       link.click();
@@ -43,7 +45,7 @@ function DownloadVttButton({ integration, sessionId, token, isDownloadable }) {
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("Download failed:", err);
-      alert(`Download failed: ${err.message}`);
+      alert(`Download Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }

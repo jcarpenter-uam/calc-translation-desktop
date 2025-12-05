@@ -42,38 +42,31 @@ function makeApiRequest(endpoint, method, body = null) {
         });
 
         response.on("end", () => {
-          // 1. Try to parse JSON, but don't crash if it fails
           let parsedData = null;
           try {
             if (data && data.trim().length > 0) {
               parsedData = JSON.parse(data);
             }
           } catch (e) {
-            // If parsing fails, we assume 'data' is just a plain string (like an HTML error or text)
             ipcHandlerLog.warn(
               `Failed to parse JSON from ${endpoint}. Raw response: ${data.substring(0, 200)}...`,
             );
           }
 
-          // 2. Handle Success (200-299)
           if (response.statusCode >= 200 && response.statusCode < 300) {
             resolve({
-              data: parsedData || data, // Return object if parsed, or string if not
+              data: parsedData || data,
               headers: response.headers,
             });
-          }
-          // 3. Handle Errors (4xx, 5xx)
-          else {
-            // Try to find a meaningful error message in the response
+          } else {
             let errorMessage =
               parsedData?.detail ||
               parsedData?.message ||
               parsedData?.error ||
               (typeof parsedData === "string" ? parsedData : null) ||
-              data || // Fallback to raw text
+              data ||
               `Request failed with status ${response.statusCode}`;
 
-            // If the error message is still an object/array, stringify it
             if (typeof errorMessage === "object") {
               errorMessage = JSON.stringify(errorMessage);
             }
@@ -342,6 +335,101 @@ export function registerIpcHandlers() {
     try {
       await makeApiRequest(`/api/tenant/${tenantId}`, "DELETE");
       return { status: "ok" };
+      import React, { useState } from "react";
+      import { FileArrowDown } from "@phosphor-icons/react/dist/csr/FileArrowDown";
+      import { SpinnerBall } from "@phosphor-icons/react/dist/csr/SpinnerBall";
+
+      const DownloadIcon = () => <FileArrowDown size={23} />;
+
+      const LoadingIcon = () => <SpinnerBall size={23} />;
+
+      /**
+       * An icon-button component to download a .vtt transcript file.
+       * Becomes green and enabled when isDownloadable is true.
+       */
+      function DownloadVttButton({
+        integration,
+        sessionId,
+        token,
+        isDownloadable,
+      }) {
+        const [isLoading, setIsLoading] = useState(false);
+
+        const handleDownload = async () => {
+          if (isLoading || !isDownloadable) return;
+
+          setIsLoading(true);
+
+          try {
+            const response = await window.electron.downloadVtt({
+              integration,
+              sessionId,
+              token,
+            });
+
+            if (response.status !== "ok") {
+              throw new Error(
+                response.message || "Download failed in main process",
+              );
+            }
+
+            const blob = new Blob([response.data], { type: "text/vtt" });
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+
+            // Sanitize filename to prevent path issues if sessionId has slashes
+            const safeSessionId = (sessionId || "").replace(/\//g, "_");
+            link.setAttribute(
+              "download",
+              `${integration}_${safeSessionId}_transcript.vtt`,
+            );
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          } catch (err) {
+            console.error("Download failed:", err);
+            // Optional: Add UI notification here
+            alert(`Download Error: ${err.message}`);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        const baseClasses =
+          "p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
+
+        const activeClasses =
+          "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100 hover:bg-green-300 dark:hover:bg-green-600";
+
+        const inactiveClasses =
+          "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800";
+
+        return (
+          <button
+            onClick={handleDownload}
+            disabled={isLoading || !isDownloadable}
+            className={`${baseClasses} ${
+              isDownloadable ? activeClasses : inactiveClasses
+            }`}
+            aria-label={
+              isDownloadable
+                ? "Download transcript"
+                : "Download transcript (available after session)"
+            }
+            title={
+              isDownloadable
+                ? "Download Transcript"
+                : "Transcript download will be available when the session ends."
+            }
+          >
+            {isLoading ? <LoadingIcon /> : <DownloadIcon />}
+          </button>
+        );
+      }
+
+      export default DownloadVttButton;
     } catch (error) {
       return { status: "error", message: error.message };
     }
@@ -350,15 +438,16 @@ export function registerIpcHandlers() {
   ipcMain.handle(
     "download-vtt",
     async (event, { integration, sessionId, token }) => {
-      // Build the dynamic URL based on integration and session ID
-      const endpoint = `/api/${integration}/${sessionId}/download/vtt`;
+      const encodedIntegration = encodeURIComponent(integration);
+      const encodedSessionId = encodeURIComponent(sessionId);
+
+      const endpoint = `/api/${encodedIntegration}/${encodedSessionId}/download/vtt`;
       const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
       ipcHandlerLog.info(
         `Handling download-vtt request for URL: ${DOWNLOAD_API_URL}`,
       );
 
-      // We need to manually attach the session cookies
       const cookies = await session.defaultSession.cookies.get({
         url: API_BASE_URL,
       });
@@ -376,7 +465,6 @@ export function registerIpcHandlers() {
           request.setHeader("Cookie", cookieHeader);
         }
 
-        // Attach the session token for validation
         if (token) {
           request.setHeader("Authorization", `Bearer ${token}`);
         }
@@ -388,6 +476,27 @@ export function registerIpcHandlers() {
             `Download response status: ${response.statusCode}`,
           );
 
+          const contentType =
+            response.headers["content-type"] ||
+            response.headers["Content-Type"];
+          const isHtml =
+            (Array.isArray(contentType) &&
+              contentType[0].includes("text/html")) ||
+            (typeof contentType === "string" &&
+              contentType.includes("text/html"));
+
+          if (isHtml) {
+            ipcHandlerLog.warn(
+              "Received HTML response for download. Likely a 404/fallback.",
+            );
+            resolve({
+              status: "error",
+              message:
+                "Download failed: Server returned HTML. Please check session status.",
+            });
+            return;
+          }
+
           response.on("data", (chunk) => {
             chunks.push(chunk);
           });
@@ -398,19 +507,12 @@ export function registerIpcHandlers() {
               const buffer = Buffer.concat(chunks);
               resolve({ status: "ok", data: buffer });
             } else {
-              const responseBody = Buffer.concat(chunks).toString();
-              let errorMessage = `Download failed with status: ${response.statusCode}`;
-              try {
-                const parsed = JSON.parse(responseBody);
-                if (parsed.detail) errorMessage = parsed.detail;
-              } catch (e) {
-                // Keep default error
-              }
-
-              ipcHandlerLog.error(errorMessage);
+              ipcHandlerLog.error(
+                `Download failed with status: ${response.statusCode}`,
+              );
               resolve({
                 status: "error",
-                message: errorMessage,
+                message: `Download failed with status: ${response.statusCode}`,
               });
             }
           });
