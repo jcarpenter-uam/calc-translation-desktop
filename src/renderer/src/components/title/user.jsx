@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/auth";
 
 /**
@@ -96,8 +97,8 @@ export default function UserAvatar() {
         >
           <ul className="py-1">
             <li>
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="
                   block 
                   px-4 py-2 
@@ -110,13 +111,13 @@ export default function UserAvatar() {
                 "
               >
                 Home
-              </a>
+              </Link>
             </li>
 
             {is_admin && (
               <li>
-                <a
-                  href="/admin"
+                <Link
+                  to="/admin"
                   className="
                     block 
                     px-4 py-2 
@@ -129,7 +130,7 @@ export default function UserAvatar() {
                   "
                 >
                   Admin
-                </a>
+                </Link>
               </li>
             )}
 

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-// import Header from "../components/header";
-// import UserAvatar from "../components/user.jsx";
-// import ThemeToggle from "../components/theme-toggle.jsx";
-// import LanguageToggle from "../components/language-toggle.jsx";
-// import Footer from "../components/footer.jsx";
-import UserManagement from "../components/user-management.jsx";
-import TenantManagement from "../components/tenant-management.jsx";
+import UserManagement from "../components/admin/user-management.jsx";
+import TenantManagement from "../components/admin/tenant-management.jsx";
+import UserAvatar from "../components/title/user.jsx";
+import Titlebar from "../components/title/titlebar.jsx";
+import { SettingsButton } from "../models/settings.jsx";
 
 // TODO: Make this look better later
 
@@ -19,6 +17,7 @@ export default function AdminPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // BUG: Cant make api request from react
         const [userResponse, tenantResponse] = await Promise.all([
           fetch("/api/users/"),
           fetch("/api/tenant/"),
@@ -45,6 +44,7 @@ export default function AdminPage() {
 
   const handleUpdateUser = async (userId, updateData) => {
     try {
+      // BUG: Cant make api request from react
       const response = await fetch(`/api/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +69,7 @@ export default function AdminPage() {
 
   const handleDeleteUser = async (userId) => {
     try {
+      // BUG: Cant make api request from react
       const response = await fetch(`/api/users/${userId}`, {
         method: "DELETE",
       });
@@ -85,6 +86,7 @@ export default function AdminPage() {
 
   const handleCreateTenant = async (createData) => {
     try {
+      // BUG: Cant make api request from react
       const response = await fetch("/api/tenant/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -106,6 +108,7 @@ export default function AdminPage() {
 
   const handleUpdateTenant = async (tenantId, updateData) => {
     try {
+      // BUG: Cant make api request from react
       const response = await fetch(`/api/tenant/${tenantId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -129,6 +132,7 @@ export default function AdminPage() {
 
   const handleDeleteTenant = async (tenantId) => {
     try {
+      // BUG: Cant make api request from react
       const response = await fetch(`/api/tenant/${tenantId}`, {
         method: "DELETE",
       });
@@ -180,17 +184,14 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* <Header> */}
-      {/*   <UserAvatar /> */}
-      {/*   <ThemeToggle /> */}
-      {/*   <LanguageToggle /> */}
-      {/* </Header> */}
+      <Titlebar>
+        <UserAvatar />
+        <SettingsButton />
+      </Titlebar>
 
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
         {renderContent()}
       </main>
-
-      {/* <Footer /> */}
     </div>
   );
 }
