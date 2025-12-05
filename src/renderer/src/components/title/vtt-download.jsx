@@ -34,10 +34,10 @@ function DownloadVttButton({ integration, sessionId, token, isDownloadable }) {
       const link = document.createElement("a");
       link.href = blobUrl;
 
-      const safeSessionId = (sessionId || "").replace(/\//g, "_");
+      const timestamp = new Date().toISOString().split("T")[0];
       link.setAttribute(
         "download",
-        `${integration}_${safeSessionId}_transcript.vtt`,
+        `${integration}_${timestamp}_transcript.vtt`,
       );
       document.body.appendChild(link);
       link.click();
