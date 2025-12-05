@@ -345,7 +345,7 @@ export function registerIpcHandlers() {
     async (event, { integration, sessionId, token }) => {
       const encodedSessionId = encodeURIComponent(sessionId);
 
-      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt`;
+      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}`;
       const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
       ipcHandlerLog.info(
@@ -369,6 +369,7 @@ export function registerIpcHandlers() {
           request.setHeader("Cookie", cookieHeader);
         }
 
+        // Doesnt hurt
         if (token) {
           request.setHeader("Authorization", `Bearer ${token}`);
         }
