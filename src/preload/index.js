@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electron", {
+  // App Controls
   minimize: () => ipcRenderer.invoke("minimize-window"),
   maximize: () => ipcRenderer.invoke("maximize-window"),
   close: () => ipcRenderer.invoke("close-window"),
@@ -8,7 +9,11 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("set-prerelease-channel", isBeta),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   toggleAlwaysOnTop: () => ipcRenderer.invoke("toggle-always-on-top"),
+
+  // Features
   downloadVtt: () => ipcRenderer.invoke("download-vtt"),
+
+  // Auth
   requestLogin: (email) => ipcRenderer.invoke("auth:request-login", email),
   startAuthFlow: (url) => ipcRenderer.invoke("start-auth-flow", url),
   getUser: () => ipcRenderer.invoke("auth:get-user"),
@@ -16,4 +21,18 @@ contextBridge.exposeInMainWorld("electron", {
   joinZoom: (payload) => ipcRenderer.invoke("auth:join-zoom", payload),
   joinTest: (payload) => ipcRenderer.invoke("auth:join-test", payload),
   linkPendingZoom: () => ipcRenderer.invoke("auth:link-zoom"),
+
+  // Admin: User Management
+  getUsers: () => ipcRenderer.invoke("admin:get-users"),
+  updateUser: (userId, data) =>
+    ipcRenderer.invoke("admin:update-user", userId, data),
+  deleteUser: (userId) => ipcRenderer.invoke("admin:delete-user", userId),
+
+  // Admin: Tenant Management
+  getTenants: () => ipcRenderer.invoke("admin:get-tenants"),
+  createTenant: (data) => ipcRenderer.invoke("admin:create-tenant", data),
+  setUserAdminStatus: (tenantId, data) =>
+    ipcRenderer.invoke("admin:set-user-admin-status", tenantId, data),
+  deleteTenant: (tenantId) =>
+    ipcRenderer.invoke("admin:delete-tenant", tenantId),
 });

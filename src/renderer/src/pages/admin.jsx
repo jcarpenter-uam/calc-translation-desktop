@@ -5,8 +5,6 @@ import UserAvatar from "../components/title/user.jsx";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 
-// TODO: Make this look better later
-
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [tenants, setTenants] = useState([]);
@@ -17,22 +15,23 @@ export default function AdminPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // BUG: Cant make api request from react
         const [userResponse, tenantResponse] = await Promise.all([
-          fetch("/api/users/"),
-          fetch("/api/tenant/"),
+          window.electron.getUsers(),
+          window.electron.getTenants(),
         ]);
 
-        if (!userResponse.ok) throw new Error("Failed to fetch users");
-        if (!tenantResponse.ok) throw new Error("Failed to fetch tenants");
+        if (userResponse.status !== "ok") {
+          throw new Error(userResponse.message || "Failed to fetch users");
+        }
+        if (tenantResponse.status !== "ok") {
+          throw new Error(tenantResponse.message || "Failed to fetch tenants");
+        }
 
-        const usersData = await userResponse.json();
-        const tenantsData = await tenantResponse.json();
-
-        setUsers(usersData);
-        setTenants(tenantsData);
+        setUsers(userResponse.data);
+        setTenants(tenantResponse.data);
         setError(null);
       } catch (err) {
+        console.error("Admin Page Fetch Error:", err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -42,20 +41,17 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
-  const handleUpdateUser = async (userId, updateData) => {
+  const handleSetUserAdminStatus = async (userId, isAdmin) => {
     try {
-      // BUG: Cant make api request from react
-      const response = await fetch(`/api/users/${userId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
+      const response = await window.electron.setUserAdminStatus(userId, {
+        is_admin: isAdmin,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update user");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to set admin status");
       }
 
-      const updatedUser = await response.json();
+      const updatedUser = response.data;
 
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
@@ -63,19 +59,16 @@ export default function AdminPage() {
         ),
       );
     } catch (err) {
-      console.error("User update error:", err);
+      console.error("Set admin status error:", err);
     }
   };
 
   const handleDeleteUser = async (userId) => {
     try {
-      // BUG: Cant make api request from react
-      const response = await fetch(`/api/users/${userId}`, {
-        method: "DELETE",
-      });
+      const response = await window.electron.deleteUser(userId);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to delete user");
       }
 
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
@@ -86,60 +79,43 @@ export default function AdminPage() {
 
   const handleCreateTenant = async (createData) => {
     try {
-      // BUG: Cant make api request from react
-      const response = await fetch("/api/tenant/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createData),
-      });
+      const response = await window.electron.createTenant(createData);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || "Failed to create tenant");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to create tenant");
       }
 
-      const newTenant = await response.json();
+      const newTenant = response.data;
       setTenants((prevTenants) => [...prevTenants, newTenant]);
     } catch (err) {
       console.error("Create tenant error:", err);
-      setError(err.message);
+      // Optional: set error state or alert
     }
   };
 
   const handleUpdateTenant = async (tenantId, updateData) => {
     try {
-      // BUG: Cant make api request from react
-      const response = await fetch(`/api/tenant/${tenantId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
+      const response = await window.electron.updateTenant(tenantId, updateData);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || "Failed to update tenant");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to update tenant");
       }
 
-      const updatedTenant = await response.json();
+      const updatedTenant = response.data;
       setTenants((prevTenants) =>
         prevTenants.map((t) => (t.tenant_id === tenantId ? updatedTenant : t)),
       );
     } catch (err) {
       console.error("Update tenant error:", err);
-      setError(err.message);
     }
   };
 
   const handleDeleteTenant = async (tenantId) => {
     try {
-      // BUG: Cant make api request from react
-      const response = await fetch(`/api/tenant/${tenantId}`, {
-        method: "DELETE",
-      });
+      const response = await window.electron.deleteTenant(tenantId);
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || "Failed to delete tenant");
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to delete tenant");
       }
 
       setTenants((prevTenants) =>
@@ -147,26 +123,33 @@ export default function AdminPage() {
       );
     } catch (err) {
       console.error("Delete tenant error:", err);
-      setError(err.message);
     }
   };
 
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="text-center text-zinc-500 dark:text-zinc-400">
-          Loading admin data...
+        <div className="flex justify-center items-center h-64">
+          <p className="text-zinc-500 dark:text-zinc-400">
+            Loading admin data...
+          </p>
         </div>
       );
     }
     if (error) {
-      return <div className="text-center text-red-500">Error: {error}</div>;
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg text-center">
+          <p>Error: {error}</p>
+        </div>
+      );
     }
     return (
       <div className="space-y-12">
         <UserManagement
           users={users}
-          onUpdateUser={handleUpdateUser}
+          onToggleAdmin={(userId, is_admin) =>
+            handleSetUserAdminStatus(userId, is_admin)
+          }
           onDeleteUser={handleDeleteUser}
         />
 

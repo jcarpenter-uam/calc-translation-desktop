@@ -40,31 +40,54 @@ function makeApiRequest(endpoint, method, body = null) {
         response.on("data", (chunk) => {
           data += chunk;
         });
+
         response.on("end", () => {
+          // 1. Try to parse JSON, but don't crash if it fails
+          let parsedData = null;
           try {
-            if (response.statusCode >= 200 && response.statusCode < 300) {
-              resolve({
-                data: JSON.parse(data),
-                headers: response.headers,
-              });
-            } else {
-              const errorMsg = data
-                ? JSON.parse(data)
-                : { detail: response.statusMessage };
-              reject(
-                new Error(
-                  errorMsg.detail ||
-                    `Request failed with status ${response.statusCode}`,
-                ),
-              );
+            if (data && data.trim().length > 0) {
+              parsedData = JSON.parse(data);
             }
           } catch (e) {
-            reject(new Error("Failed to parse server response"));
+            // If parsing fails, we assume 'data' is just a plain string (like an HTML error or text)
+            ipcHandlerLog.warn(
+              `Failed to parse JSON from ${endpoint}. Raw response: ${data.substring(0, 200)}...`,
+            );
+          }
+
+          // 2. Handle Success (200-299)
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            resolve({
+              data: parsedData || data, // Return object if parsed, or string if not
+              headers: response.headers,
+            });
+          }
+          // 3. Handle Errors (4xx, 5xx)
+          else {
+            // Try to find a meaningful error message in the response
+            let errorMessage =
+              parsedData?.detail ||
+              parsedData?.message ||
+              parsedData?.error ||
+              (typeof parsedData === "string" ? parsedData : null) ||
+              data || // Fallback to raw text
+              `Request failed with status ${response.statusCode}`;
+
+            // If the error message is still an object/array, stringify it
+            if (typeof errorMessage === "object") {
+              errorMessage = JSON.stringify(errorMessage);
+            }
+
+            ipcHandlerLog.error(
+              `API Error [${response.statusCode}]: ${errorMessage}`,
+            );
+            reject(new Error(errorMessage));
           }
         });
       });
 
       request.on("error", (error) => {
+        ipcHandlerLog.error(`Network Error on ${endpoint}:`, error);
         reject(error);
       });
 
@@ -73,6 +96,7 @@ function makeApiRequest(endpoint, method, body = null) {
       }
       request.end();
     } catch (err) {
+      ipcHandlerLog.error("Request Setup Error:", err);
       reject(err);
     }
   });
@@ -229,6 +253,80 @@ export function registerIpcHandlers() {
       return { status: "ok", data };
     } catch (error) {
       ipcHandlerLog.error("Zoom linking failed:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:get-users", async () => {
+    try {
+      const { data } = await makeApiRequest("/api/users/", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle(
+    "admin:set-user-admin-status",
+    async (event, userId, updateData) => {
+      try {
+        const { data } = await makeApiRequest(
+          `/api/users/${userId}/admin`,
+          "PUT",
+          updateData,
+        );
+        return { status: "ok", data };
+      } catch (error) {
+        return { status: "error", message: error.message };
+      }
+    },
+  );
+
+  ipcMain.handle("admin:delete-user", async (event, userId) => {
+    try {
+      await makeApiRequest(`/api/users/${userId}`, "DELETE");
+      return { status: "ok" };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:get-tenants", async () => {
+    try {
+      const { data } = await makeApiRequest("/api/tenant/", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:create-tenant", async (event, createData) => {
+    try {
+      const { data } = await makeApiRequest("/api/tenant/", "POST", createData);
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:update-tenant", async (event, tenantId, updateData) => {
+    try {
+      const { data } = await makeApiRequest(
+        `/api/tenant/${tenantId}`,
+        "PATCH",
+        updateData,
+      );
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:delete-tenant", async (event, tenantId) => {
+    try {
+      await makeApiRequest(`/api/tenant/${tenantId}`, "DELETE");
+      return { status: "ok" };
+    } catch (error) {
       return { status: "error", message: error.message };
     }
   });
