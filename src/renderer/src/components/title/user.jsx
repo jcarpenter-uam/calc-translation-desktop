@@ -99,6 +99,9 @@ export default function UserAvatar() {
             <li>
               <Link
                 to="/"
+                onClick={() => {
+                  setIsOpen(false);
+                }}
                 className="
                   block 
                   px-4 py-2 
@@ -118,6 +121,9 @@ export default function UserAvatar() {
               <li>
                 <Link
                   to="/admin"
+                  onClick={() => {
+                    setIsOpen(false);
+                  }}
                   className="
                     block 
                     px-4 py-2 
