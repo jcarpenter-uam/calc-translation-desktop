@@ -214,6 +214,22 @@ export function registerIpcHandlers() {
     ipcHandlerLog.info("Logging out via IPC...");
     try {
       await makeApiRequest("/api/auth/logout", "POST");
+
+      const cookies = await session.defaultSession.cookies.get({
+        url: API_BASE_URL,
+      });
+
+      if (cookies.length > 0) {
+        const removalPromises = cookies.map((cookie) => {
+          return session.defaultSession.cookies.remove(
+            API_BASE_URL,
+            cookie.name,
+          );
+        });
+        await Promise.all(removalPromises);
+        ipcHandlerLog.info(`Cleared ${cookies.length} cookies.`);
+      }
+
       return { status: "ok" };
     } catch (error) {
       return { status: "error", message: error.message };

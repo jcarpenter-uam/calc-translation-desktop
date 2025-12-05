@@ -5,4 +5,4 @@
 - Reduce refreshes on new page load
 - WS error
 - Logging
-- Logout clears cookie
+- If home is clicked when on the home page the model should close
