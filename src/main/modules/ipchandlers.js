@@ -343,10 +343,9 @@ export function registerIpcHandlers() {
   ipcMain.handle(
     "download-vtt",
     async (event, { integration, sessionId, token }) => {
-      const encodedIntegration = encodeURIComponent(integration);
       const encodedSessionId = encodeURIComponent(sessionId);
 
-      const endpoint = `/api/${encodedIntegration}/${encodedSessionId}/download/vtt`;
+      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt`;
       const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
       ipcHandlerLog.info(
@@ -394,10 +393,17 @@ export function registerIpcHandlers() {
             ipcHandlerLog.warn(
               "Received HTML response for download. Likely a 404/fallback.",
             );
-            resolve({
-              status: "error",
-              message:
-                "Download failed: Server returned HTML. Please check session status.",
+            response.on("data", (chunk) => {
+              chunks.push(chunk);
+            });
+            response.on("end", () => {
+              const body = Buffer.concat(chunks).toString().substring(0, 500);
+              ipcHandlerLog.warn(`HTML Response Preview: ${body}`);
+              resolve({
+                status: "error",
+                message:
+                  "Download failed: Server returned HTML. Please check the session URL or status.",
+              });
             });
             return;
           }
@@ -412,12 +418,17 @@ export function registerIpcHandlers() {
               const buffer = Buffer.concat(chunks);
               resolve({ status: "ok", data: buffer });
             } else {
-              ipcHandlerLog.error(
-                `Download failed with status: ${response.statusCode}`,
-              );
+              const responseBody = Buffer.concat(chunks).toString();
+              let errorMessage = `Download failed with status: ${response.statusCode}`;
+              try {
+                const parsed = JSON.parse(responseBody);
+                if (parsed.detail) errorMessage = parsed.detail;
+              } catch (e) {}
+
+              ipcHandlerLog.error(errorMessage);
               resolve({
                 status: "error",
-                message: `Download failed with status: ${response.statusCode}`,
+                message: errorMessage,
               });
             }
           });
