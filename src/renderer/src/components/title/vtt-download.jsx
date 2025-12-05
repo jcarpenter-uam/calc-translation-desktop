@@ -10,7 +10,7 @@ const LoadingIcon = () => <SpinnerBall size={23} />;
  * An icon-button component to download a .vtt transcript file.
  * Becomes green and enabled when isDownloadable is true.
  */
-function DownloadVttButton({ isDownloadable }) {
+function DownloadVttButton({ integration, sessionId, token, isDownloadable }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDownload = async () => {
@@ -19,7 +19,11 @@ function DownloadVttButton({ isDownloadable }) {
     setIsLoading(true);
 
     try {
-      const response = await window.electron.downloadVtt();
+      const response = await window.electron.downloadVtt({
+        integration,
+        sessionId,
+        token,
+      });
 
       if (response.status !== "ok") {
         throw new Error(response.message || "Download failed in main process");
@@ -29,13 +33,17 @@ function DownloadVttButton({ isDownloadable }) {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.setAttribute("download", `meeting_transcript.vtt`);
+      link.setAttribute(
+        "download",
+        `${integration}_${sessionId}_transcript.vtt`,
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("Download failed:", err);
+      alert(`Download failed: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -59,8 +67,13 @@ function DownloadVttButton({ isDownloadable }) {
       }`}
       aria-label={
         isDownloadable
-          ? "Download transcript (available for a limited time)"
-          : "Download transcript (not yet available)"
+          ? "Download transcript"
+          : "Download transcript (available after session)"
+      }
+      title={
+        isDownloadable
+          ? "Download Transcript"
+          : "Transcript download will be available when the session ends."
       }
     >
       {isLoading ? <LoadingIcon /> : <DownloadIcon />}

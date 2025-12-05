@@ -347,70 +347,94 @@ export function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("download-vtt", async () => {
-    const DOWNLOAD_API_URL = "https://translator.my-uam.com/api/download-vtt";
-    ipcHandlerLog.info("Handling download-vtt request...");
+  ipcMain.handle(
+    "download-vtt",
+    async (event, { integration, sessionId, token }) => {
+      // Build the dynamic URL based on integration and session ID
+      const endpoint = `/api/${integration}/${sessionId}/download/vtt`;
+      const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
-    const cookies = await session.defaultSession.cookies.get({
-      url: API_BASE_URL,
-    });
-    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+      ipcHandlerLog.info(
+        `Handling download-vtt request for URL: ${DOWNLOAD_API_URL}`,
+      );
 
-    return new Promise((resolve) => {
-      const request = net.request({
-        method: "GET",
-        url: DOWNLOAD_API_URL,
+      // We need to manually attach the session cookies
+      const cookies = await session.defaultSession.cookies.get({
+        url: API_BASE_URL,
       });
+      const cookieHeader = cookies
+        .map((c) => `${c.name}=${c.value}`)
+        .join("; ");
 
-      if (cookieHeader) {
-        request.setHeader("Cookie", cookieHeader);
-      }
-
-      let chunks = [];
-
-      request.on("response", (response) => {
-        ipcHandlerLog.info(
-          `DOWNLOAD_API_URL response status: ${response.statusCode}`,
-        );
-
-        response.on("data", (chunk) => {
-          chunks.push(chunk);
+      return new Promise((resolve) => {
+        const request = net.request({
+          method: "GET",
+          url: DOWNLOAD_API_URL,
         });
 
-        response.on("end", () => {
-          ipcHandlerLog.info("Download request finished.");
-          if (response.statusCode >= 200 && response.statusCode < 300) {
-            const buffer = Buffer.concat(chunks);
-            resolve({ status: "ok", data: buffer });
-          } else {
-            ipcHandlerLog.error(
-              `Download failed with status: ${response.statusCode}`,
-            );
+        if (cookieHeader) {
+          request.setHeader("Cookie", cookieHeader);
+        }
+
+        // Attach the session token for validation
+        if (token) {
+          request.setHeader("Authorization", `Bearer ${token}`);
+        }
+
+        let chunks = [];
+
+        request.on("response", (response) => {
+          ipcHandlerLog.info(
+            `Download response status: ${response.statusCode}`,
+          );
+
+          response.on("data", (chunk) => {
+            chunks.push(chunk);
+          });
+
+          response.on("end", () => {
+            ipcHandlerLog.info("Download request finished.");
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+              const buffer = Buffer.concat(chunks);
+              resolve({ status: "ok", data: buffer });
+            } else {
+              const responseBody = Buffer.concat(chunks).toString();
+              let errorMessage = `Download failed with status: ${response.statusCode}`;
+              try {
+                const parsed = JSON.parse(responseBody);
+                if (parsed.detail) errorMessage = parsed.detail;
+              } catch (e) {
+                // Keep default error
+              }
+
+              ipcHandlerLog.error(errorMessage);
+              resolve({
+                status: "error",
+                message: errorMessage,
+              });
+            }
+          });
+
+          response.on("error", (error) => {
+            ipcHandlerLog.error("Error during download response: ", error);
             resolve({
               status: "error",
-              message: `Download failed with status: ${response.statusCode}`,
+              message:
+                error.message || "Unknown error during download response",
             });
-          }
-        });
-
-        response.on("error", (error) => {
-          ipcHandlerLog.error("Error during download response: ", error);
-          resolve({
-            status: "error",
-            message: error.message || "Unknown error during download response",
           });
         });
-      });
 
-      request.on("error", (error) => {
-        ipcHandlerLog.error("Error making download request: ", error);
-        resolve({
-          status: "error",
-          message: error.message || "Unknown error making download request",
+        request.on("error", (error) => {
+          ipcHandlerLog.error("Error making download request: ", error);
+          resolve({
+            status: "error",
+            message: error.message || "Unknown error making download request",
+          });
         });
-      });
 
-      request.end();
-    });
-  });
+        request.end();
+      });
+    },
+  );
 }

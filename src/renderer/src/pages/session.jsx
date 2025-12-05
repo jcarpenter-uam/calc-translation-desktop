@@ -9,6 +9,7 @@ import { useSmartScroll } from "../hooks/use-smart-scroll.js";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 import UserAvatar from "../components/title/user.jsx";
+import DownloadVttButton from "../components/title/vtt-download.jsx";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -44,11 +45,9 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
-  // TODO: import from global var
-  const API_WS_URL = "wss://translator-test.my-uam.com";
-
+  // TODO: Update when launched
   const wsUrl = isAuthorized
-    ? `${API_WS_URL}/ws/view/${integration}/${encodedSessionId}?token=${token}`
+    ? `wss://translator-test.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}`
     : null;
 
   const { transcripts, isDownloadable } = useTranscriptStream(
@@ -75,6 +74,12 @@ export default function SessionPage() {
       <Titlebar>
         <UserAvatar />
         <SettingsButton />
+        <DownloadVttButton
+          integration={integration}
+          sessionId={sessionId}
+          token={token}
+          isDownloadable={isDownloadable}
+        />
       </Titlebar>
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -97,5 +102,3 @@ export default function SessionPage() {
     </>
   );
 }
-
-// WS connection closes almost as soon as it is opened, but backend indicated sucessful auth attempt

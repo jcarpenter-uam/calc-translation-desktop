@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld("electron", {
   toggleAlwaysOnTop: () => ipcRenderer.invoke("toggle-always-on-top"),
 
   // Features
-  downloadVtt: () => ipcRenderer.invoke("download-vtt"),
+  downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),
 
   // Auth
   requestLogin: (email) => ipcRenderer.invoke("auth:request-login", email),
