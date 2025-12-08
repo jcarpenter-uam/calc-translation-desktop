@@ -4,7 +4,6 @@ import Login from "./pages/login";
 import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
 import AdminPage from "./pages/admin";
-import NotFound from "./pages/not-found";
 
 export default function App() {
   return (
@@ -25,8 +24,6 @@ export default function App() {
           <Route element={<ProtectedRoute adminOnly={true} />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
-
-          <Route path="*" element={<NotFound />} />
         </Routes>
       </HashRouter>
     </div>
