@@ -7,7 +7,7 @@ import { FaEdit, FaTrash, FaSave, FaTimes, FaPlus } from "react-icons/fa";
 function CreateTenantForm({ onCreate }) {
   const [formData, setFormData] = useState({
     tenant_id: "",
-    domain: "",
+    domains: "",
     client_id: "",
     client_secret: "",
     organization_name: "",
@@ -20,11 +20,20 @@ function CreateTenantForm({ onCreate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onCreate(formData);
-    // Reset form
+
+    const domainArray = formData.domains
+      .split(",")
+      .map((d) => d.trim())
+      .filter((d) => d.length > 0);
+
+    onCreate({
+      ...formData,
+      domains: domainArray,
+    });
+
     setFormData({
       tenant_id: "",
-      domain: "",
+      domains: "",
       client_id: "",
       client_secret: "",
       organization_name: "",
@@ -36,7 +45,7 @@ function CreateTenantForm({ onCreate }) {
       onSubmit={handleSubmit}
       className="p-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-4"
     >
-      <h3 className="text-lg font-semibold col-span-1 md:col-span-2">
+      <h3 className="text-lg font-semibold col-span-1 md:col-span-2 text-zinc-900 dark:text-zinc-100">
         Create New Tenant
       </h3>
       <input
@@ -45,15 +54,15 @@ function CreateTenantForm({ onCreate }) {
         onChange={handleChange}
         placeholder="Organization Name"
         required
-        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
       />
       <input
-        name="domain"
-        value={formData.domain}
+        name="domains"
+        value={formData.domains}
         onChange={handleChange}
-        placeholder="Domain (e.g., contoso.onmicrosoft.com)"
+        placeholder="Domains (comma separated, e.g., contoso.com, sub.contoso.com)"
         required
-        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
       />
       <input
         name="tenant_id"
@@ -61,7 +70,7 @@ function CreateTenantForm({ onCreate }) {
         onChange={handleChange}
         placeholder="Entra ID (Directory) Tenant ID"
         required
-        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
       />
       <input
         name="client_id"
@@ -69,7 +78,7 @@ function CreateTenantForm({ onCreate }) {
         onChange={handleChange}
         placeholder="Application (Client) ID"
         required
-        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
       />
       <input
         name="client_secret"
@@ -78,11 +87,11 @@ function CreateTenantForm({ onCreate }) {
         onChange={handleChange}
         placeholder="Client Secret"
         required
-        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
       />
       <button
         type="submit"
-        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
       >
         <FaPlus /> Create Tenant
       </button>
@@ -95,9 +104,12 @@ function CreateTenantForm({ onCreate }) {
  */
 function TenantRow({ tenant, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
+
+  const initialDomains = (tenant.domains || []).join(", ");
+
   const [formData, setFormData] = useState({
     organization_name: tenant.organization_name || "",
-    domain: tenant.domain || "",
+    domains: initialDomains,
     client_id: tenant.client_id || "",
     client_secret: "",
   });
@@ -112,9 +124,15 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
     if (formData.organization_name !== tenant.organization_name) {
       updateData.organization_name = formData.organization_name;
     }
-    if (formData.domain !== tenant.domain) {
-      updateData.domain = formData.domain;
+
+    const currentDomainString = (tenant.domains || []).join(", ");
+    if (formData.domains !== currentDomainString) {
+      updateData.domains = formData.domains
+        .split(",")
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0);
     }
+
     if (formData.client_id !== tenant.client_id) {
       updateData.client_id = formData.client_id;
     }
@@ -131,7 +149,7 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
   const handleCancel = () => {
     setFormData({
       organization_name: tenant.organization_name || "",
-      domain: tenant.domain || "",
+      domains: initialDomains,
       client_id: tenant.client_id || "",
       client_secret: "",
     });
@@ -148,6 +166,25 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
     }
   };
 
+  const renderDomains = () => {
+    const list = tenant.domains || [];
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {list.map(
+          (d, i) =>
+            d && (
+              <span
+                key={i}
+                className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-700 rounded text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600"
+              >
+                {d}
+              </span>
+            ),
+        )}
+      </div>
+    );
+  };
+
   if (isEditing) {
     return (
       <div className="p-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-sm space-y-3">
@@ -156,21 +193,21 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
           value={formData.organization_name}
           onChange={handleChange}
           placeholder="Organization Name"
-          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
         />
         <input
-          name="domain"
-          value={formData.domain}
+          name="domains"
+          value={formData.domains}
           onChange={handleChange}
-          placeholder="Domain"
-          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Domains (comma separated)"
+          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
         />
         <input
           name="client_id"
           value={formData.client_id}
           onChange={handleChange}
           placeholder="Client ID"
-          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
         />
         <input
           name="client_secret"
@@ -178,7 +215,7 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
           value={formData.client_secret}
           onChange={handleChange}
           placeholder="New Client Secret (optional)"
-          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
         />
         <div className="flex gap-2 justify-end mt-2">
           <button
@@ -206,10 +243,8 @@ function TenantRow({ tenant, onUpdate, onDelete }) {
         <p className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">
           {tenant.organization_name}
         </p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          {tenant.domain}
-        </p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+        {renderDomains()}
+        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
           Client ID: {tenant.client_id}
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
@@ -258,7 +293,7 @@ export default function TenantManagement({
 }) {
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6 text-center">
+      <h2 className="text-2xl font-semibold mb-6 text-center text-zinc-900 dark:text-zinc-100">
         Tenant Management
       </h2>
       <CreateTenantForm onCreate={onCreateTenant} />

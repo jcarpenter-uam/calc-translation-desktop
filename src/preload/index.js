@@ -27,12 +27,14 @@ contextBridge.exposeInMainWorld("electron", {
   updateUser: (userId, data) =>
     ipcRenderer.invoke("admin:update-user", userId, data),
   deleteUser: (userId) => ipcRenderer.invoke("admin:delete-user", userId),
+  setUserAdminStatus: (tenantId, data) =>
+    ipcRenderer.invoke("admin:set-user-admin-status", tenantId, data),
 
   // Admin: Tenant Management
   getTenants: () => ipcRenderer.invoke("admin:get-tenants"),
   createTenant: (data) => ipcRenderer.invoke("admin:create-tenant", data),
-  setUserAdminStatus: (tenantId, data) =>
-    ipcRenderer.invoke("admin:set-user-admin-status", tenantId, data),
+  updateTenant: (tenantId, data) =>
+    ipcRenderer.invoke("admin:update-tenant", tenantId, data),
   deleteTenant: (tenantId) =>
     ipcRenderer.invoke("admin:delete-tenant", tenantId),
 });
