@@ -1,84 +1,65 @@
 import React, { useState } from "react";
-import { FileArrowDown } from "@phosphor-icons/react/dist/csr/FileArrowDown";
-import { SpinnerBall } from "@phosphor-icons/react/dist/csr/SpinnerBall";
-
-const DownloadIcon = () => <FileArrowDown size={23} />;
-
-const LoadingIcon = () => <SpinnerBall size={23} />;
+import { useLanguage } from "../../context/language.jsx";
+import { useTranslation } from "react-i18next";
 
 /**
- * An icon-button component to download a .vtt transcript file.
- * Becomes green and enabled when isDownloadable is true.
+ * A button component to download a .vtt transcript file.
+ * Renders as a green text button.
  */
-function DownloadVttButton({ integration, sessionId, token, isDownloadable }) {
+function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
   const [isLoading, setIsLoading] = useState(false);
+  const { language } = useLanguage();
+  const { t } = useTranslation();
 
   const handleDownload = async () => {
-    if (isLoading || !isDownloadable) return;
+    if (isLoading || !isDownloadable || !integration || !sessionId) return;
 
     setIsLoading(true);
 
+    const encodedSessionId = encodeURIComponent(sessionId);
+    const downloadUrl = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}&language=${language}`;
+
     try {
-      const response = await window.electron.downloadVtt({
-        integration,
-        sessionId,
-        token,
+      const response = await fetch(downloadUrl, {
+        method: "GET",
       });
 
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Download failed in main process");
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
       }
 
-      const blob = new Blob([response.data], { type: "text/vtt" });
+      const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-
-      const timestamp = new Date().toISOString().split("T")[0];
-      link.setAttribute(
-        "download",
-        `${integration}_${timestamp}_transcript.vtt`,
-      );
+      link.setAttribute("download", `meeting_transcript_${language}.vtt`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("Download failed:", err);
-      alert(`Download Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const baseClasses =
-    "p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors";
-
-  const activeClasses =
-    "bg-green-200 text-green-800 dark:bg-green-700 dark:text-green-100 hover:bg-green-300 dark:hover:bg-green-600";
-
-  const inactiveClasses =
-    "text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800";
-
   return (
     <button
       onClick={handleDownload}
       disabled={isLoading || !isDownloadable}
-      className={`${baseClasses} ${
-        isDownloadable ? activeClasses : inactiveClasses
-      }`}
-      aria-label={
-        isDownloadable
-          ? "Download transcript"
-          : "Download transcript (available after session)"
-      }
-      title={
-        isDownloadable
-          ? "Download Transcript"
-          : "Transcript download will be available when the session ends."
-      }
+      className={`
+        px-5 py-2.5 mb-6 text-sm font-semibold rounded-md shadow-sm 
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-zinc-900 
+        transition-colors cursor-pointer
+        ${
+          isLoading
+            ? "bg-green-500 text-white opacity-75 cursor-wait"
+            : "bg-green-600 text-white hover:bg-green-700"
+        }
+      `}
     >
-      {isLoading ? <LoadingIcon /> : <DownloadIcon />}
+      {isLoading ? t("downloading") : t("download_transcript")}
     </button>
   );
 }
