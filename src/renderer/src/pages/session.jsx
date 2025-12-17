@@ -6,10 +6,10 @@ import Unauthorized from "../components/auth/unauthorized.jsx";
 import Notification from "../components/misc/notification.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
-import Titlebar from "../components/title/titlebar.jsx";
+import Header from "../components/general/header.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 import UserAvatar from "../components/general/user.jsx";
-import DownloadVttButton from "../components/title/vtt-download.jsx";
+import DownloadVttButton from "../components/session/vtt-download.jsx";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -71,7 +71,7 @@ export default function SessionPage() {
 
   return (
     <>
-      <Titlebar>
+      <Header>
         <UserAvatar />
         <SettingsButton />
         <DownloadVttButton
@@ -80,7 +80,7 @@ export default function SessionPage() {
           token={token}
           isDownloadable={isDownloadable}
         />
-      </Titlebar>
+      </Header>
 
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">

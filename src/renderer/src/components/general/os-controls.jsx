@@ -1,4 +1,3 @@
-import React from "react";
 import log from "electron-log/renderer";
 import { X } from "@phosphor-icons/react/dist/csr/X";
 import { Minus } from "@phosphor-icons/react/dist/csr/Minus";

@@ -5,7 +5,7 @@ import UserAvatar from "../components/general/user.jsx";
 import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
 
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
-import Titlebar from "../components/title/titlebar.jsx";
+import Header from "../components/general/header.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 
 export default function LandingPage() {
@@ -149,10 +149,10 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Titlebar>
+      <Header>
         <UserAvatar />
         <SettingsButton />
-      </Titlebar>
+      </Header>
 
       <main className="flex-grow flex overflow-hidden">
         <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">

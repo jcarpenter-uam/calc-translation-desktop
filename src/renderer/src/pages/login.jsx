@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import Titlebar from "../components/title/titlebar.jsx";
+import Header from "../components/general/header.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 import { EnvelopeSimple } from "@phosphor-icons/react";
 import { useAuth } from "../context/auth";
@@ -57,9 +57,9 @@ export default function Login() {
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
-      <Titlebar>
+      <Header>
         <SettingsButton />
-      </Titlebar>
+      </Header>
 
       <main className="flex-1 overflow-y-auto">
         <div className="flex min-h-full items-center justify-center p-6 sm:p-8">

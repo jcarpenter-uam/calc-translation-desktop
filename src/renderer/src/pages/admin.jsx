@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
 import UserAvatar from "../components/general/user.jsx";
-import Titlebar from "../components/title/titlebar.jsx";
+import Header from "../components/general/header.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 
 export default function AdminPage() {
@@ -167,10 +167,10 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Titlebar>
+      <Header>
         <UserAvatar />
         <SettingsButton />
-      </Titlebar>
+      </Header>
 
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
         {renderContent()}
