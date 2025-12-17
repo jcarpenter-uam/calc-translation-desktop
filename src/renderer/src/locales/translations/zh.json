@@ -296,5 +296,8 @@
   "user_menu_tooltip": "已登录为 {{name}}。点击查看选项。",
   "download_transcript": "会话已结束。下载文字记录",
   "downloading": "正在下载...",
-  "loading_history": "正在翻译对话记录……"
+  "loading_history": "正在翻译对话记录……",
+  "minimize": "Minimize",
+  "maximize": "Maximize",
+  "close": "Close"
 }
