@@ -71,7 +71,7 @@ export default function SessionPage() {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto w-full">
+      <div className="max-w-3xl mx-auto w-full pb-6">
         {isBackfilling && <BackfillLoading />}
         {transcripts
           .filter((t) => !isBackfilling || !t.isBackfill)
