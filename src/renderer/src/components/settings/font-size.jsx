@@ -23,7 +23,7 @@ export default function FontSizeSlider() {
           value={fontSize}
           onChange={handleChange}
           className="
-            w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer 
+            w-32 h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer 
             dark:bg-zinc-700
             accent-blue-600 dark:accent-blue-500
             focus:outline-none focus:ring-2 focus:ring-blue-500/50
