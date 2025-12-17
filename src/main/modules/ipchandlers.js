@@ -142,13 +142,15 @@ export function registerIpcHandlers() {
     return newState;
   });
 
-  ipcMain.handle("auth:request-login", async (event, email) => {
-    ipcHandlerLog.info(`Requesting login URL for: ${email}`);
+  ipcMain.handle("auth:request-login", async (event, email, language) => {
+    ipcHandlerLog.info(
+      `Requesting login URL for: ${email} with language: ${language}`,
+    );
     try {
       const { data, headers } = await makeApiRequest(
         "/api/auth/login",
         "POST",
-        { email },
+        { email, language },
       );
 
       const rawCookies = headers["set-cookie"] || [];

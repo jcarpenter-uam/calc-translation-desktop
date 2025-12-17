@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { EnvelopeSimple } from "@phosphor-icons/react";
 import { useAuth } from "../context/auth";
+import { useLanguage } from "../context/language.jsx";
 
 export default function Login() {
   const { checkAuth, user } = useAuth();
@@ -11,6 +12,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [infoMessage, setInfoMessage] = useState(null);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (user) {
@@ -32,7 +34,7 @@ export default function Login() {
     setError(null);
 
     try {
-      const response = await window.electron.requestLogin(email);
+      const response = await window.electron.requestLogin(email, language);
 
       if (response.status !== "ok") {
         throw new Error(response.message || "An unknown error occurred.");
