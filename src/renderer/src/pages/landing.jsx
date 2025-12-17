@@ -134,7 +134,7 @@ export default function LandingPage() {
   const SidebarItem = ({ id, label, icon, activeClass }) => (
     <button
       onClick={() => setIntegration(id)}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
+      className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
         integration === id
           ? activeClass
           : "border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
@@ -158,14 +158,14 @@ export default function LandingPage() {
             id="zoom"
             label={t("integration_zoom")}
             icon={<BiLogoZoom className="h-5 w-5" />}
-            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 cursor-pointer"
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
           />
           {user?.is_admin && (
             <SidebarItem
               id="test"
               label={t("integration_test")}
               icon={<BiSolidFlask className="h-5 w-5" />}
-              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 cursor-pointer"
+              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
             />
           )}
         </div>
