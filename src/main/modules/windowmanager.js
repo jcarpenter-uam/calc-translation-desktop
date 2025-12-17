@@ -12,7 +12,7 @@ export function createMainWindow() {
 
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 350,
+    height: 400,
     show: false,
     autoHideMenuBar: true,
     frame: false,

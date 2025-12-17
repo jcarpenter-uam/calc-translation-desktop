@@ -17,9 +17,19 @@ export function SettingsProvider({ children }) {
     return localStorage.getItem("display_mode_preference") || "both";
   });
 
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem("app_font_size");
+    return saved ? parseInt(saved, 10) : 100;
+  });
+
   useEffect(() => {
     localStorage.setItem("display_mode_preference", displayMode);
   }, [displayMode]);
+
+  useEffect(() => {
+    localStorage.setItem("app_font_size", fontSize.toString());
+    document.documentElement.style.fontSize = `${fontSize}%`;
+  }, [fontSize]);
 
   useEffect(() => {
     async function fetchVersion() {
@@ -105,6 +115,8 @@ export function SettingsProvider({ children }) {
     togglePin,
     displayMode,
     setDisplayMode,
+    fontSize,
+    setFontSize,
   };
 
   return (
