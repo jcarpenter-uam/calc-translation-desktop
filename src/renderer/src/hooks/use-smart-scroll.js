@@ -64,7 +64,7 @@ export function useSmartScroll(list, lastElementRef) {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isAutoScrollEnabled, language, lastElementRef]);
+  }, [isAutoScrollEnabled, t, lastElementRef]);
 
   useLayoutEffect(() => {
     if (isAutoScrollEnabled) {

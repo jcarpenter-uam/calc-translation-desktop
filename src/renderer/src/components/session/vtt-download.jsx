@@ -12,26 +12,27 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
   const { t } = useTranslation();
 
   const handleDownload = async () => {
-    if (isLoading || !isDownloadable || !integration || !sessionId) return;
+    if (isLoading || !isDownloadable) return;
 
     setIsLoading(true);
 
-    const encodedSessionId = encodeURIComponent(sessionId);
-    const downloadUrl = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}&language=${language}`;
-
     try {
-      const response = await fetch(downloadUrl, {
-        method: "GET",
+      const response = await window.electron.downloadVtt({
+        integration,
+        sessionId,
+        token,
+        language,
       });
 
-      if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Download failed in main process");
       }
 
-      const blob = await response.blob();
+      const blob = new Blob([response.data], { type: "text/vtt" });
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
+
       link.setAttribute("download", `meeting_transcript_${language}.vtt`);
       document.body.appendChild(link);
       link.click();
@@ -39,6 +40,7 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("Download failed:", err);
+      alert(`Download Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }

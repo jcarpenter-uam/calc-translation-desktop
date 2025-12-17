@@ -357,10 +357,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle(
     "download-vtt",
-    async (event, { integration, sessionId, token }) => {
+    async (event, { integration, sessionId, token, language }) => {
       const encodedSessionId = encodeURIComponent(sessionId);
 
-      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}`;
+      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}&language=${language}`;
       const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
       ipcHandlerLog.info(
