@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
 import ThemeToggle from "./theme-toggle.jsx";
 import Language from "./language.jsx";
@@ -18,6 +18,22 @@ const SettingsRow = ({ label, children }) => (
 
 export default function SettingsModal({ isOpen, onClose }) {
   const { appVersion } = useSettings();
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;

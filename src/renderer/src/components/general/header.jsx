@@ -6,7 +6,7 @@ import SettingsModal from "../settings/modal";
 import { FiSettings } from "react-icons/fi";
 
 export default function Header() {
-  const { user, isLoading } = useAuth;
+  const { user, isLoading } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
