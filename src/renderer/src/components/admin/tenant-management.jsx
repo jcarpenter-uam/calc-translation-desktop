@@ -93,7 +93,7 @@ function CreateTenantForm({ onCreate }) {
       />
       <button
         type="submit"
-        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium cursor-pointer"
       >
         <FaPlus /> {t("create_tenant_btn")}
       </button>

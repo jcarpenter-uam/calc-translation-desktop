@@ -158,14 +158,14 @@ export default function LandingPage() {
             id="zoom"
             label={t("integration_zoom")}
             icon={<BiLogoZoom className="h-5 w-5" />}
-            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 cursor-pointer"
           />
           {user?.is_admin && (
             <SidebarItem
               id="test"
               label={t("integration_test")}
               icon={<BiSolidFlask className="h-5 w-5" />}
-              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 cursor-pointer"
             />
           )}
         </div>

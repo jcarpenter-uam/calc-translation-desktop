@@ -31,7 +31,7 @@ export default function OsControls() {
     <div className="flex items-center gap-2 app-region-no-drag">
       <button
         onClick={handleMinimize}
-        className={`${baseButtonStyles} hover:bg-yellow-500/90 hover:text-white focus:ring-yellow-500`}
+        className={`${baseButtonStyles} hover:bg-yellow-500/90 hover:text-white focus:ring-yellow-500 cursor-pointer`}
         aria-label={t("minimize")}
       >
         <Minus className="w-5 h-5" />
@@ -39,7 +39,7 @@ export default function OsControls() {
 
       <button
         onClick={handleMaximize}
-        className={`${baseButtonStyles} hover:bg-green-500/90 hover:text-white focus:ring-green-500`}
+        className={`${baseButtonStyles} hover:bg-green-500/90 hover:text-white focus:ring-green-500 cursor-pointer`}
         aria-label={t("maximize")}
       >
         <Browsers className="w-5 h-5" />
@@ -47,7 +47,7 @@ export default function OsControls() {
 
       <button
         onClick={handleClose}
-        className={`${baseButtonStyles} hover:bg-red-500/90 hover:text-white focus:ring-red-500`}
+        className={`${baseButtonStyles} hover:bg-red-500/90 hover:text-white focus:ring-red-500 cursor-pointer`}
         aria-label={t("close")}
       >
         <X className="w-5 h-5" />

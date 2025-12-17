@@ -19,7 +19,7 @@ export default function PinToggle() {
         "text-zinc-500 dark:text-zinc-400",
         "hover:bg-zinc-100 dark:hover:bg-zinc-800",
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
-        "focus:ring-blue-500 dark:focus:ring-offset-zinc-900",
+        "focus:ring-blue-500 dark:focus:ring-offset-zinc-900 cursor-pointer",
         isPinned
           ? "text-blue-500 bg-zinc-100 dark:bg-zinc-800"
           : "hover:text-zinc-700 dark:hover:text-zinc-300",

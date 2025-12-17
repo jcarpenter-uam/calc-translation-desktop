@@ -36,7 +36,7 @@ export function ZoomForm({ onSubmit }) {
       <button
         type="button"
         onClick={() => setShowManual(!showManual)}
-        className="w-full relative flex items-center justify-center py-2 group focus:outline-none"
+        className="w-full relative flex items-center justify-center py-2 group focus:outline-none cursor-pointer"
       >
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
@@ -92,7 +92,7 @@ export function ZoomForm({ onSubmit }) {
       <div className="pt-2">
         <button
           type="submit"
-          className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
+          className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm cursor-pointer"
         >
           {t("join_zoom_btn")}
         </button>
@@ -134,7 +134,7 @@ export function TestForm({ onSubmit }) {
       <div className="pt-2">
         <button
           type="submit"
-          className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors shadow-sm"
+          className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors shadow-sm cursor-pointer"
         >
           {t("join_test_btn")}
         </button>
