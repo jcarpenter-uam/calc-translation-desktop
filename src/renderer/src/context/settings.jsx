@@ -13,6 +13,14 @@ export function SettingsProvider({ children }) {
   const [isBetaEnabled, setIsBetaEnabled] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
+  const [displayMode, setDisplayMode] = useState(() => {
+    return localStorage.getItem("display_mode_preference") || "both";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("display_mode_preference", displayMode);
+  }, [displayMode]);
+
   useEffect(() => {
     async function fetchVersion() {
       try {
@@ -95,6 +103,8 @@ export function SettingsProvider({ children }) {
     setBetaChannel,
     isPinned,
     togglePin,
+    displayMode,
+    setDisplayMode,
   };
 
   return (

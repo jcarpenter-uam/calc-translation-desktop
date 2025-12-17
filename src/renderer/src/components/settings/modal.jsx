@@ -1,10 +1,11 @@
 import React from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
-import ThemeToggle from "../settings/theme-toggle.jsx";
+import ThemeToggle from "./theme-toggle.jsx";
 import Language from "./language.jsx";
-import PinToggle from "../settings/pinned-toggle.jsx";
+import PinToggle from "./pinned-toggle.jsx";
 import { useSettings } from "../../context/settings.jsx";
-import BetaToggle from "../settings/beta-toggle.jsx";
+import BetaToggle from "./beta-toggle.jsx";
+import DisplayMode from "./display-mode.jsx";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">
@@ -62,6 +63,10 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label="Language">
             <Language />
+          </SettingsRow>
+          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
+          <SettingsRow label="Display Mode">
+            <DisplayMode />
           </SettingsRow>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
