@@ -1,14 +1,14 @@
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
-import Transcript from "../components/transcript.jsx";
-import Unauthorized from "../components/unauthorized.jsx";
-import Notification from "../components/notification.jsx";
+import Transcript from "../components/session/transcript.jsx";
+import Unauthorized from "../components/auth/unauthorized.jsx";
+import Notification from "../components/misc/notification.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
-import UserAvatar from "../components/title/user.jsx";
+import UserAvatar from "../components/general/user.jsx";
 import DownloadVttButton from "../components/title/vtt-download.jsx";
 
 function useQuery() {

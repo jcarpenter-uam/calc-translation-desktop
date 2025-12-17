@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
-import UserAvatar from "../components/title/user.jsx";
+import UserAvatar from "../components/general/user.jsx";
 import Titlebar from "../components/title/titlebar.jsx";
 import { SettingsButton } from "../models/settings.jsx";
 

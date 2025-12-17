@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
-import UserAvatar from "../components/title/user.jsx";
-import { ZoomForm, TestForm } from "../components/integration-card.jsx";
+import UserAvatar from "../components/general/user.jsx";
+import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
 
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
 import Titlebar from "../components/title/titlebar.jsx";
