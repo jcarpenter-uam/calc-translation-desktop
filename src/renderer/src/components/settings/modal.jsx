@@ -6,6 +6,7 @@ import PinToggle from "./pinned-toggle.jsx";
 import { useSettings } from "../../context/settings.jsx";
 import BetaToggle from "./beta-toggle.jsx";
 import DisplayMode from "./display-mode.jsx";
+import { useTranslation } from "react-i18next";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">
@@ -17,6 +18,7 @@ const SettingsRow = ({ label, children }) => (
 );
 
 export default function SettingsModal({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const { appVersion } = useSettings();
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function SettingsModal({ isOpen, onClose }) {
       >
         <header className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-700/80 px-4 py-2">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Settings
+            {t("settings_title")}
           </h3>
           <button
             type="button"
@@ -69,29 +71,29 @@ export default function SettingsModal({ isOpen, onClose }) {
         </header>
 
         <main className="px-6 py-3 space-y-2">
-          <SettingsRow label="Appearance">
+          <SettingsRow label={t("theme_label")}>
             <Theme />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label="Pin to Top">
+          <SettingsRow label={t("pin_label")}>
             <PinToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label="Language">
+          <SettingsRow label={t("language_label")}>
             <Language />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label="Display Mode">
+          <SettingsRow label={t("display_mode_label")}>
             <DisplayMode />
           </SettingsRow>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            Version {appVersion}
+            {t("version")} {appVersion}
           </span>
           <div className="app-region-no-drag flex items-center gap-2">
             <span className="text-xs text-zinc-500 dark:text-zinc-4out">
-              Beta Channel
+              {t("beta_channel")}
             </span>
             <BetaToggle />
           </div>
