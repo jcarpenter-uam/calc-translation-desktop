@@ -59,7 +59,11 @@ export default function SessionPage() {
   );
 
   const lastTopTextRef = React.useRef(null);
-  const notification = useSmartScroll(transcripts, lastTopTextRef);
+  const notification = useSmartScroll(
+    transcripts,
+    lastTopTextRef,
+    isDownloadable,
+  );
 
   if (showUnauthorized) {
     return <Unauthorized message={t("access_denied_session_message")} />;

@@ -9,7 +9,7 @@ const SCROLL_PADDING_BOTTOM = 96;
  * It automatically scrolls to the bottom when new items are added, but only if the user is already
  * near the bottom. It also provides notifications to the user about the auto-scroll status.
  */
-export function useSmartScroll(list, lastElementRef) {
+export function useSmartScroll(list, lastElementRef, extraDependency = null) {
   const [notification, setNotification] = useState({
     message: "",
     visible: false,
@@ -93,7 +93,7 @@ export function useSmartScroll(list, lastElementRef) {
         ignoreScrollEventsRef.current = false;
       }, 100);
     }
-  }, [list, lastElementRef, isAutoScrollEnabled]);
+  }, [list, lastElementRef, isAutoScrollEnabled, extraDependency]);
 
   return notification;
 }
