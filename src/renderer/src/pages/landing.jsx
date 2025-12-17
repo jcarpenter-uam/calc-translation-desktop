@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
-import UserAvatar from "../components/general/user.jsx";
 import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
-
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
-import Header from "../components/general/header.jsx";
-import { SettingsButton } from "../models/settings.jsx";
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -148,48 +144,41 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <Header>
-        <UserAvatar />
-        <SettingsButton />
-      </Header>
-
-      <main className="flex-grow flex overflow-hidden">
-        <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
-          <div className="px-4 mb-2">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              Integration
-            </h2>
-          </div>
-          <div className="flex flex-col">
-            <SidebarItem
-              id="zoom"
-              label="Zoom Meeting"
-              icon={<BiLogoZoom className="h-5 w-5" />}
-              activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-            />
-            {user?.is_admin && (
-              <SidebarItem
-                id="test"
-                label="Test Session"
-                icon={<BiSolidFlask className="h-5 w-5" />}
-                activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-              />
-            )}
-          </div>
-        </aside>
-
-        <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
-          <div className="max-w-md mx-auto">
-            {renderForm()}
-            {error && (
-              <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
-                {error}
-              </div>
-            )}
-          </div>
+    <div className="flex-grow flex overflow-hidden">
+      <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+        <div className="px-4 mb-2">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            Integration
+          </h2>
         </div>
-      </main>
+        <div className="flex flex-col">
+          <SidebarItem
+            id="zoom"
+            label="Zoom Meeting"
+            icon={<BiLogoZoom className="h-5 w-5" />}
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+          />
+          {user?.is_admin && (
+            <SidebarItem
+              id="test"
+              label="Test Session"
+              icon={<BiSolidFlask className="h-5 w-5" />}
+              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+            />
+          )}
+        </div>
+      </aside>
+
+      <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
+        <div className="max-w-md mx-auto">
+          {renderForm()}
+          {error && (
+            <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

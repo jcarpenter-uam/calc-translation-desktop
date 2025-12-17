@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/auth/protected-route";
+import Layout from "./components/general/layout";
 import Login from "./pages/login";
 import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
@@ -11,18 +12,23 @@ export default function App() {
       <HashRouter>
         {/* <ScrollToTop /> */}
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
+          <Route element={<Layout />}>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Routes for all authenticated users */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/sessions/:integration/*" element={<SessionPage />} />
-          </Route>
+            {/* Routes for all authenticated users */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route
+                path="/sessions/:integration/*"
+                element={<SessionPage />}
+              />
+            </Route>
 
-          {/* Routes for admin users only */}
-          <Route element={<ProtectedRoute adminOnly={true} />}>
-            <Route path="/admin" element={<AdminPage />} />
+            {/* Routes for admin users only */}
+            <Route element={<ProtectedRoute adminOnly={true} />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
           </Route>
         </Routes>
       </HashRouter>
