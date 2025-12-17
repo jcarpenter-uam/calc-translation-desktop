@@ -13,20 +13,27 @@ export function useLanguageCode() {
   }, [user]);
 
   const setLanguage = useCallback(
-    (newLang) => {
+    async (newLang) => {
       setLocalLanguage(newLang);
 
       if (user) {
         setUser({ ...user, language_code: newLang });
 
-        // TODO: IPC handler
-        fetch("/api/users/me/language", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ language_code: newLang }),
-        }).catch((err) => {
+        try {
+          if (window.electron && window.electron.updateUserLanguage) {
+            const result = await window.electron.updateUserLanguage(newLang);
+
+            if (result.status === "error") {
+              console.error("IPC Error updating language:", result.message);
+            }
+          } else {
+            console.warn(
+              "Electron IPC not available. Language not synced to server.",
+            );
+          }
+        } catch (err) {
           console.error("Failed to sync language preference:", err);
-        });
+        }
       }
     },
     [user, setUser, setLocalLanguage],

@@ -205,6 +205,19 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("users:update-language", async (event, languageCode) => {
+    ipcHandlerLog.info(`Updating user language preference to: ${languageCode}`);
+    try {
+      const { data } = await makeApiRequest("/api/users/me/language", "PUT", {
+        language_code: languageCode,
+      });
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Failed to update language:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle("auth:logout", async () => {
     ipcHandlerLog.info("Logging out via IPC...");
     try {
