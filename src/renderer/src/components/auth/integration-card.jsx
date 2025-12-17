@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { BiChevronDown, BiChevronRight } from "react-icons/bi";
+import { useTranslation } from "react-i18next";
 
 export function ZoomForm({ onSubmit }) {
   const [meetingId, setMeetingId] = useState("");
   const [password, setPassword] = useState("");
   const [joinUrl, setJoinUrl] = useState("");
   const [showManual, setShowManual] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,14 +21,14 @@ export function ZoomForm({ onSubmit }) {
           htmlFor="joinUrl"
           className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5"
         >
-          Join via URL
+          {t("join_url_label")}
         </label>
         <input
           type="url"
           id="joinUrl"
           value={joinUrl}
           onChange={(e) => setJoinUrl(e.target.value)}
-          placeholder="Paste Zoom Link here..."
+          placeholder={t("join_url_placeholder")}
           className="block w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
         />
       </div>
@@ -40,7 +42,7 @@ export function ZoomForm({ onSubmit }) {
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
         </div>
         <div className="relative flex items-center gap-1 bg-white dark:bg-zinc-900 px-2 text-[10px] font-bold text-zinc-400 uppercase group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
-          <span>OR Join Manually</span>
+          <span>{t("or_divider")}</span>
           {showManual ? (
             <BiChevronDown className="w-3 h-3" />
           ) : (
@@ -56,14 +58,14 @@ export function ZoomForm({ onSubmit }) {
               htmlFor="meetingId"
               className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5"
             >
-              Meeting ID
+              {t("meeting_id_label")}
             </label>
             <input
               type="text"
               id="meetingId"
               value={meetingId}
               onChange={(e) => setMeetingId(e.target.value)}
-              placeholder="000 000 0000"
+              placeholder={t("meeting_id_placeholder")}
               className="block w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             />
           </div>
@@ -73,14 +75,14 @@ export function ZoomForm({ onSubmit }) {
               htmlFor="password"
               className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5"
             >
-              Passcode
+              {t("passcode_label")}
             </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="• • • • • •"
+              placeholder={t("passcode_placeholder")}
               className="block w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             />
           </div>
@@ -92,7 +94,7 @@ export function ZoomForm({ onSubmit }) {
           type="submit"
           className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
         >
-          Start Session
+          {t("join_zoom_btn")}
         </button>
       </div>
     </form>
@@ -100,6 +102,7 @@ export function ZoomForm({ onSubmit }) {
 }
 
 export function TestForm({ onSubmit }) {
+  const { t } = useTranslation();
   const [sessionId, setSessionId] = useState("");
 
   const handleSubmit = (e) => {
@@ -115,14 +118,14 @@ export function TestForm({ onSubmit }) {
           htmlFor="session-id"
           className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5"
         >
-          Enter Test Session ID
+          {t("session_id_label")}
         </label>
         <input
           type="text"
           id="session-id"
           value={sessionId}
           onChange={(e) => setSessionId(e.target.value)}
-          placeholder="e.g., 'test-01'"
+          placeholder={t("session_id_placeholder")}
           required
           className="block w-full px-3 py-2 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
         />
@@ -133,14 +136,9 @@ export function TestForm({ onSubmit }) {
           type="submit"
           className="w-full px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors shadow-sm"
         >
-          Join Test Session
+          {t("join_test_btn")}
         </button>
       </div>
-
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-        This is for internal testing purposes only. It simulates a live session
-        stream.
-      </p>
     </form>
   );
 }

@@ -9,7 +9,7 @@
   "zoom_link_info": "Please log in to finish linking your new Zoom account.",
   "join_url_label": "Join URL",
   "join_url_placeholder": "e.g., https://us02web.zoom.us/j/...",
-  "or_divider": "OR",
+  "or_divider": "OR Join Manually",
   "meeting_id_label": "Meeting ID",
   "meeting_id_placeholder": "e.g., 800 1234 5678",
   "passcode_label": "Passcode",
