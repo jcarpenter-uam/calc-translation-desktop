@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
-import ThemeToggle from "./theme-toggle.jsx";
+import Theme from "./theme.jsx";
 import Language from "./language.jsx";
 import PinToggle from "./pinned-toggle.jsx";
 import { useSettings } from "../../context/settings.jsx";
@@ -70,7 +70,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
         <main className="px-6 py-3 space-y-2">
           <SettingsRow label="Appearance">
-            <ThemeToggle />
+            <Theme />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label="Pin to Top">
