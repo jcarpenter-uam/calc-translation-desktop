@@ -47,7 +47,7 @@ export default function SessionPage() {
 
   // TODO: Update when launched
   const wsUrl = isAuthorized
-    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}`
+    ? `wss://translator.home.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}`
     : null;
 
   const { transcripts, isDownloadable } = useTranscriptStream(

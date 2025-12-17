@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "preview": "electron-vite preview",
     "publish": "npm run build && electron-builder -w --publish always"
   },
   "keywords": [],
