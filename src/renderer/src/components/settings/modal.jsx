@@ -1,34 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
-import { Gear } from "@phosphor-icons/react/dist/csr/Gear";
-import ThemeToggle from "../components/settings/theme-toggle.jsx";
-import LanguageToggle from "../components/settings/language-toggle.jsx";
-import PinToggle from "../components/settings/pinned-toggle.jsx";
-import { useLanguage } from "../context/language.jsx";
-import { useSettings } from "../context/settings.jsx";
-import BetaToggle from "../components/settings/beta-toggle.jsx";
-
-export function SettingsButton({ className }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className={
-          className ||
-          "p-2 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-        }
-        aria-label="Open settings"
-      >
-        <Gear className="w-6 h-6" />
-      </button>
-
-      <SettingsModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </>
-  );
-}
+import ThemeToggle from "../settings/theme-toggle.jsx";
+import LanguageToggle from "../settings/language-toggle.jsx";
+import PinToggle from "../settings/pinned-toggle.jsx";
+import { useLanguage } from "../../context/language.jsx";
+import { useSettings } from "../../context/settings.jsx";
+import BetaToggle from "../settings/beta-toggle.jsx";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">
