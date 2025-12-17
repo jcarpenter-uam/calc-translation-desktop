@@ -1,7 +1,7 @@
 import React from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
 import ThemeToggle from "../settings/theme-toggle.jsx";
-import LanguageToggle from "../settings/language-toggle.jsx";
+import Language from "./language.jsx";
 import PinToggle from "../settings/pinned-toggle.jsx";
 import { useLanguage } from "../../context/language.jsx";
 import { useSettings } from "../../context/settings.jsx";
@@ -63,7 +63,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={language === "english" ? "Language" : "语言"}>
-            <LanguageToggle />
+            <Language />
           </SettingsRow>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
