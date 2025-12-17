@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
 import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
+import { useTranslation } from "react-i18next";
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [integration, setIntegration] = useState("zoom");
   const [error, setError] = useState(null);
@@ -17,7 +19,7 @@ export default function LandingPage() {
       if (needsLink === "true") {
         try {
           console.log("Found pending Zoom link, attempting to link account...");
-          alert("Finishing Zoom account setup...");
+          alert(t("finishing_zoom_setup"));
 
           const response = await window.electron.linkPendingZoom();
 
@@ -26,12 +28,10 @@ export default function LandingPage() {
           }
 
           console.log("Zoom account linked successfully!");
-          alert("Zoom account linked successfully!");
+          alert(t("zoom_linked_success"));
         } catch (error) {
           console.error("Zoom link error:", error);
-          alert(
-            `Failed to link Zoom: ${error.message}. Please try reconnecting from your profile.`,
-          );
+          alert(t("zoom_link_failed", { error: error.message }));
         } finally {
           sessionStorage.removeItem("zoom_link_pending");
         }
@@ -49,7 +49,7 @@ export default function LandingPage() {
     setError(null);
 
     if (!joinUrl && !meetingId) {
-      setError("Please provide either a Join URL or a Meeting ID.");
+      setError(t("error_missing_zoom_input"));
       return;
     }
 
@@ -61,10 +61,7 @@ export default function LandingPage() {
       });
 
       if (response.status !== "ok") {
-        throw new Error(
-          response.message ||
-            "Authentication failed. Please check your inputs.",
-        );
+        throw new Error(response.message || t("error_auth_failed"));
       }
 
       const data = response.data;
@@ -72,8 +69,12 @@ export default function LandingPage() {
       const sessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!sessionId || !token) {
-        throw new Error("Server did not return a valid session.");
+      if (!sessionId) {
+        throw new Error(t("error_no_session_id"));
+      }
+
+      if (!token) {
+        throw new Error(t("error_no_token"));
       }
 
       handleJoin("zoom", sessionId, token);
@@ -87,7 +88,7 @@ export default function LandingPage() {
     setError(null);
 
     if (!sessionId) {
-      setError("Please provide a Session ID.");
+      setError(t("error_missing_session_id"));
       return;
     }
 
@@ -97,10 +98,7 @@ export default function LandingPage() {
       });
 
       if (response.status !== "ok") {
-        throw new Error(
-          response.message ||
-            "Test authentication failed. Please check your session ID.",
-        );
+        throw new Error(response.message || t("error_test_auth_failed"));
       }
 
       const data = response.data;
@@ -108,8 +106,12 @@ export default function LandingPage() {
       const returnedSessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!returnedSessionId || !token) {
-        throw new Error("Server did not return a valid session.");
+      if (!returnedSessionId) {
+        throw new Error(t("error_no_session_id"));
+      }
+
+      if (!token) {
+        throw new Error(t("error_no_token"));
       }
 
       handleJoin("test", returnedSessionId, token);
@@ -148,20 +150,20 @@ export default function LandingPage() {
       <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Integration
+            {t("choose_integration")}
           </h2>
         </div>
         <div className="flex flex-col">
           <SidebarItem
             id="zoom"
-            label="Zoom Meeting"
+            label={t("integration_zoom")}
             icon={<BiLogoZoom className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
           />
           {user?.is_admin && (
             <SidebarItem
               id="test"
-              label="Test Session"
+              label={t("integration_test")}
               icon={<BiSolidFlask className="h-5 w-5" />}
               activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
             />
