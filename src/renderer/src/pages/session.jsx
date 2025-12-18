@@ -47,9 +47,8 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
-  // TODO: Update when launched
   const wsUrl = isAuthorized
-    ? `wss://translator.home.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
+    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling } = useTranscriptStream(
