@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
-import UserAvatar from "../components/title/user.jsx";
-import Titlebar from "../components/title/titlebar.jsx";
-import { SettingsButton } from "../models/settings.jsx";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -166,15 +163,8 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Titlebar>
-        <UserAvatar />
-        <SettingsButton />
-      </Titlebar>
-
-      <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
-        {renderContent()}
-      </main>
+    <div className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+      {renderContent()}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import log from "electron-log/renderer";
+import { useTranslation } from "react-i18next";
 
 const LanguageContext = createContext();
 
@@ -27,26 +28,39 @@ function getInitialLanguage() {
   const browserLang = window.navigator.language;
   if (browserLang.startsWith("zh")) {
     log.info(`Language: Detected browser language: chinese`);
-    return "chinese";
+    return "zh";
+  }
+
+  if (browserLang.startsWith("es")) {
+    log.info(`Language: Detected browser language: spanish`);
+    return "es";
   }
 
   log.info(`Language: Falling back to default: english`);
-  return "english";
+  return "en";
 }
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(getInitialLanguage);
+  const [language, setLanguageState] = useState(getInitialLanguage);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
+    i18n.changeLanguage(language);
+  }, []);
+
+  const setLanguage = (newLang) => {
+    setLanguageState(newLang);
+    i18n.changeLanguage(newLang);
+
     try {
-      window.localStorage.setItem(STORAGE_KEY, language);
+      window.localStorage.setItem(STORAGE_KEY, newLang);
       log.info(
-        `Language: Saved language preference to localStorage: ${language}`,
+        `Language: Saved language preference to localStorage: ${newLang}`,
       );
     } catch (error) {
       log.error("Language: Error writing to localStorage", error);
     }
-  }, [language]);
+  };
 
   const value = { language, setLanguage };
 

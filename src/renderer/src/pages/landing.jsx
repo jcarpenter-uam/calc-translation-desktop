@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth";
-import UserAvatar from "../components/title/user.jsx";
-import { ZoomForm, TestForm } from "../components/integration-card.jsx";
-
+import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
 import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
-import Titlebar from "../components/title/titlebar.jsx";
-import { SettingsButton } from "../models/settings.jsx";
+import { useTranslation } from "react-i18next";
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [integration, setIntegration] = useState("zoom");
   const [error, setError] = useState(null);
@@ -21,7 +19,7 @@ export default function LandingPage() {
       if (needsLink === "true") {
         try {
           console.log("Found pending Zoom link, attempting to link account...");
-          alert("Finishing Zoom account setup...");
+          alert(t("finishing_zoom_setup"));
 
           const response = await window.electron.linkPendingZoom();
 
@@ -30,12 +28,10 @@ export default function LandingPage() {
           }
 
           console.log("Zoom account linked successfully!");
-          alert("Zoom account linked successfully!");
+          alert(t("zoom_linked_success"));
         } catch (error) {
           console.error("Zoom link error:", error);
-          alert(
-            `Failed to link Zoom: ${error.message}. Please try reconnecting from your profile.`,
-          );
+          alert(t("zoom_link_failed", { error: error.message }));
         } finally {
           sessionStorage.removeItem("zoom_link_pending");
         }
@@ -53,7 +49,7 @@ export default function LandingPage() {
     setError(null);
 
     if (!joinUrl && !meetingId) {
-      setError("Please provide either a Join URL or a Meeting ID.");
+      setError(t("error_missing_zoom_input"));
       return;
     }
 
@@ -65,10 +61,7 @@ export default function LandingPage() {
       });
 
       if (response.status !== "ok") {
-        throw new Error(
-          response.message ||
-            "Authentication failed. Please check your inputs.",
-        );
+        throw new Error(response.message || t("error_auth_failed"));
       }
 
       const data = response.data;
@@ -76,8 +69,12 @@ export default function LandingPage() {
       const sessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!sessionId || !token) {
-        throw new Error("Server did not return a valid session.");
+      if (!sessionId) {
+        throw new Error(t("error_no_session_id"));
+      }
+
+      if (!token) {
+        throw new Error(t("error_no_token"));
       }
 
       handleJoin("zoom", sessionId, token);
@@ -91,7 +88,7 @@ export default function LandingPage() {
     setError(null);
 
     if (!sessionId) {
-      setError("Please provide a Session ID.");
+      setError(t("error_missing_session_id"));
       return;
     }
 
@@ -101,10 +98,7 @@ export default function LandingPage() {
       });
 
       if (response.status !== "ok") {
-        throw new Error(
-          response.message ||
-            "Test authentication failed. Please check your session ID.",
-        );
+        throw new Error(response.message || t("error_test_auth_failed"));
       }
 
       const data = response.data;
@@ -112,8 +106,12 @@ export default function LandingPage() {
       const returnedSessionId = data.meetinguuid;
       const token = data.token;
 
-      if (!returnedSessionId || !token) {
-        throw new Error("Server did not return a valid session.");
+      if (!returnedSessionId) {
+        throw new Error(t("error_no_session_id"));
+      }
+
+      if (!token) {
+        throw new Error(t("error_no_token"));
       }
 
       handleJoin("test", returnedSessionId, token);
@@ -136,7 +134,7 @@ export default function LandingPage() {
   const SidebarItem = ({ id, label, icon, activeClass }) => (
     <button
       onClick={() => setIntegration(id)}
-      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
+      className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
         integration === id
           ? activeClass
           : "border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
@@ -148,48 +146,41 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <Titlebar>
-        <UserAvatar />
-        <SettingsButton />
-      </Titlebar>
-
-      <main className="flex-grow flex overflow-hidden">
-        <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
-          <div className="px-4 mb-2">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-              Integration
-            </h2>
-          </div>
-          <div className="flex flex-col">
-            <SidebarItem
-              id="zoom"
-              label="Zoom Meeting"
-              icon={<BiLogoZoom className="h-5 w-5" />}
-              activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-            />
-            {user?.is_admin && (
-              <SidebarItem
-                id="test"
-                label="Test Session"
-                icon={<BiSolidFlask className="h-5 w-5" />}
-                activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-              />
-            )}
-          </div>
-        </aside>
-
-        <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
-          <div className="max-w-md mx-auto">
-            {renderForm()}
-            {error && (
-              <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
-                {error}
-              </div>
-            )}
-          </div>
+    <div className="flex-grow flex overflow-hidden">
+      <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+        <div className="px-4 mb-2">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {t("choose_integration")}
+          </h2>
         </div>
-      </main>
+        <div className="flex flex-col">
+          <SidebarItem
+            id="zoom"
+            label={t("integration_zoom")}
+            icon={<BiLogoZoom className="h-5 w-5" />}
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+          />
+          {user?.is_admin && (
+            <SidebarItem
+              id="test"
+              label={t("integration_test")}
+              icon={<BiSolidFlask className="h-5 w-5" />}
+              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+            />
+          )}
+        </div>
+      </aside>
+
+      <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
+        <div className="max-w-md mx-auto">
+          {renderForm()}
+          {error && (
+            <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

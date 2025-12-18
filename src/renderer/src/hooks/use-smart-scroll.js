@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import { useLanguage } from "../context/language.jsx";
+import { useTranslation } from "react-i18next";
 import log from "electron-log/renderer";
 
 const SCROLL_PADDING_BOTTOM = 96;
@@ -9,7 +9,7 @@ const SCROLL_PADDING_BOTTOM = 96;
  * It automatically scrolls to the bottom when new items are added, but only if the user is already
  * near the bottom. It also provides notifications to the user about the auto-scroll status.
  */
-export function useSmartScroll(list, lastElementRef) {
+export function useSmartScroll(list, lastElementRef, extraDependency = null) {
   const [notification, setNotification] = useState({
     message: "",
     visible: false,
@@ -19,7 +19,7 @@ export function useSmartScroll(list, lastElementRef) {
   const ignoreScrollEventsRef = useRef(false);
   const scrollCooldownTimer = useRef(null);
 
-  const { language } = useLanguage();
+  const { t } = useTranslation();
 
   const showNotification = (message) => {
     log.info(`Showing notification: "${message}"`);
@@ -52,21 +52,19 @@ export function useSmartScroll(list, lastElementRef) {
       if (isAtTarget && !isAutoScrollEnabled) {
         log.info("User scrolled to bottom. Enabling auto-scroll.");
         setIsAutoScrollEnabled(true);
-        const message =
-          language === "english" ? "Auto Scroll On" : "自动滚动开启";
+        const message = t("auto_scroll_on");
         showNotification(message);
       } else if (!isAtTarget && isAutoScrollEnabled) {
         log.info("User scrolled up. Disabling auto-scroll.");
         setIsAutoScrollEnabled(false);
-        const message =
-          language === "english" ? "Auto Scroll Off" : "自动滚动关闭";
+        const message = t("auto_scroll_off");
         showNotification(message);
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isAutoScrollEnabled, language, lastElementRef]);
+  }, [isAutoScrollEnabled, t, lastElementRef]);
 
   useLayoutEffect(() => {
     if (isAutoScrollEnabled) {
@@ -95,7 +93,7 @@ export function useSmartScroll(list, lastElementRef) {
         ignoreScrollEventsRef.current = false;
       }, 100);
     }
-  }, [list, lastElementRef, isAutoScrollEnabled]);
+  }, [list, lastElementRef, isAutoScrollEnabled, extraDependency]);
 
   return notification;
 }

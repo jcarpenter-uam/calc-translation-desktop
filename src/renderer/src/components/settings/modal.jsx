@@ -1,34 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { X } from "@phosphor-icons/react/dist/csr/X";
-import { Gear } from "@phosphor-icons/react/dist/csr/Gear";
-import ThemeToggle from "../components/settings/theme-toggle.jsx";
-import LanguageToggle from "../components/settings/language-toggle.jsx";
-import PinToggle from "../components/settings/pinned-toggle.jsx";
-import { useLanguage } from "../context/language.jsx";
-import { useSettings } from "../context/settings.jsx";
-import BetaToggle from "../components/settings/beta-toggle.jsx";
-
-export function SettingsButton({ className }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className={
-          className ||
-          "p-2 rounded-full text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-        }
-        aria-label="Open settings"
-      >
-        <Gear className="w-6 h-6" />
-      </button>
-
-      <SettingsModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </>
-  );
-}
+import Theme from "./theme.jsx";
+import Language from "./language.jsx";
+import PinToggle from "./pinned-toggle.jsx";
+import { useSettings } from "../../context/settings.jsx";
+import BetaToggle from "./beta-toggle.jsx";
+import DisplayMode from "./display-mode.jsx";
+import { useTranslation } from "react-i18next";
+import FontSizeSlider from "./font-size.jsx";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">
@@ -40,8 +19,24 @@ const SettingsRow = ({ label, children }) => (
 );
 
 export default function SettingsModal({ isOpen, onClose }) {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const { appVersion } = useSettings();
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
@@ -64,38 +59,46 @@ export default function SettingsModal({ isOpen, onClose }) {
       >
         <header className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-700/80 px-4 py-2">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            {language === "english" ? "Settings" : "设置"}
+            {t("settings_title")}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 transition-colors app-region-no-drag hover:bg-red-500/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            aria-label={language === "english" ? "Close settings" : "关闭设置"}
+            className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 transition-colors app-region-no-drag hover:bg-red-500/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            aria-label="Close settings"
           >
             <X className="w-5 h-5" />
           </button>
         </header>
 
         <main className="px-6 py-3 space-y-2">
-          <SettingsRow label={language === "english" ? "Appearance" : "外观"}>
-            <ThemeToggle />
+          <SettingsRow label={t("theme_label")}>
+            <Theme />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={language === "english" ? "Pin to Top" : "置顶"}>
+          <SettingsRow label={t("pin_label")}>
             <PinToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={language === "english" ? "Language" : "语言"}>
-            <LanguageToggle />
+          <SettingsRow label={t("language_label")}>
+            <Language />
+          </SettingsRow>
+          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
+          <SettingsRow label={t("display_mode_label")}>
+            <DisplayMode />
+          </SettingsRow>
+          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
+          <SettingsRow label={t("font_size_label")}>
+            <FontSizeSlider />
           </SettingsRow>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            {language === "english" ? "Version" : "版本"} {appVersion}
+            {t("version")} {appVersion}
           </span>
           <div className="app-region-no-drag flex items-center gap-2">
             <span className="text-xs text-zinc-500 dark:text-zinc-4out">
-              {language === "english" ? "Beta Channel" : "测试频道"}
+              {t("beta_channel")}
             </span>
             <BetaToggle />
           </div>

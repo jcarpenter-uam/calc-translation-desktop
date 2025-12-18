@@ -23,6 +23,9 @@
   html {
     background-color: #ffffff;
     color: #18181b;
+    transition-property: font-size;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
   }
   html.dark {
     background-color: #18181b;

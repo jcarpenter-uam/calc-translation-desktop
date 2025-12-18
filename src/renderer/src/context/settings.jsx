@@ -13,6 +13,24 @@ export function SettingsProvider({ children }) {
   const [isBetaEnabled, setIsBetaEnabled] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
+  const [displayMode, setDisplayMode] = useState(() => {
+    return localStorage.getItem("display_mode_preference") || "both";
+  });
+
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem("app_font_size");
+    return saved ? parseInt(saved, 10) : 100;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("display_mode_preference", displayMode);
+  }, [displayMode]);
+
+  useEffect(() => {
+    localStorage.setItem("app_font_size", fontSize.toString());
+    document.documentElement.style.fontSize = `${fontSize}%`;
+  }, [fontSize]);
+
   useEffect(() => {
     async function fetchVersion() {
       try {
@@ -95,6 +113,10 @@ export function SettingsProvider({ children }) {
     setBetaChannel,
     isPinned,
     togglePin,
+    displayMode,
+    setDisplayMode,
+    fontSize,
+    setFontSize,
   };
 
   return (

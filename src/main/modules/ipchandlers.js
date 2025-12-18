@@ -142,13 +142,15 @@ export function registerIpcHandlers() {
     return newState;
   });
 
-  ipcMain.handle("auth:request-login", async (event, email) => {
-    ipcHandlerLog.info(`Requesting login URL for: ${email}`);
+  ipcMain.handle("auth:request-login", async (event, email, language) => {
+    ipcHandlerLog.info(
+      `Requesting login URL for: ${email} with language: ${language}`,
+    );
     try {
       const { data, headers } = await makeApiRequest(
         "/api/auth/login",
         "POST",
-        { email },
+        { email, language },
       );
 
       const rawCookies = headers["set-cookie"] || [];
@@ -199,6 +201,19 @@ export function registerIpcHandlers() {
       return { status: "ok", data };
     } catch (error) {
       ipcHandlerLog.warn("Failed to fetch user:", error.message);
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("users:update-language", async (event, languageCode) => {
+    ipcHandlerLog.info(`Updating user language preference to: ${languageCode}`);
+    try {
+      const { data } = await makeApiRequest("/api/users/me/language", "PUT", {
+        language_code: languageCode,
+      });
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Failed to update language:", error.message);
       return { status: "error", message: error.message };
     }
   });
@@ -342,10 +357,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle(
     "download-vtt",
-    async (event, { integration, sessionId, token }) => {
+    async (event, { integration, sessionId, token, language }) => {
       const encodedSessionId = encodeURIComponent(sessionId);
 
-      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}`;
+      const endpoint = `/api/session/${integration}/${encodedSessionId}/download/vtt?token=${token}&language=${language}`;
       const DOWNLOAD_API_URL = `${API_BASE_URL}${endpoint}`;
 
       ipcHandlerLog.info(
