@@ -42,7 +42,9 @@ export default function LandingPage() {
   }, []);
 
   const handleJoin = (type, sessionId, token) => {
-    navigate(`/sessions/${type}/${sessionId}?token=${token}`);
+    navigate(
+      `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}`,
+    );
   };
 
   const handleZoomSubmit = async ({ meetingId, password, joinUrl }) => {
