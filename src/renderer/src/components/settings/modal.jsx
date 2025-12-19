@@ -7,7 +7,6 @@ import { useSettings } from "../../context/settings.jsx";
 import BetaToggle from "./beta-toggle.jsx";
 import DisplayMode from "./display-mode.jsx";
 import { useTranslation } from "react-i18next";
-import FontSizeSlider from "./font-size.jsx";
 
 const SettingsRow = ({ label, children }) => (
   <div className="flex items-center justify-between">
@@ -86,10 +85,6 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={t("display_mode_label")}>
             <DisplayMode />
-          </SettingsRow>
-          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={t("font_size_label")}>
-            <FontSizeSlider />
           </SettingsRow>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">

@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./header";
+import FontSize from "./font-size";
 
 export default function Layout() {
   return (
@@ -10,6 +11,7 @@ export default function Layout() {
       <main className="flex-grow w-full max-w-7xl mx-auto flex flex-col">
         <Outlet />
       </main>
+      <FontSize />
     </div>
   );
 }
