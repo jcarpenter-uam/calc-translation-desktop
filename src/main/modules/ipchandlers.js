@@ -355,6 +355,15 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("admin:get-sessions", async () => {
+    try {
+      const { data } = await makeApiRequest("/api/session", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle(
     "download-vtt",
     async (event, { integration, sessionId, token, language }) => {

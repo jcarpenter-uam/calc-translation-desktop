@@ -93,5 +93,12 @@
   "loading_history": "Traduciendo el historial de conversaciones...",
   "minimize": "Minimizar",
   "maximize": "Maximizar",
-  "close": "Cerca"
+  "close": "Cerca",
+  "active_sessions_title": "Sesiones Activas",
+  "active_sessions_desc": "Monitoreo en tiempo real",
+  "refetching": "Actualizando...",
+  "updated_at": "Actualizado: {{time}}",
+  "no_active_sessions": "No se encontraron sesiones activas.",
+  "live_status": "En Vivo",
+  "started_label": "Iniciado:"
 }

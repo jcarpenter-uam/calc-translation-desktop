@@ -1,12 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
+import ActiveSessions from "../components/admin/active-sessions.jsx";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState(null);
+  const [sessionsLastUpdated, setSessionsLastUpdated] = useState(new Date());
+
+  const fetchSessions = useCallback(async (isBackground = false) => {
+    if (!isBackground) setSessionsLoading(true);
+    try {
+      const response = await window.electron.getSessions();
+
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to fetch sessions");
+      }
+
+      setSessions(response.data);
+      setSessionsLastUpdated(new Date());
+      setSessionsError(null);
+    } catch (err) {
+      console.error("Session Fetch Error:", err);
+      setSessionsError(err.message);
+    } finally {
+      if (!isBackground) setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions(false);
+
+    const interval = setInterval(() => {
+      fetchSessions(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchSessions]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,14 +184,20 @@ export default function AdminPage() {
           }
           onDeleteUser={handleDeleteUser}
         />
-
         <hr className="border-zinc-200 dark:border-zinc-700" />
-
         <TenantManagement
           tenants={tenants}
           onCreateTenant={handleCreateTenant}
           onUpdateTenant={handleUpdateTenant}
           onDeleteTenant={handleDeleteTenant}
+        />
+        <hr className="border-zinc-200 dark:border-zinc-700" />
+        <ActiveSessions
+          sessions={sessions}
+          loading={sessionsLoading}
+          error={sessionsError}
+          lastUpdated={sessionsLastUpdated}
+          onRefresh={() => fetchSessions(false)}
         />
       </div>
     );

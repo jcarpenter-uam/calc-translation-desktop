@@ -91,5 +91,12 @@
   "loading_history": "Translating conversation history...",
   "minimize": "Minimize",
   "maximize": "Maximize",
-  "close": "Close"
+  "close": "Close",
+  "active_sessions_title": "Active Sessions",
+  "active_sessions_desc": "Real-time monitoring",
+  "refetching": "Refetching...",
+  "updated_at": "Updated: {{time}}",
+  "no_active_sessions": "No active sessions found.",
+  "live_status": "Live",
+  "started_label": "Started:"
 }

@@ -91,5 +91,12 @@
   "loading_history": "Menerjemahkan riwayat percakapan...",
   "minimize": "Minimalkan",
   "maximize": "Maksimalkan",
-  "close": "Tutup"
+  "close": "Tutup",
+  "active_sessions_title": "Sesi Aktif",
+  "active_sessions_desc": "Pemantauan real-time",
+  "refetching": "Memuat ulang...",
+  "updated_at": "Diperbarui: {{time}}",
+  "no_active_sessions": "Tidak ada sesi aktif ditemukan.",
+  "live_status": "Langsung",
+  "started_label": "Dimulai:"
 }
