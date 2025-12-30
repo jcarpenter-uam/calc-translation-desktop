@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld("electron", {
   updateUserLanguage: (languageCode) =>
     ipcRenderer.invoke("users:update-language", languageCode),
   getSessions: () => ipcRenderer.invoke("admin:get-sessions"),
+  getLogs: () => ipcRenderer.invoke("admin:get-logs"),
 
   // Auth
   requestLogin: (email, language) =>

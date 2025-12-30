@@ -6,7 +6,8 @@ import { createAuthWindow } from "./auth";
 
 const ipcHandlerLog = log.scope("ipchandler");
 
-const API_BASE_URL = "https://translator.my-uam.com";
+// const API_BASE_URL = "https://translator.my-uam.com";
+const API_BASE_URL = "http://localhost:8000";
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");
@@ -358,6 +359,15 @@ export function registerIpcHandlers() {
   ipcMain.handle("admin:get-sessions", async () => {
     try {
       const { data } = await makeApiRequest("/api/session", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:get-logs", async () => {
+    try {
+      const { data } = await makeApiRequest("/api/logs/?lines=200", "GET");
       return { status: "ok", data };
     } catch (error) {
       return { status: "error", message: error.message };
