@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld("electron", {
   downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),
   updateUserLanguage: (languageCode) =>
     ipcRenderer.invoke("users:update-language", languageCode),
-  getSessions: () => ipcRenderer.invoke("admin:get-sessions"),
+  getMetrics: () => ipcRenderer.invoke("admin:get-metrics"),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
 
   // Auth

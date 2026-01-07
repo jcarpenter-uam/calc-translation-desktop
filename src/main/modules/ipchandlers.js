@@ -355,11 +355,22 @@ export function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("admin:get-sessions", async () => {
+  ipcMain.handle("admin:get-metrics", async () => {
+    ipcHandlerLog.info("Fetching system metrics via IPC...");
     try {
-      const { data } = await makeApiRequest("/api/session", "GET");
-      return { status: "ok", data };
+      const [serverRes, zoomRes] = await Promise.all([
+        makeApiRequest("/api/metrics/server", "GET"),
+        makeApiRequest("/api/metrics/zoom", "GET"),
+      ]);
+      return {
+        status: "ok",
+        data: {
+          server: serverRes.data,
+          zoom: zoomRes.data,
+        },
+      };
     } catch (error) {
+      ipcHandlerLog.error("Failed to fetch metrics:", error);
       return { status: "error", message: error.message };
     }
   });

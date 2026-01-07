@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
-import ActiveSessions from "../components/admin/active-sessions.jsx";
+import MetricsViewing from "../components/admin/metrics.jsx";
 import LogViewing from "../components/admin/log-viewing.jsx";
 
 export default function AdminPage() {
@@ -9,43 +9,13 @@ export default function AdminPage() {
   const [tenants, setTenants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sessions, setSessions] = useState([]);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [sessionsError, setSessionsError] = useState(null);
-  const [sessionsLastUpdated, setSessionsLastUpdated] = useState(new Date());
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState(null);
-
-  const fetchSessions = useCallback(async (isBackground = false) => {
-    if (!isBackground) setSessionsLoading(true);
-    try {
-      const response = await window.electron.getSessions();
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to fetch sessions");
-      }
-
-      setSessions(response.data);
-      setSessionsLastUpdated(new Date());
-      setSessionsError(null);
-    } catch (err) {
-      console.error("Session Fetch Error:", err);
-      setSessionsError(err.message);
-    } finally {
-      if (!isBackground) setSessionsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSessions(false);
-
-    const interval = setInterval(() => {
-      fetchSessions(true);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [fetchSessions]);
+  const [serverMetrics, setServerMetrics] = useState(null);
+  const [zoomMetrics, setZoomMetrics] = useState(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState(null);
 
   const fetchLogs = async () => {
     try {
@@ -66,6 +36,27 @@ export default function AdminPage() {
     const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchMetrics = async () => {
+    setMetricsLoading(true);
+    try {
+      const response = await window.electron.getMetrics();
+
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to fetch metrics");
+      }
+
+      setServerMetrics(response.data.server);
+      setZoomMetrics(response.data.zoom);
+
+      setMetricsError(null);
+    } catch (err) {
+      console.error("Metrics fetch error:", err);
+      setMetricsError(err.message);
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,7 +136,6 @@ export default function AdminPage() {
       setTenants((prevTenants) => [...prevTenants, newTenant]);
     } catch (err) {
       console.error("Create tenant error:", err);
-      // Optional: set error state or alert
     }
   };
 
@@ -216,12 +206,12 @@ export default function AdminPage() {
           onDeleteTenant={handleDeleteTenant}
         />
         <hr className="border-zinc-200 dark:border-zinc-700" />
-        <ActiveSessions
-          sessions={sessions}
-          loading={sessionsLoading}
-          error={sessionsError}
-          lastUpdated={sessionsLastUpdated}
-          onRefresh={() => fetchSessions(false)}
+        <MetricsViewing
+          serverMetrics={serverMetrics}
+          zoomMetrics={zoomMetrics}
+          loading={metricsLoading}
+          error={metricsError}
+          onRefresh={fetchMetrics}
         />
         <hr className="border-zinc-200 dark:border-zinc-700" />
         <LogViewing
