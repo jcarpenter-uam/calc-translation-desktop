@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/auth";
-import { ZoomForm, TestForm } from "../components/auth/integration-card.jsx";
-import { BiLogoZoom, BiSolidFlask } from "react-icons/bi";
+import { ZoomForm } from "../components/auth/integration-card.jsx";
+import { BiLogoZoom } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 
 export default function LandingPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [integration, setIntegration] = useState("zoom");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -86,49 +84,9 @@ export default function LandingPage() {
     }
   };
 
-  const handleTestSubmit = async ({ sessionId }) => {
-    setError(null);
-
-    if (!sessionId) {
-      setError(t("error_missing_session_id"));
-      return;
-    }
-
-    try {
-      const response = await window.electron.joinTest({
-        session_id: sessionId,
-      });
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || t("error_test_auth_failed"));
-      }
-
-      const data = response.data;
-      console.log("Server response:", data);
-      const returnedSessionId = data.meetinguuid;
-      const token = data.token;
-
-      if (!returnedSessionId) {
-        throw new Error(t("error_no_session_id"));
-      }
-
-      if (!token) {
-        throw new Error(t("error_no_token"));
-      }
-
-      handleJoin("test", returnedSessionId, token);
-    } catch (err) {
-      console.error("Test authentication failed:", err);
-      setError(err.message);
-    }
-  };
-
   const renderForm = () => {
     if (integration === "zoom") {
       return <ZoomForm onSubmit={handleZoomSubmit} />;
-    }
-    if (integration === "test") {
-      return <TestForm onSubmit={handleTestSubmit} />;
     }
     return null;
   };
@@ -162,14 +120,6 @@ export default function LandingPage() {
             icon={<BiLogoZoom className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
           />
-          {user?.is_admin && (
-            <SidebarItem
-              id="test"
-              label={t("integration_test")}
-              icon={<BiSolidFlask className="h-5 w-5" />}
-              activeClass="border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-            />
-          )}
         </div>
       </aside>
 
