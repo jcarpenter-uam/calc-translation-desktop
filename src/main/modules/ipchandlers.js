@@ -6,7 +6,8 @@ import { createAuthWindow } from "./auth";
 
 const ipcHandlerLog = log.scope("ipchandler");
 
-const API_BASE_URL = "https://translator.my-uam.com";
+// const API_BASE_URL = "https://translator.my-uam.com";
+const API_BASE_URL = "http://localhost:8000";
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");

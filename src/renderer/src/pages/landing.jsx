@@ -3,12 +3,50 @@ import { useNavigate } from "react-router-dom";
 import { ZoomForm } from "../components/auth/integration-card.jsx";
 import { BiLogoZoom } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
+import { useCalendar } from "../hooks/use-calendar.js";
+import { CalendarView } from "../components/calender/view.jsx";
+
+const getCurrentWorkWeek = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+
+  const start = new Date(now);
+  start.setDate(diff);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 4);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
 
 export default function LandingPage() {
   const { t } = useTranslation();
   const [integration, setIntegration] = useState("zoom");
   const [error, setError] = useState(null);
+  const [dateRange, setDateRange] = useState(getCurrentWorkWeek());
   const navigate = useNavigate();
+  const {
+    events,
+    loading: calendarLoading,
+    error: calendarError,
+    syncCalendar,
+  } = useCalendar(dateRange.start, dateRange.end);
+
+  useEffect(() => {
+    const SYNC_KEY = "calendar_last_synced_at";
+    const TTL = 12 * 60 * 60 * 1000; // 12 hours
+    const now = Date.now();
+    const lastSync = localStorage.getItem(SYNC_KEY);
+
+    if (!lastSync || now - parseInt(lastSync, 10) > TTL) {
+      syncCalendar();
+      localStorage.setItem(SYNC_KEY, now.toString());
+      console.log("Calendar auto synced");
+    }
+  }, [syncCalendar]);
 
   useEffect(() => {
     const checkPendingZoomLink = async () => {
@@ -84,6 +122,37 @@ export default function LandingPage() {
     }
   };
 
+  const handleCalendarJoin = async (event) => {
+    try {
+      const response = await fetch("/api/auth/calendar-join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          meetingId: event.id,
+          joinUrl: event.join_url,
+          startTime: event.start_time,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to initialize session");
+      }
+
+      const data = await response.json();
+
+      const { sessionId, token, type } = data;
+
+      navigate(
+        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}`,
+      );
+    } catch (err) {
+      console.error("Failed to quick-join:", err);
+      setError("Failed to start assistant. Please try again.");
+    }
+  };
+
   const renderForm = () => {
     if (integration === "zoom") {
       return <ZoomForm onSubmit={handleZoomSubmit} />;
@@ -133,6 +202,16 @@ export default function LandingPage() {
           )}
         </div>
       </div>
+      <CalendarView
+        events={events}
+        loading={calendarLoading}
+        error={calendarError}
+        onSync={syncCalendar}
+        startDate={dateRange.start}
+        endDate={dateRange.end}
+        onDateChange={setDateRange}
+        onAppJoin={handleCalendarJoin}
+      />
     </div>
   );
 }
