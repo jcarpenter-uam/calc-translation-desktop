@@ -1,14 +1,52 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ZoomForm } from "../components/auth/integration-card.jsx";
-import { BiLogoZoom } from "react-icons/bi";
+import { BiLogoZoom, BiCalendar } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
+import { useCalendar } from "../hooks/use-calendar.js";
+import { CalendarView } from "../components/calender/view.jsx";
+
+const getCurrentWorkWeek = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+
+  const start = new Date(now);
+  start.setDate(diff);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 4);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
 
 export default function LandingPage() {
   const { t } = useTranslation();
-  const [integration, setIntegration] = useState("zoom");
+  const [integration, setIntegration] = useState("calendar");
   const [error, setError] = useState(null);
+  const [dateRange, setDateRange] = useState(getCurrentWorkWeek());
   const navigate = useNavigate();
+  const {
+    events,
+    loading: calendarLoading,
+    error: calendarError,
+    syncCalendar,
+  } = useCalendar(dateRange.start, dateRange.end);
+
+  useEffect(() => {
+    const SYNC_KEY = "calendar_last_synced_at";
+    const TTL = 12 * 60 * 60 * 1000; // 12 hours
+    const now = Date.now();
+    const lastSync = localStorage.getItem(SYNC_KEY);
+
+    if (!lastSync || now - parseInt(lastSync, 10) > TTL) {
+      syncCalendar();
+      localStorage.setItem(SYNC_KEY, now.toString());
+      console.log("Calendar auto synced");
+    }
+  }, [syncCalendar]);
 
   useEffect(() => {
     const checkPendingZoomLink = async () => {
@@ -84,11 +122,37 @@ export default function LandingPage() {
     }
   };
 
-  const renderForm = () => {
-    if (integration === "zoom") {
-      return <ZoomForm onSubmit={handleZoomSubmit} />;
+  const handleCalendarJoin = async (event) => {
+    try {
+      const payload = {
+        meetingId: event.id,
+        joinUrl: event.join_url,
+        startTime: event.start_time,
+      };
+
+      const response = await window.electron.joinCalendarSession(payload);
+
+      const isSuccess =
+        response.status === "ok" ||
+        (response.data && response.data.sessionId && response.data.token);
+
+      if (!isSuccess) {
+        const statusMsg = response.code ? ` (Status ${response.code})` : "";
+        throw new Error(
+          (response.message || "Failed to initialize session") + statusMsg,
+        );
+      }
+
+      const data = response.data;
+      const { sessionId, token, type } = data;
+
+      navigate(
+        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}`,
+      );
+    } catch (err) {
+      console.error("Failed to quick-join:", err);
+      setError("Failed to start assistant. Please try again.");
     }
-    return null;
   };
 
   const SidebarItem = ({ id, label, icon, activeClass }) => (
@@ -106,11 +170,36 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="flex-grow flex overflow-hidden">
-      <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+    <div className="flex-grow flex">
+      {/* Sidebar */}
+      <aside className="sticky top-16 h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+        {/* Calendar Section */}
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            {t("choose_integration")}
+            {t("calendar_join")}
+          </h2>
+        </div>
+        <div className="flex flex-col">
+          <SidebarItem
+            id="calendar"
+            label={t("calendar_view")}
+            icon={<BiCalendar className="h-5 w-5" />}
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+          />
+        </div>
+
+        <div className="flex items-center px-4 py-3">
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
+          <span className="px-3 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">
+            {t("or_divider")}
+          </span>
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
+        </div>
+
+        {/* Integration Section */}
+        <div className="px-4 mb-2">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {t("manual_join")}
           </h2>
         </div>
         <div className="flex flex-col">
@@ -123,15 +212,36 @@ export default function LandingPage() {
         </div>
       </aside>
 
-      <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
-        <div className="max-w-md mx-auto">
-          {renderForm()}
-          {error && (
-            <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
-              {error}
+      {/* Main Content Area */}
+      <div className="flex-1 bg-white dark:bg-zinc-900/50 overflow-hidden flex flex-col">
+        {integration === "calendar" ? (
+          <div className="h-full p-6 overflow-hidden">
+            <CalendarView
+              events={events}
+              loading={calendarLoading}
+              error={calendarError}
+              onSync={syncCalendar}
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+              onDateChange={setDateRange}
+              onAppJoin={handleCalendarJoin}
+            />
+          </div>
+        ) : (
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-md mx-auto mt-10">
+              {integration === "zoom" && (
+                <ZoomForm onSubmit={handleZoomSubmit} />
+              )}
+
+              {error && (
+                <div className="mt-3 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/30 text-center">
+                  {error}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

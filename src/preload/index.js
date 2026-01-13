@@ -17,6 +17,13 @@ contextBridge.exposeInMainWorld("electron", {
   getMetrics: () => ipcRenderer.invoke("admin:get-metrics"),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
 
+  // Calendar
+  getCalendarEvents: (start, end) =>
+    ipcRenderer.invoke("calendar:get-events", start, end),
+  syncCalendar: () => ipcRenderer.invoke("calendar:sync"),
+  joinCalendarSession: (payload) =>
+    ipcRenderer.invoke("auth:join-calendar", payload),
+
   // Auth
   requestLogin: (email, language) =>
     ipcRenderer.invoke("auth:request-login", email, language),

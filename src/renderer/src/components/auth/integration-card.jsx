@@ -42,7 +42,7 @@ export function ZoomForm({ onSubmit }) {
           <div className="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
         </div>
         <div className="relative flex items-center gap-1 bg-white dark:bg-zinc-900 px-2 text-[10px] font-bold text-zinc-400 uppercase group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
-          <span>{t("or_divider")}</span>
+          <span>{t("or_type_in")}</span>
           {showManual ? (
             <BiChevronDown className="w-3 h-3" />
           ) : (
