@@ -124,24 +124,26 @@ export default function LandingPage() {
 
   const handleCalendarJoin = async (event) => {
     try {
-      const response = await fetch("/api/auth/calendar-join", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          meetingId: event.id,
-          joinUrl: event.join_url,
-          startTime: event.start_time,
-        }),
-      });
+      const payload = {
+        meetingId: event.id,
+        joinUrl: event.join_url,
+        startTime: event.start_time,
+      };
 
-      if (!response.ok) {
-        throw new Error("Failed to initialize session");
+      const response = await window.electron.joinCalendarSession(payload);
+
+      const isSuccess =
+        response.status === "ok" ||
+        (response.data && response.data.sessionId && response.data.token);
+
+      if (!isSuccess) {
+        const statusMsg = response.code ? ` (Status ${response.code})` : "";
+        throw new Error(
+          (response.message || "Failed to initialize session") + statusMsg,
+        );
       }
 
-      const data = await response.json();
-
+      const data = response.data;
       const { sessionId, token, type } = data;
 
       navigate(
@@ -151,13 +153,6 @@ export default function LandingPage() {
       console.error("Failed to quick-join:", err);
       setError("Failed to start assistant. Please try again.");
     }
-  };
-
-  const renderForm = () => {
-    if (integration === "zoom") {
-      return <ZoomForm onSubmit={handleZoomSubmit} />;
-    }
-    return null;
   };
 
   const SidebarItem = ({ id, label, icon, activeClass }) => (

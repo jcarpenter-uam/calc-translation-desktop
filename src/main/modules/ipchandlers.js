@@ -143,6 +143,25 @@ export function registerIpcHandlers() {
     return newState;
   });
 
+  ipcMain.handle("calendar:get-events", async (_, start, end) => {
+    const params = new URLSearchParams();
+    if (start) params.append("start", start);
+    if (end) params.append("end", end);
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/api/calender/?${queryString}`
+      : "/api/calender/";
+    return await makeApiRequest(endpoint, "GET");
+  });
+
+  ipcMain.handle("calendar:sync", async () => {
+    return await makeApiRequest("/api/calender/sync", "GET");
+  });
+
+  ipcMain.handle("auth:join-calendar", async (_, payload) => {
+    return await makeApiRequest("/api/auth/calendar-join", "POST", payload);
+  });
+
   ipcMain.handle("auth:request-login", async (event, email, language) => {
     ipcHandlerLog.info(
       `Requesting login URL for: ${email} with language: ${language}`,

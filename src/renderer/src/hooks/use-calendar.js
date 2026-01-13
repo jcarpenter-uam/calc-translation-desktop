@@ -9,24 +9,22 @@ export function useCalendar(startDate = null, endDate = null) {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (startDate) params.append("start", startDate.toISOString());
-      if (endDate) params.append("end", endDate.toISOString());
+      const startIso = startDate ? startDate.toISOString() : null;
+      const endIso = endDate ? endDate.toISOString() : null;
 
-      const queryString = params.toString();
-      const url = queryString
-        ? `/api/calender/?${queryString}`
-        : "/api/calender/";
+      const response = await window.electron.getCalendarEvents(
+        startIso,
+        endIso,
+      );
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
+      if (response.status === "ok" || response.data) {
+        const eventData = Array.isArray(response.data) ? response.data : [];
+        setEvents(eventData);
       } else {
-        console.warn("Failed to fetch initial calendar data");
+        console.warn("Unexpected calendar response format:", response);
       }
     } catch (err) {
-      console.error(err);
+      console.error("fetchCalendar error:", err);
       setError("Failed to load calendar.");
     } finally {
       setLoading(false);
@@ -37,16 +35,22 @@ export function useCalendar(startDate = null, endDate = null) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/calender/sync");
+      const response = await window.electron.syncCalendar();
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Failed to sync calendar.");
+      const isSuccess =
+        response.status === "ok" ||
+        response.status === 200 ||
+        response.status === 204 ||
+        !response.error;
+
+      if (!isSuccess) {
+        throw new Error(response.message || "Failed to sync calendar.");
       }
 
+      console.log("Sync successful, refreshing events...");
       await fetchCalendar();
     } catch (err) {
-      console.error(err);
+      console.error("syncCalendar error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -57,5 +61,5 @@ export function useCalendar(startDate = null, endDate = null) {
     fetchCalendar();
   }, [fetchCalendar]);
 
-  return { events, loading, error, syncCalendar, refetch: fetchCalendar };
+  return { events, loading, error, syncCalendar };
 }
