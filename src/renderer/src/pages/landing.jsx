@@ -172,14 +172,14 @@ export default function LandingPage() {
   return (
     <div className="flex-grow flex overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-1/3 min-w-[200px] max-w-[250px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+      <aside className="bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
         {/* Calendar Section */}
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
             {t("calendar_join")}
           </h2>
         </div>
-        <div className="flex flex-col mb-4">
+        <div className="flex flex-col">
           <SidebarItem
             id="calendar"
             label={t("calendar_view")}
@@ -188,10 +188,18 @@ export default function LandingPage() {
           />
         </div>
 
+        <div className="flex items-center px-4 py-3">
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
+          <span className="px-3 text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">
+            {t("or_divider")}
+          </span>
+          <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800"></div>
+        </div>
+
         {/* Integration Section */}
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            {t("choose_integration")}
+            {t("manual_join")}
           </h2>
         </div>
         <div className="flex flex-col">
