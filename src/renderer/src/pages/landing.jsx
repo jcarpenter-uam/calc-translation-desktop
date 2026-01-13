@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ZoomForm } from "../components/auth/integration-card.jsx";
-import { BiLogoZoom } from "react-icons/bi";
+import { BiLogoZoom, BiCalendar } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 import { useCalendar } from "../hooks/use-calendar.js";
 import { CalendarView } from "../components/calender/view.jsx";
@@ -24,7 +24,7 @@ const getCurrentWorkWeek = () => {
 
 export default function LandingPage() {
   const { t } = useTranslation();
-  const [integration, setIntegration] = useState("zoom");
+  const [integration, setIntegration] = useState("calendar");
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState(getCurrentWorkWeek());
   const navigate = useNavigate();
@@ -176,7 +176,24 @@ export default function LandingPage() {
 
   return (
     <div className="flex-grow flex overflow-hidden">
-      <aside className="w-1/3 min-w-[200px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+      {/* Sidebar */}
+      <aside className="w-1/3 min-w-[200px] max-w-[250px] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+        {/* Calendar Section */}
+        <div className="px-4 mb-2">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            {t("calendar_join")}
+          </h2>
+        </div>
+        <div className="flex flex-col mb-4">
+          <SidebarItem
+            id="calendar"
+            label={t("calendar_view")}
+            icon={<BiCalendar className="h-5 w-5" />}
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+          />
+        </div>
+
+        {/* Integration Section */}
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
             {t("choose_integration")}
@@ -192,26 +209,37 @@ export default function LandingPage() {
         </div>
       </aside>
 
-      <div className="flex-1 p-6 bg-white dark:bg-zinc-900/50 overflow-y-auto">
-        <div className="max-w-md mx-auto">
-          {renderForm()}
-          {error && (
-            <div className="mt-3 p-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-center">
-              {error}
+      {/* Main Content Area */}
+      <div className="flex-1 bg-white dark:bg-zinc-900/50 overflow-hidden flex flex-col">
+        {integration === "calendar" ? (
+          <div className="h-full p-6 overflow-hidden">
+            <CalendarView
+              events={events}
+              loading={calendarLoading}
+              error={calendarError}
+              onSync={syncCalendar}
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+              onDateChange={setDateRange}
+              onAppJoin={handleCalendarJoin}
+            />
+          </div>
+        ) : (
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-md mx-auto mt-10">
+              {integration === "zoom" && (
+                <ZoomForm onSubmit={handleZoomSubmit} />
+              )}
+
+              {error && (
+                <div className="mt-3 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/30 text-center">
+                  {error}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-      <CalendarView
-        events={events}
-        loading={calendarLoading}
-        error={calendarError}
-        onSync={syncCalendar}
-        startDate={dateRange.start}
-        endDate={dateRange.end}
-        onDateChange={setDateRange}
-        onAppJoin={handleCalendarJoin}
-      />
     </div>
   );
 }
