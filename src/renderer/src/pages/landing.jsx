@@ -170,9 +170,9 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="flex-grow flex overflow-hidden">
+    <div className="flex-grow flex">
       {/* Sidebar */}
-      <aside className="bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
+      <aside className="sticky top-16 h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 pt-4">
         {/* Calendar Section */}
         <div className="px-4 mb-2">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
