@@ -104,7 +104,7 @@ export default function LandingPage() {
 
       const data = response.data;
       console.log("Server response:", data);
-      const sessionId = data.meetinguuid;
+      const sessionId = data.sessionId;
       const token = data.token;
 
       if (!sessionId) {

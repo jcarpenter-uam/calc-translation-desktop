@@ -87,7 +87,7 @@
   "menu_admin": "Admin",
   "menu_logout": "Logout",
   "user_menu_tooltip": "Logged in as {{name}}. Click for options.",
-  "download_transcript": "Session ended. Download transcript",
+  "download_transcript": "Download transcript",
   "downloading": "Downloading...",
   "loading_history": "Translating conversation history...",
   "minimize": "Minimize",
@@ -147,5 +147,7 @@
   "refresh_now": "Refresh Now",
   "refreshing": "Refreshing...",
   "no_logs": "No logs available.",
-  "error_loading_logs": "Error loading logs: "
+  "error_loading_logs": "Error loading logs: ",
+  "meeting_ended": "Meeting Ended",
+  "meeting_ended_description": "The transcript and AI summary will be emailed to you shortly.\n\nYou can also download the transcript file directly here."
 }

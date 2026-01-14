@@ -87,7 +87,7 @@
   "menu_admin": "Admin",
   "menu_logout": "Keluar",
   "user_menu_tooltip": "Masuk sebagai {{name}}. Klik untuk opsi.",
-  "download_transcript": "Sesi berakhir. Unduh transkrip",
+  "download_transcript": "Unduh transkrip",
   "downloading": "Mengunduh...",
   "loading_history": "Menerjemahkan riwayat percakapan...",
   "minimize": "Minimalkan",
@@ -154,5 +154,7 @@
   "refresh_now": "Segarkan Sekarang",
   "refreshing": "Menyegarkan...",
   "no_logs": "Tidak ada log yang tersedia.",
-  "error_loading_logs": "Kesalahan memuat log: "
+  "error_loading_logs": "Kesalahan memuat log: ",
+  "meeting_ended": "Rapat Berakhir",
+  "meeting_ended_description": "Transkrip dan ringkasan AI akan dikirimkan melalui email kepada Anda segera.\n\nAnda juga dapat mengunduh file transkrip langsung di sini."
 }
