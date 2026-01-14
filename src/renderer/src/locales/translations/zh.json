@@ -87,7 +87,7 @@
   "menu_admin": "管理",
   "menu_logout": "退出登录",
   "user_menu_tooltip": "已登录为 {{name}}。点击查看选项。",
-  "download_transcript": "会话已结束。下载文字记录",
+  "download_transcript": "下载文字记录",
   "downloading": "正在下载...",
   "loading_history": "正在翻译对话记录……",
   "minimize": "最小化",
@@ -154,5 +154,7 @@
   "refresh_now": "立即刷新",
   "refreshing": "正在刷新...",
   "no_logs": "暂无日志。",
-  "error_loading_logs": "加载日志出错："
+  "error_loading_logs": "加载日志出错：",
+  "meeting_ended": "会议已结束",
+  "meeting_ended_description": "会议记录和人工智能摘要将很快通过电子邮件发送给您。\n\n您也可以在此处直接下载会议记录文件。"
 }
