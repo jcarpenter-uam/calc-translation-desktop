@@ -53,7 +53,7 @@ export function setupAutoUpdaterListeners() {
           autoUpdateLog.info(
             "User chose 'Install Now'. Quitting and installing.",
           );
-          autoUpdater.quitAndInstall(true);
+          autoUpdater.quitAndInstall(false, true);
         } else {
           autoUpdateLog.info(
             "User chose 'Install on Next Start'. Update will be installed on next launch.",
