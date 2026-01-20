@@ -229,7 +229,7 @@ export default function LandingPage() {
           </div>
         ) : (
           <div className="flex-1 p-6 overflow-y-auto">
-            <div className="max-w-md mx-auto mt-10">
+            <div className="max-w-md mx-auto">
               {integration === "zoom" && (
                 <ZoomForm onSubmit={handleZoomSubmit} />
               )}
