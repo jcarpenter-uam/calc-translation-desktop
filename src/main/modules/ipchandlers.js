@@ -275,13 +275,17 @@ export function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("auth:join-test", async (event, payload) => {
-    ipcHandlerLog.info("Attempting to join Test session via IPC...");
+  ipcMain.handle("auth:join-standalone", async (event, payload) => {
+    ipcHandlerLog.info("Attempting to join Standalone session via IPC...");
     try {
-      const { data } = await makeApiRequest("/api/auth/test", "POST", payload);
+      const { data } = await makeApiRequest(
+        "/api/auth/standalone",
+        "POST",
+        payload,
+      );
       return { status: "ok", data };
     } catch (error) {
-      ipcHandlerLog.error("Test join failed:", error.message);
+      ipcHandlerLog.error("Standalone join failed:", error.message);
       return { status: "error", message: error.message };
     }
   });

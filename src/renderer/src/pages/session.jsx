@@ -48,8 +48,12 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
+  // const wsUrl = isAuthorized
+  //   ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
+  //   : null;
+
   const wsUrl = isAuthorized
-    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
+    ? `ws://localhost:8000/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =

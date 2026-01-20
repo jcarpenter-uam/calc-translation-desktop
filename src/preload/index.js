@@ -31,7 +31,8 @@ contextBridge.exposeInMainWorld("electron", {
   getUser: () => ipcRenderer.invoke("auth:get-user"),
   logout: () => ipcRenderer.invoke("auth:logout"),
   joinZoom: (payload) => ipcRenderer.invoke("auth:join-zoom", payload),
-  joinTest: (payload) => ipcRenderer.invoke("auth:join-test", payload),
+  joinStandalone: (payload) =>
+    ipcRenderer.invoke("auth:join-standalone", payload),
   linkPendingZoom: () => ipcRenderer.invoke("auth:link-zoom"),
 
   // Admin: User Management

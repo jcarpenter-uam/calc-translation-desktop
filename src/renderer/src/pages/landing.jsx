@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ZoomForm } from "../components/auth/integration-card.jsx";
-import { BiLogoZoom, BiCalendar } from "react-icons/bi";
+import {
+  ZoomForm,
+  StandaloneForm,
+} from "../components/auth/integration-card.jsx";
+import { BiLogoZoom, BiCalendar, BiUser } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 import { useCalendar } from "../hooks/use-calendar.js";
 import { CalendarView } from "../components/calender/view.jsx";
@@ -77,81 +80,52 @@ export default function LandingPage() {
     checkPendingZoomLink();
   }, []);
 
-  const handleJoin = (type, sessionId, token) => {
-    navigate(
-      `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}`,
-    );
-  };
-
-  const handleZoomSubmit = async ({ meetingId, password, joinUrl }) => {
+  const handleJoin = async (data, source = "manual") => {
     setError(null);
-
-    if (!joinUrl && !meetingId) {
-      setError(t("error_missing_zoom_input"));
-      return;
-    }
-
     try {
-      const response = await window.electron.joinZoom({
-        meetingid: meetingId || null,
-        meetingpass: password || null,
-        join_url: joinUrl || null,
-      });
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || t("error_auth_failed"));
-      }
-
-      const data = response.data;
-      console.log("Server response:", data);
-      const sessionId = data.sessionId;
-      const token = data.token;
-
-      if (!sessionId) {
-        throw new Error(t("error_no_session_id"));
-      }
-
-      if (!token) {
-        throw new Error(t("error_no_token"));
-      }
-
-      handleJoin("zoom", sessionId, token);
-    } catch (err) {
-      console.error("Authentication failed:", err);
-      setError(err.message);
-    }
-  };
-
-  const handleCalendarJoin = async (event) => {
-    try {
-      const payload = {
-        meetingId: event.id,
-        joinUrl: event.join_url,
-        startTime: event.start_time,
+      let response;
+      const headers = {
+        "Content-Type": "application/json",
       };
 
-      const response = await window.electron.joinCalendarSession(payload);
-
-      const isSuccess =
-        response.status === "ok" ||
-        (response.data && response.data.sessionId && response.data.token);
-
-      if (!isSuccess) {
-        const statusMsg = response.code ? ` (Status ${response.code})` : "";
-        throw new Error(
-          (response.message || "Failed to initialize session") + statusMsg,
-        );
+      if (source === "calendar") {
+        response = await window.electron.joinCalendarSession({
+          meetingId: data.id,
+          joinUrl: data.join_url,
+          startTime: data.start_time,
+        });
+      } else {
+        if (integration === "zoom") {
+          response = await window.electron.joinZoom({
+            meetingid: data.meetingId || null,
+            meetingpass: data.password || null,
+            join_url: data.joinUrl || null,
+          });
+        } else if (integration === "standalone") {
+          response = await window.electron.joinStandalone({
+            host: data.mode === "host",
+            join_url: data.joinUrl,
+          });
+        }
       }
 
-      const data = response.data;
-      const { sessionId, token, type } = data;
+      if (response.status !== "ok") {
+        throw new Error(response.message || t("login_error_generic"));
+      }
+
+      const responseData = response.data;
+
+      const { sessionId, token, type, joinUrl } = responseData;
+
+      const isHost = integration === "standalone" && data.mode === "host";
 
       navigate(
-        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}`,
+        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}${isHost ? "&isHost=true" : ""}`,
+        { state: { joinUrl } },
       );
     } catch (err) {
-      console.error("Failed to quick-join:", err);
-      setError("Failed to start assistant. Please try again.");
+      console.error("Join failed:", err);
+      setError(err.message || t("login_error_generic"));
     }
   };
 
@@ -168,6 +142,19 @@ export default function LandingPage() {
       <span>{label}</span>
     </button>
   );
+
+  const renderIntegrationForm = () => {
+    switch (integration) {
+      case "zoom":
+        return <ZoomForm onSubmit={(data) => handleJoin(data, "manual")} />;
+      case "standalone":
+        return (
+          <StandaloneForm onSubmit={(data) => handleJoin(data, "manual")} />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex-grow flex">
@@ -209,6 +196,12 @@ export default function LandingPage() {
             icon={<BiLogoZoom className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
           />
+          <SidebarItem
+            id="standalone"
+            label={t("integration_standalone")}
+            icon={<BiUser className="h-5 w-5" />}
+            activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+          />
         </div>
       </aside>
 
@@ -224,15 +217,13 @@ export default function LandingPage() {
               startDate={dateRange.start}
               endDate={dateRange.end}
               onDateChange={setDateRange}
-              onAppJoin={handleCalendarJoin}
+              onAppJoin={handleJoin}
             />
           </div>
         ) : (
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="max-w-md mx-auto">
-              {integration === "zoom" && (
-                <ZoomForm onSubmit={handleZoomSubmit} />
-              )}
+              {renderIntegrationForm()}
 
               {error && (
                 <div className="mt-3 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-900/30 text-center">
