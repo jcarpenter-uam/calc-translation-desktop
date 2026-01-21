@@ -23,7 +23,7 @@ const SILENCE_SAMPLES = new Float32Array(4096).fill(0);
 const SILENCE_PCM = floatTo16BitPCM(SILENCE_SAMPLES);
 const SILENCE_BASE64 = arrayBufferToBase64(SILENCE_PCM);
 
-export function useHostAudio(sessionId, integration) {
+export function useHostAudio(sessionId, integration, token) {
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState("disconnected");
@@ -42,10 +42,9 @@ export function useHostAudio(sessionId, integration) {
   const hasConnectedOnceRef = useRef(false);
 
   useEffect(() => {
-    if (!sessionId || !integration) return;
+    if (!sessionId || !integration || !token) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/transcribe/${integration}/${sessionId}`;
+    const wsUrl = `ws://localhost:8000/ws/transcribe/${integration}/${sessionId}?token=${token}`;
 
     console.log("Host connecting to:", wsUrl);
     const ws = new WebSocket(wsUrl);
@@ -87,7 +86,7 @@ export function useHostAudio(sessionId, integration) {
       }
       stopAudio();
     };
-  }, [integration, sessionId]);
+  }, [integration, sessionId, token]);
 
   useEffect(() => {
     if (isAudioInitialized && canvasRef.current && analyserRef.current) {

@@ -39,6 +39,7 @@ export default function SessionPage() {
   const hostAudioProps = useHostAudio(
     isHost ? sessionId : null,
     isHost ? integration : null,
+    token,
   );
 
   const handleAuthFailure = useCallback(() => {
