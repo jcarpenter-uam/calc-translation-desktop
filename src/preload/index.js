@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("set-prerelease-channel", isBeta),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   toggleAlwaysOnTop: () => ipcRenderer.invoke("toggle-always-on-top"),
+  writeToClipboard: (text) => ipcRenderer.invoke("clipboard-write", text),
 
   // Features
   downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),

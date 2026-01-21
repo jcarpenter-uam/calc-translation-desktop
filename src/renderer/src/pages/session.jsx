@@ -8,7 +8,6 @@ import Notification from "../components/misc/notification.jsx";
 import BackfillLoading from "../components/session/backfill-loading.jsx";
 import WaitingRoom from "../components/session/waiting.jsx";
 import HostAudioSender from "../components/session/host-audio-sender.jsx";
-import JoinURLDisplay from "../components/session/joinURL-display.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
 import { useLanguage } from "../context/language.jsx";
@@ -96,8 +95,7 @@ export default function SessionPage() {
   return (
     <>
       <div className="w-full pb-6 px-4">
-        {isHost && joinUrl && <JoinURLDisplay joinUrl={joinUrl} />}
-        {isHost && <HostAudioSender {...hostAudioProps} />}
+        {isHost && <HostAudioSender {...hostAudioProps} joinUrl={joinUrl} />}
 
         {isBackfilling && <BackfillLoading />}
         {transcripts

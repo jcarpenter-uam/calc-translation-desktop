@@ -162,5 +162,6 @@
   "join_audio": "Join w/Audio",
   "unmute": "Unmute",
   "mute": "Mute",
-  "end_broadcast": "End Broadcast"
+  "end_broadcast": "End Broadcast",
+  "copy_join_link": "Copy Join URL"
 }

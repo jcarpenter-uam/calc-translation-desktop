@@ -19,7 +19,7 @@ export default function FontSize() {
         <button
           onClick={handleDecrease}
           disabled={fontSize <= 75}
-          className="p-[6px] hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-600 dark:text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="cursor-pointer p-[6px] hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-600 dark:text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Decrease font size"
         >
           <FaSearchMinus size={12} />
@@ -32,7 +32,7 @@ export default function FontSize() {
         <button
           onClick={handleIncrease}
           disabled={fontSize >= 150}
-          className="p-[6px] hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-600 dark:text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="cursor-pointer p-[6px] hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-full transition-colors text-zinc-600 dark:text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Increase font size"
         >
           <FaSearchPlus size={12} />

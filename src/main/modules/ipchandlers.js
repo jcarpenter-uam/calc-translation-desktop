@@ -1,4 +1,4 @@
-import { ipcMain, net, app, session } from "electron";
+import { ipcMain, net, app, session, clipboard } from "electron";
 import { getMainWindow } from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
@@ -141,6 +141,11 @@ export function registerIpcHandlers() {
     ipcHandlerLog.info(`Toggling always-on-top to: ${newState}`);
     mainWindow.setAlwaysOnTop(newState);
     return newState;
+  });
+
+  ipcMain.handle("clipboard-write", async (event, text) => {
+    clipboard.writeText(text);
+    return true;
   });
 
   ipcMain.handle("calendar:get-events", async (_, start, end) => {
