@@ -216,7 +216,7 @@ export default function LandingPage() {
               startDate={dateRange.start}
               endDate={dateRange.end}
               onDateChange={setDateRange}
-              onAppJoin={handleJoin}
+              onAppJoin={(event) => handleJoin(event, "calendar")}
             />
           </div>
         ) : (

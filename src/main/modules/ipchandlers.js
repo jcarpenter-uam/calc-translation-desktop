@@ -164,7 +164,18 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("auth:join-calendar", async (_, payload) => {
-    return await makeApiRequest("/api/auth/calendar-join", "POST", payload);
+    ipcHandlerLog.info("Attempting to join Calendar session via IPC...");
+    try {
+      const { data } = await makeApiRequest(
+        "/api/auth/calendar-join",
+        "POST",
+        payload,
+      );
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Calendar join failed:", error.message);
+      return { status: "error", message: error.message };
+    }
   });
 
   ipcMain.handle("auth:request-login", async (event, email, language) => {
