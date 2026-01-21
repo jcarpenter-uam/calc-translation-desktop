@@ -1,16 +1,19 @@
 import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import DownloadVttButton from "../components/session/vtt-download.jsx";
 import Transcript from "../components/session/transcript.jsx";
 import Unauthorized from "../components/auth/unauthorized.jsx";
 import Notification from "../components/misc/notification.jsx";
 import BackfillLoading from "../components/session/backfill-loading.jsx";
 import WaitingRoom from "../components/session/waiting.jsx";
+import HostAudioSender from "../components/session/host-audio-sender.jsx";
+import JoinURLDisplay from "../components/session/joinURL-display.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
 import { useLanguage } from "../context/language.jsx";
 import { useTranslation } from "react-i18next";
+import { useHostAudio } from "../hooks/use-host-audio.js";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -25,10 +28,18 @@ export default function SessionPage() {
   const query = useQuery();
   const token = query.get("token");
 
+  const isHost = query.get("isHost") === "true";
+  const joinUrl = location.state?.joinUrl;
+
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
   const { language } = useLanguage();
   const { t } = useTranslation();
+
+  const hostAudioProps = useHostAudio(
+    isHost ? sessionId : null,
+    isHost ? integration : null,
+  );
 
   const handleAuthFailure = useCallback(() => {
     setIsAuthorized(false);
@@ -60,11 +71,10 @@ export default function SessionPage() {
     useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
   const lastTopTextRef = React.useRef(null);
-  const notification = useSmartScroll(
-    transcripts,
-    lastTopTextRef,
-    isDownloadable,
-  );
+  const scrollDependencies = useMemo(() => {
+    return [transcripts, isDownloadable];
+  }, [transcripts, isDownloadable]);
+  const notification = useSmartScroll(scrollDependencies, lastTopTextRef);
 
   if (showUnauthorized) {
     return <Unauthorized message={t("access_denied_session_message")} />;
@@ -74,7 +84,7 @@ export default function SessionPage() {
     return null;
   }
 
-  if (sessionStatus === "waiting") {
+  if (sessionStatus === "waiting" && !isHost) {
     return (
       <div className="max-w-3xl mx-auto w-full">
         <WaitingRoom />
@@ -85,6 +95,9 @@ export default function SessionPage() {
   return (
     <>
       <div className="max-w-3xl mx-auto w-full pb-6">
+        {isHost && joinUrl && <JoinURLDisplay joinUrl={joinUrl} />}
+        {isHost && <HostAudioSender {...hostAudioProps} />}
+
         {isBackfilling && <BackfillLoading />}
         {transcripts
           .filter((t) => !isBackfilling || !t.isBackfill)
