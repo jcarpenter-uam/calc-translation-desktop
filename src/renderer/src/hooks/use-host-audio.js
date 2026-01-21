@@ -44,7 +44,7 @@ export function useHostAudio(sessionId, integration, token) {
   useEffect(() => {
     if (!sessionId || !integration || !token) return;
 
-    const wsUrl = `wss://3fa948276f1f.ngrok-free.app/ws/transcribe/${integration}/${sessionId}?token=${token}`;
+    const wsUrl = `wss://translator.my-uam.com/ws/transcribe/${integration}/${sessionId}?token=${token}`;
 
     console.log("Host connecting to:", wsUrl);
     const ws = new WebSocket(wsUrl);

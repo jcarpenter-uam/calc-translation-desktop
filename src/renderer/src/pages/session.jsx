@@ -59,12 +59,8 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
-  // const wsUrl = isAuthorized
-  //   ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
-  //   : null;
-
   const wsUrl = isAuthorized
-    ? `wss://3fa948276f1f.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
+    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
@@ -104,11 +100,18 @@ export default function SessionPage() {
             <Transcript
               key={t.id}
               {...t}
-              topTextRef={index === array.length - 1 ? lastTopTextRef : null}
+              topTextRef={
+                !isDownloadable && index === array.length - 1
+                  ? lastTopTextRef
+                  : null
+              }
             />
           ))}
         {isDownloadable && (
-          <div className="mt-8 mb-8 mx-4 sm:mx-0 p-6 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm text-center">
+          <div
+            ref={lastTopTextRef}
+            className="mt-8 mb-8 mx-4 sm:mx-0 p-6 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm text-center"
+          >
             <div className="flex flex-col items-center justify-center space-y-3">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {t("meeting_ended")}
