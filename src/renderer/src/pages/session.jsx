@@ -65,7 +65,7 @@ export default function SessionPage() {
   //   : null;
 
   const wsUrl = isAuthorized
-    ? `ws://localhost:8000/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
+    ? `wss://3fa948276f1f.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${language}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
