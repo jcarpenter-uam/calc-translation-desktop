@@ -8,7 +8,7 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-grow w-full max-w-7xl mx-auto flex flex-col">
+      <main className="flex-grow w-full mx-auto flex flex-col">
         <Outlet />
       </main>
       <FontSize />

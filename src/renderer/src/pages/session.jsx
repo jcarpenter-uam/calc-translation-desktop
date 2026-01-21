@@ -95,7 +95,7 @@ export default function SessionPage() {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto w-full pb-6">
+      <div className="w-full pb-6 px-4">
         {isHost && joinUrl && <JoinURLDisplay joinUrl={joinUrl} />}
         {isHost && <HostAudioSender {...hostAudioProps} />}
 
