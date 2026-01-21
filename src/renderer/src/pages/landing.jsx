@@ -120,8 +120,7 @@ export default function LandingPage() {
       const isHost = integration === "standalone" && data.mode === "host";
 
       navigate(
-        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}${isHost ? "&isHost=true" : ""}`,
-        { state: { joinUrl } },
+        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}&joinUrl=${encodeURIComponent(joinUrl)}${isHost ? "&isHost=true" : ""}`,
       );
     } catch (err) {
       console.error("Join failed:", err);

@@ -29,7 +29,7 @@ export default function SessionPage() {
   const token = query.get("token");
 
   const isHost = query.get("isHost") === "true";
-  const joinUrl = location.state?.joinUrl;
+  const joinUrl = query.get("joinUrl");
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
