@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BiMicrophone,
@@ -8,6 +8,8 @@ import {
   BiCheck,
   BiQuestionMark,
   BiX,
+  BiDesktop,
+  BiChevronUp,
 } from "react-icons/bi";
 
 export default function HostAudioSender({
@@ -19,33 +21,49 @@ export default function HostAudioSender({
   toggleMute,
   disconnectSession,
   joinUrl,
+  inputDevices = [],
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showDeviceMenu, setShowDeviceMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowDeviceMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && showHelp) {
+      if (e.key === "Escape") {
         setShowHelp(false);
+        setShowDeviceMenu(false);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHelp]);
+  }, [showHelp, showDeviceMenu]);
 
   const handleCopy = async () => {
     if (!joinUrl) return;
-
     if (window.electronAPI && window.electronAPI.writeToClipboard) {
       await window.electronAPI.writeToClipboard(joinUrl);
     } else {
       await navigator.clipboard.writeText(joinUrl);
     }
-
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDeviceSelect = (deviceId) => {
+    setShowDeviceMenu(false);
+    startAudio(deviceId);
   };
 
   if (status === "error") {
@@ -62,10 +80,57 @@ export default function HostAudioSender({
 
   if (!isAudioInitialized) {
     return (
-      <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100]">
+      <div
+        className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100]"
+        ref={menuRef}
+      >
+        {showDeviceMenu && (
+          <div className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+            <div className="p-2 space-y-1">
+              <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                Select Audio Source
+              </div>
+
+              <button
+                onClick={() => handleDeviceSelect("system")}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
+              >
+                <BiDesktop className="text-blue-500" size={18} />
+                <span>System Audio</span>
+              </button>
+
+              <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
+
+              {inputDevices.length === 0 ? (
+                <button
+                  onClick={() => handleDeviceSelect(undefined)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
+                >
+                  <BiMicrophone className="text-green-500" size={18} />
+                  <span>Default Microphone</span>
+                </button>
+              ) : (
+                inputDevices.map((device) => (
+                  <button
+                    key={device.deviceId}
+                    onClick={() => handleDeviceSelect(device.deviceId)}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left truncate"
+                  >
+                    <BiMicrophone className="text-zinc-400" size={18} />
+                    <span className="truncate">
+                      {device.label ||
+                        `Microphone ${device.deviceId.slice(0, 4)}...`}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
           <button
-            onClick={startAudio}
+            onClick={() => setShowDeviceMenu(!showDeviceMenu)}
             disabled={status !== "connected"}
             className={`flex items-center gap-2 cursor-pointer relative overflow-hidden px-3 py-1.5 rounded-full transition-colors ${
               status !== "connected"
@@ -73,7 +138,11 @@ export default function HostAudioSender({
                 : "text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
             }`}
           >
-            <BiMicrophone size={14} />
+            {showDeviceMenu ? (
+              <BiChevronUp size={14} />
+            ) : (
+              <BiMicrophone size={14} />
+            )}
             <span className="text-xs font-bold uppercase tracking-wide whitespace-nowrap">
               {t("join_audio")}
             </span>
@@ -85,11 +154,8 @@ export default function HostAudioSender({
 
   return (
     <>
-      {/* Container for Main Controls + Help Button */}
       <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100] flex items-center gap-3">
-        {/* Audio Controls */}
         <div className="flex items-center gap-[4px] bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
-          {/* Mute/Unmute Button */}
           <button
             onClick={toggleMute}
             className={`cursor-pointer relative overflow-hidden p-[6px] rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -116,7 +182,6 @@ export default function HostAudioSender({
 
           <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
 
-          {/* Copy Join Link Button */}
           <button
             onClick={handleCopy}
             className={`cursor-pointer p-[6px] rounded-full transition-colors ${
@@ -131,7 +196,6 @@ export default function HostAudioSender({
 
           <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
 
-          {/* End Broadcast Button */}
           <button
             onClick={disconnectSession}
             className="cursor-pointer p-[6px] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -141,7 +205,6 @@ export default function HostAudioSender({
           </button>
         </div>
 
-        {/* Help Button */}
         <button
           onClick={() => setShowHelp(true)}
           className="cursor-pointer flex items-center justify-center bg-white dark:bg-zinc-800 w-[34px] h-[34px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
@@ -165,7 +228,6 @@ export default function HostAudioSender({
                 <BiX size={20} />
               </button>
             </div>
-
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-full text-green-600 dark:text-green-400">
@@ -175,7 +237,6 @@ export default function HostAudioSender({
                   {t("mute_toggle")}
                 </p>
               </div>
-
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-600 dark:text-blue-400">
                   <BiLink size={18} />
@@ -189,7 +250,6 @@ export default function HostAudioSender({
                   </p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4">
                 <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full text-red-500">
                   <BiPowerOff size={18} />

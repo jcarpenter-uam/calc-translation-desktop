@@ -1,4 +1,11 @@
-import { ipcMain, net, app, session, clipboard } from "electron";
+import {
+  ipcMain,
+  net,
+  app,
+  session,
+  clipboard,
+  desktopCapturer,
+} from "electron";
 import { getMainWindow } from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
@@ -101,6 +108,16 @@ export function registerIpcHandlers() {
     ipcHandlerLog.error("registerIpcHandlers: mainWindow not available!");
     return;
   }
+
+  ipcMain.handle("desktop:get-sources", async () => {
+    try {
+      const sources = await desktopCapturer.getSources({ types: ["screen"] });
+      return sources;
+    } catch (error) {
+      console.error("Failed to get desktop sources:", error);
+      throw error;
+    }
+  });
 
   ipcMain.handle("minimize-window", () => {
     ipcHandlerLog.info("Minimizing window.");
