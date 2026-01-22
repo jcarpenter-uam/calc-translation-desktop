@@ -173,5 +173,6 @@
   "select_audio_source": "Seleccionar fuente de audio",
   "system_audio": "Audio del sistema",
   "include_mic": "Incluir micrófono",
-  "change_input": "Cambiar entrada"
+  "change_input": "Cambiar entrada",
+  "translate_ui": "Traducir interfaz"
 }

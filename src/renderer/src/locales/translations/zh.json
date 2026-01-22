@@ -178,5 +178,6 @@
   "select_audio_source": "选择音频源",
   "system_audio": "系统音频",
   "include_mic": "包含麦克风",
-  "change_input": "切换输入"
+  "change_input": "切换输入",
+  "translate_ui": "翻译界面"
 }

@@ -5,6 +5,7 @@ import Language from "./language.jsx";
 import PinToggle from "./pinned-toggle.jsx";
 import { useSettings } from "../../context/settings.jsx";
 import BetaToggle from "./beta-toggle.jsx";
+import UiLanguageToggle from "./ui-translation.jsx";
 import DisplayMode from "./display-mode.jsx";
 import { useTranslation } from "react-i18next";
 
@@ -81,6 +82,10 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={t("language_label")}>
             <Language />
+          </SettingsRow>
+          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
+          <SettingsRow label={t("translate_ui")}>
+            <UiLanguageToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={t("display_mode_label")}>

@@ -178,5 +178,6 @@
   "select_audio_source": "Pilih Sumber Audio",
   "system_audio": "Audio Sistem",
   "include_mic": "Sertakan Mikrofon",
-  "change_input": "Ganti Input"
+  "change_input": "Ganti Input",
+  "translate_ui": "Terjemahkan antarmuka"
 }

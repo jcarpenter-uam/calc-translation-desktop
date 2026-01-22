@@ -171,5 +171,6 @@
   "select_audio_source": "Select Audio Source",
   "system_audio": "System Audio",
   "include_mic": "Include Microphone",
-  "change_input": "Change Input"
+  "change_input": "Change Input",
+  "translate_ui": "Translate UI"
 }
