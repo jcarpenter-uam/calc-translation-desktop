@@ -24,6 +24,13 @@ function DeviceMenu({
   const menuRef = useRef(null);
   const { t } = useTranslation();
 
+  const [includeMic, setIncludeMic] = useState(activeMode === "both");
+
+  useEffect(() => {
+    if (activeMode === "both") setIncludeMic(true);
+    if (activeMode === "system") setIncludeMic(false);
+  }, [activeMode]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -38,6 +45,15 @@ function DeviceMenu({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose, triggerRef]);
 
+  const handleCheckboxChange = (e) => {
+    const isChecked = e.target.checked;
+    setIncludeMic(isChecked);
+
+    if (activeMode === "system" || activeMode === "both") {
+      onSelect(isChecked ? "both" : "system");
+    }
+  };
+
   const getButtonClass = (isActive) => {
     return `cursor-pointer w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-left ${
       isActive
@@ -46,6 +62,8 @@ function DeviceMenu({
     }`;
   };
 
+  const isSystemActive = activeMode === "system" || activeMode === "both";
+
   return (
     <div
       ref={menuRef}
@@ -53,42 +71,63 @@ function DeviceMenu({
     >
       <div className="p-2 space-y-1">
         <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          {t("select_audio_source")}
+          Select Audio Source
         </div>
 
-        {/* System Audio Option */}
-        <button
-          onClick={() => onSelect("system")}
-          className={getButtonClass(activeMode === "system")}
-          title={t("system_audio")}
+        {/* System Audio Group */}
+        <div
+          className={`rounded-lg border transition-colors duration-200 ${
+            isSystemActive
+              ? "bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/30"
+              : "border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-700/30"
+          }`}
         >
-          <BiDesktop
-            className={`shrink-0 ${
-              activeMode === "system"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-blue-500"
-            }`}
-            size={18}
-          />
-          <span className="truncate">{t("system_audio")}</span>
-        </button>
+          {/* Main Button: Selects System (or Both if checked) */}
+          <button
+            onClick={() => onSelect(includeMic ? "both" : "system")}
+            className="cursor-pointer w-full flex items-center gap-3 px-3 pt-2 pb-1 text-sm text-left"
+            title={t("system_audio")}
+          >
+            <BiDesktop
+              className={`shrink-0 ${
+                isSystemActive
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-blue-500"
+              }`}
+              size={18}
+            />
+            <span
+              className={`truncate ${
+                isSystemActive
+                  ? "font-medium text-blue-700 dark:text-blue-300"
+                  : "text-zinc-700 dark:text-zinc-200"
+              }`}
+            >
+              {t("system_audio")}
+            </span>
+          </button>
 
-        {/* Both Option */}
-        <button
-          onClick={() => onSelect("both")}
-          className={getButtonClass(activeMode === "both")}
-          title={t("system_and_mic")}
-        >
-          <BiLayer
-            className={`shrink-0 ${
-              activeMode === "both"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-purple-500"
-            }`}
-            size={18}
-          />
-          <span className="truncate">{t("system_and_mic")}</span>
-        </button>
+          {/* Toggle Switch: Toggles Mic Inclusion */}
+          <div className="flex items-center gap-2 px-3 pb-2 pl-[38px]">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={includeMic}
+                onChange={handleCheckboxChange}
+              />
+              <div className="w-7 h-4 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-zinc-600 bg-red-500 dark:bg-red-600 peer-checked:bg-green-500 dark:peer-checked:bg-green-600"></div>
+            </label>
+            <span
+              onClick={() => {
+                handleCheckboxChange({ target: { checked: !includeMic } });
+              }}
+              className="text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer select-none"
+            >
+              Include Microphone
+            </span>
+          </div>
+        </div>
 
         <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
 
@@ -97,22 +136,18 @@ function DeviceMenu({
           <button
             onClick={() => onSelect(undefined)}
             className={getButtonClass(
-              activeMode === undefined &&
-                activeMode !== "system" &&
-                activeMode !== "both",
+              activeMode === undefined && !isSystemActive,
             )}
           >
             <BiMicrophone
               className={`shrink-0 ${
-                activeMode === undefined &&
-                activeMode !== "system" &&
-                activeMode !== "both"
+                activeMode === undefined && !isSystemActive
                   ? "text-blue-600 dark:text-blue-400"
                   : "text-green-500"
               }`}
               size={18}
             />
-            <span className="truncate">{t("default_mic")}</span>
+            <span className="truncate">Default Microphone</span>
           </button>
         ) : (
           inputDevices.map((device) => (
