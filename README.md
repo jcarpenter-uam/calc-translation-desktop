@@ -22,7 +22,7 @@
 > 1.  Click the small text that says **"More info"**.
 > 2.  A new button, **"Run anyway"**, will appear. Click it.
 >
-> *This warning appears simply because the app is not registered with Microsoft (a costly process). It is safe to install if downloaded directly from this GitHub repository or distributed throughout the organization.*
+> _This warning appears simply because the app is not registered with Microsoft (a costly process). It is safe to install if downloaded directly from this GitHub repository or distributed throughout the organization._
 
 ---
 
@@ -43,4 +43,5 @@
 - **Pin to Top:** Keep the app above all other windows on your desktop so nothing obstructs your view.
 - **Beta Channel:** Opt-in to receive beta updates. These are newer, but may be less stable.
   - If you experience issues, turn this off to revert to the current stable version.
-
+- **Language:** Set the language preference for your account.
+- **Display Mode:** This gives you the option of displaying only transcripts, translations, or both
