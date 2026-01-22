@@ -174,5 +174,9 @@
   "help": "Bantuan",
   "host_controls": "Kontrol Tuan Rumah",
   "mute_toggle": "Alihkan Bisukan",
-  "copy_link_desc": "Bagikan ini kepada orang lain yang akan bergabung dengan rapat Anda."
+  "copy_link_desc": "Bagikan ini kepada orang lain yang akan bergabung dengan rapat Anda.",
+  "select_audio_source": "Pilih Sumber Audio",
+  "system_audio": "Audio Sistem",
+  "include_mic": "Sertakan Mikrofon",
+  "change_input": "Ganti Input"
 }

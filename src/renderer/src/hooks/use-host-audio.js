@@ -27,12 +27,18 @@ export function useHostAudio(sessionId, integration, token) {
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState("disconnected");
+  const [inputDevices, setInputDevices] = useState([]);
+  const [activeMode, setActiveMode] = useState(null);
 
   const wsRef = useRef(null);
   const audioContextRef = useRef(null);
   const processorRef = useRef(null);
-  const sourceRef = useRef(null);
-  const streamRef = useRef(null);
+
+  const micSourceRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const sysSourceRef = useRef(null);
+  const sysStreamRef = useRef(null);
+
   const analyserRef = useRef(null);
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -42,11 +48,29 @@ export function useHostAudio(sessionId, integration, token) {
   const hasConnectedOnceRef = useRef(false);
 
   useEffect(() => {
+    const getDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const inputs = devices.filter((d) => d.kind === "audioinput");
+        setInputDevices(inputs);
+      } catch (err) {
+        console.error("Error enumerating devices:", err);
+      }
+    };
+
+    getDevices();
+    navigator.mediaDevices.addEventListener("devicechange", getDevices);
+    return () => {
+      navigator.mediaDevices.removeEventListener("devicechange", getDevices);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!sessionId || !integration || !token) return;
 
     const wsUrl = `wss://translator.my-uam.com/ws/transcribe/${integration}/${sessionId}?token=${token}`;
-
     console.log("Host connecting to:", wsUrl);
+
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -55,11 +79,7 @@ export function useHostAudio(sessionId, integration, token) {
         wsRef.current?.readyState === WebSocket.OPEN &&
         !isAudioInitializedRef.current
       ) {
-        wsRef.current.send(
-          JSON.stringify({
-            audio: SILENCE_BASE64,
-          }),
-        );
+        wsRef.current.send(JSON.stringify({ audio: SILENCE_BASE64 }));
       }
     }, 250);
 
@@ -73,17 +93,14 @@ export function useHostAudio(sessionId, integration, token) {
       setStatus("error");
     };
 
-    ws.onclose = (event) => {
-      console.log("Host Audio WS closed", event.code, event.reason);
+    ws.onclose = () => {
       setStatus("disconnected");
       stopAudio();
     };
 
     return () => {
       clearInterval(keepAliveInterval);
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
+      if (ws.readyState === WebSocket.OPEN) ws.close();
       stopAudio();
     };
   }, [integration, sessionId, token]);
@@ -97,18 +114,16 @@ export function useHostAudio(sessionId, integration, token) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isAudioInitialized]);
+  }, [isAudioInitialized, activeMode]);
 
   const drawVisualizer = () => {
     if (!canvasRef.current || !analyserRef.current) return;
-
     const canvas = canvasRef.current;
     const canvasCtx = canvas.getContext("2d");
     const analyser = analyserRef.current;
 
     analyser.smoothingTimeConstant = 0.8;
     analyser.fftSize = 32;
-
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -131,39 +146,65 @@ export function useHostAudio(sessionId, integration, token) {
         const percent = dataArray[i] / 255;
         const barHeight = Math.max(4, percent * canvas.height);
         const y = (canvas.height - barHeight) / 2;
-
         canvasCtx.fillStyle = `rgba(255, 255, 255, ${0.3 + percent * 0.7})`;
-
         canvasCtx.beginPath();
         canvasCtx.roundRect(x, y, barWidth, barHeight, 10);
         canvasCtx.fill();
-
         x += barWidth + gap;
       }
     };
     draw();
   };
 
-  const startAudio = async () => {
+  const cleanupMedia = () => {
+    if (animationFrameRef.current)
+      cancelAnimationFrame(animationFrameRef.current);
+
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+
+    if (micSourceRef.current) {
+      micSourceRef.current.disconnect();
+      micSourceRef.current = null;
+    }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
+    }
+
+    if (sysSourceRef.current) {
+      sysSourceRef.current.disconnect();
+      sysSourceRef.current = null;
+    }
+    if (sysStreamRef.current) {
+      sysStreamRef.current.getTracks().forEach((track) => track.stop());
+      sysStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+  };
+
+  const startAudio = async (selection) => {
     try {
+      cleanupMedia();
+
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         const type = hasConnectedOnceRef.current
           ? "session_reconnected"
           : "session_start";
-
         const meta = {
           meeting_uuid: sessionId,
           streamId: "browser-guest",
           workerPid: "browser",
         };
-
-        console.log(`Sending ${type} to backend...`);
-        wsRef.current.send(
-          JSON.stringify({
-            type: type,
-            payload: meta,
-          }),
-        );
+        wsRef.current.send(JSON.stringify({ type, payload: meta }));
         hasConnectedOnceRef.current = true;
       }
 
@@ -171,21 +212,8 @@ export function useHostAudio(sessionId, integration, token) {
       const ctx = new AudioContext({ sampleRate: 16000 });
       audioContextRef.current = ctx;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          sampleRate: 16000,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
-      streamRef.current = stream;
-      const source = ctx.createMediaStreamSource(stream);
-      sourceRef.current = source;
-
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 64;
-      source.connect(analyser);
       analyserRef.current = analyser;
 
       const processor = ctx.createScriptProcessor(4096, 1, 1);
@@ -202,49 +230,91 @@ export function useHostAudio(sessionId, integration, token) {
           const pcmBuffer = floatTo16BitPCM(inputData);
           const base64Audio = arrayBufferToBase64(pcmBuffer);
 
-          wsRef.current.send(
-            JSON.stringify({
-              audio: base64Audio,
-            }),
-          );
+          wsRef.current.send(JSON.stringify({ audio: base64Audio }));
         }
       };
 
-      source.connect(processor);
+      const setupSystem = async () => {
+        const sources = await window.electron.getDesktopSources();
+        const screenSource = sources[0];
+
+        if (!screenSource) throw new Error("No screen source found");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            mandatory: {
+              chromeMediaSource: "desktop",
+              chromeMediaSourceId: screenSource.id,
+            },
+          },
+          video: {
+            mandatory: {
+              chromeMediaSource: "desktop",
+              chromeMediaSourceId: screenSource.id,
+            },
+          },
+        });
+
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.stop();
+          stream.removeTrack(videoTrack);
+        }
+
+        sysStreamRef.current = stream;
+        const source = ctx.createMediaStreamSource(stream);
+        sysSourceRef.current = source;
+
+        source.connect(analyser);
+        source.connect(processor);
+      };
+
+      const setupMic = async (deviceId) => {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+
+        micStreamRef.current = stream;
+        const source = ctx.createMediaStreamSource(stream);
+        micSourceRef.current = source;
+
+        source.connect(analyser);
+        source.connect(processor);
+      };
+
+      if (selection === "system") {
+        await setupSystem();
+      } else if (selection === "both") {
+        await Promise.all([setupSystem(), setupMic(undefined)]);
+      } else {
+        await setupMic(selection);
+      }
+
       processor.connect(ctx.destination);
 
+      setActiveMode(selection);
       setIsAudioInitialized(true);
       isAudioInitializedRef.current = true;
       setIsMuted(false);
       isMutedRef.current = false;
     } catch (err) {
-      console.error("Failed to start microphone", err);
-      alert("Could not access microphone.");
+      console.error("Failed to start audio", err);
+      alert("Could not access audio device: " + err.message);
+      stopAudio();
     }
   };
 
   const stopAudio = () => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
-    }
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
+    cleanupMedia();
     setIsAudioInitialized(false);
     isAudioInitializedRef.current = false;
+    setActiveMode(null);
   };
 
   const toggleMute = () => {
@@ -255,7 +325,6 @@ export function useHostAudio(sessionId, integration, token) {
 
   const disconnectSession = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log("Sending session_end to backend...");
       wsRef.current.send(JSON.stringify({ type: "session_end" }));
     }
     if (wsRef.current) {
@@ -273,5 +342,7 @@ export function useHostAudio(sessionId, integration, token) {
     startAudio,
     toggleMute,
     disconnectSession,
+    inputDevices,
+    activeMode,
   };
 }

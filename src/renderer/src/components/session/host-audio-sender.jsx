@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BiMicrophone,
@@ -8,7 +8,173 @@ import {
   BiCheck,
   BiQuestionMark,
   BiX,
+  BiDesktop,
+  BiChevronUp,
+  BiChevronDown,
+  BiLayer,
 } from "react-icons/bi";
+
+function DeviceMenu({
+  inputDevices,
+  activeMode,
+  onSelect,
+  onClose,
+  triggerRef,
+}) {
+  const menuRef = useRef(null);
+  const { t } = useTranslation();
+
+  const [includeMic, setIncludeMic] = useState(activeMode === "both");
+
+  useEffect(() => {
+    if (activeMode === "both") setIncludeMic(true);
+    if (activeMode === "system") setIncludeMic(false);
+  }, [activeMode]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        (!triggerRef?.current || !triggerRef.current.contains(event.target))
+      ) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose, triggerRef]);
+
+  const handleCheckboxChange = (e) => {
+    const isChecked = e.target.checked;
+    setIncludeMic(isChecked);
+
+    if (activeMode === "system" || activeMode === "both") {
+      onSelect(isChecked ? "both" : "system");
+    }
+  };
+
+  const getButtonClass = (isActive) => {
+    return `cursor-pointer w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-left ${
+      isActive
+        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium"
+        : "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50"
+    }`;
+  };
+
+  const isSystemActive = activeMode === "system" || activeMode === "both";
+
+  return (
+    <div
+      ref={menuRef}
+      className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-in fade-in slide-in-from-bottom-2 z-[110]"
+    >
+      <div className="p-2 space-y-1">
+        <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          {t("select_audio_source")}
+        </div>
+
+        {/* System Audio Group */}
+        <div
+          className={`rounded-lg border transition-colors duration-200 ${
+            isSystemActive
+              ? "bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/30"
+              : "border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-700/30"
+          }`}
+        >
+          {/* Main Button: Selects System (or Both if checked) */}
+          <button
+            onClick={() => onSelect(includeMic ? "both" : "system")}
+            className="cursor-pointer w-full flex items-center gap-3 px-3 pt-2 pb-1 text-sm text-left"
+            title={t("system_audio")}
+          >
+            <BiDesktop
+              className={`shrink-0 ${
+                isSystemActive
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-blue-500"
+              }`}
+              size={18}
+            />
+            <span
+              className={`truncate ${
+                isSystemActive
+                  ? "font-medium text-blue-700 dark:text-blue-300"
+                  : "text-zinc-700 dark:text-zinc-200"
+              }`}
+            >
+              {t("system_audio")}
+            </span>
+          </button>
+
+          {/* Toggle Switch: Toggles Mic Inclusion */}
+          <div className="flex items-center gap-2 px-3 pb-2 pl-[38px]">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={includeMic}
+                onChange={handleCheckboxChange}
+              />
+              <div className="w-7 h-4 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all dark:border-zinc-600 bg-red-500 dark:bg-red-600 peer-checked:bg-green-500 dark:peer-checked:bg-green-600"></div>
+            </label>
+            <span
+              onClick={() => {
+                handleCheckboxChange({ target: { checked: !includeMic } });
+              }}
+              className="text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer select-none"
+            >
+              {t("include_mic")}
+            </span>
+          </div>
+        </div>
+
+        <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
+
+        {/* Microphone Options */}
+        {inputDevices.length === 0 ? (
+          <button
+            onClick={() => onSelect(undefined)}
+            className={getButtonClass(
+              activeMode === undefined && !isSystemActive,
+            )}
+          >
+            <BiMicrophone
+              className={`shrink-0 ${
+                activeMode === undefined && !isSystemActive
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-green-500"
+              }`}
+              size={18}
+            />
+            <span className="truncate">Default Microphone</span>
+          </button>
+        ) : (
+          inputDevices.map((device) => (
+            <button
+              key={device.deviceId}
+              onClick={() => onSelect(device.deviceId)}
+              className={getButtonClass(activeMode === device.deviceId)}
+              title={device.label || "Microphone"}
+            >
+              <BiMicrophone
+                className={`shrink-0 ${
+                  activeMode === device.deviceId
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-zinc-400"
+                }`}
+                size={18}
+              />
+              <span className="truncate">
+                {device.label || `Microphone ${device.deviceId.slice(0, 4)}...`}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function HostAudioSender({
   isAudioInitialized,
@@ -19,21 +185,26 @@ export default function HostAudioSender({
   toggleMute,
   disconnectSession,
   joinUrl,
+  inputDevices = [],
+  activeMode,
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showDeviceMenu, setShowDeviceMenu] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const triggerRef = useRef(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && showHelp) {
+      if (e.key === "Escape") {
         setShowHelp(false);
+        setShowDeviceMenu(false);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showHelp]);
+  }, [showHelp, showDeviceMenu]);
 
   const handleCopy = async () => {
     if (!joinUrl) return;
@@ -46,6 +217,11 @@ export default function HostAudioSender({
 
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDeviceSelect = (deviceId) => {
+    setShowDeviceMenu(false);
+    startAudio(deviceId);
   };
 
   if (status === "error") {
@@ -63,9 +239,20 @@ export default function HostAudioSender({
   if (!isAudioInitialized) {
     return (
       <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100]">
+        {/* Reused Device Menu */}
+        {showDeviceMenu && (
+          <DeviceMenu
+            inputDevices={inputDevices}
+            activeMode={activeMode}
+            onSelect={handleDeviceSelect}
+            onClose={() => setShowDeviceMenu(false)}
+            triggerRef={triggerRef}
+          />
+        )}
+
         <div className="flex items-center bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
           <button
-            onClick={startAudio}
+            onClick={() => setShowDeviceMenu(!showDeviceMenu)}
             disabled={status !== "connected"}
             className={`flex items-center gap-2 cursor-pointer relative overflow-hidden px-3 py-1.5 rounded-full transition-colors ${
               status !== "connected"
@@ -73,7 +260,11 @@ export default function HostAudioSender({
                 : "text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20"
             }`}
           >
-            <BiMicrophone size={14} />
+            {showDeviceMenu ? (
+              <BiChevronDown size={14} />
+            ) : (
+              <BiMicrophone size={14} />
+            )}
             <span className="text-xs font-bold uppercase tracking-wide whitespace-nowrap">
               {t("join_audio")}
             </span>
@@ -85,70 +276,115 @@ export default function HostAudioSender({
 
   return (
     <>
-      {/* Container for Main Controls + Help Button */}
-      <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100] flex items-center gap-3">
-        {/* Audio Controls */}
-        <div className="flex items-center gap-[4px] bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
-          {/* Mute/Unmute Button */}
-          <button
-            onClick={toggleMute}
-            className={`cursor-pointer relative overflow-hidden p-[6px] rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              isMuted
-                ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                : "text-green-600 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-700"
-            }`}
-            title={isMuted ? t("unmute") : t("mute")}
-          >
-            <canvas
-              ref={canvasRef}
-              width={32}
-              height={32}
-              className="absolute inset-0 w-full h-full opacity-30 pointer-events-none"
-            />
-            <div className="relative z-10">
-              {isMuted ? (
-                <BiMicrophoneOff size={14} />
-              ) : (
-                <BiMicrophone size={14} />
-              )}
-            </div>
-          </button>
-
-          <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-
-          {/* Copy Join Link Button */}
-          <button
-            onClick={handleCopy}
-            className={`cursor-pointer p-[6px] rounded-full transition-colors ${
-              copied
-                ? "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400"
-                : "text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-700"
-            }`}
-            title={t("copy_join_link")}
-          >
-            {copied ? <BiCheck size={14} /> : <BiLink size={14} />}
-          </button>
-
-          <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-
-          {/* End Broadcast Button */}
-          <button
-            onClick={disconnectSession}
-            className="cursor-pointer p-[6px] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={t("end_broadcast")}
-          >
-            <BiPowerOff size={14} />
-          </button>
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col items-center gap-1 pb-6 px-8 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+          isHovered || showDeviceMenu
+            ? "translate-y-0"
+            : "translate-y-[calc(100%-24px)]"
+        }`}
+      >
+        <div
+          className={`bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-t-lg px-6 pt-0.5 pb-1 shadow-sm border-t border-x border-zinc-100 dark:border-zinc-700/50 transition-opacity duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+            isHovered || showDeviceMenu ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <BiChevronUp
+            size={24}
+            className="text-zinc-500 dark:text-zinc-400 animate-pulse"
+          />
         </div>
 
-        {/* Help Button */}
-        <button
-          onClick={() => setShowHelp(true)}
-          className="cursor-pointer flex items-center justify-center bg-white dark:bg-zinc-800 w-[34px] h-[34px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-          title={t("help")}
-        >
-          <BiQuestionMark size={16} />
-        </button>
+        {/* Audio Controls Row */}
+        <div className="relative flex items-center gap-3">
+          {/* Reused Device Menu */}
+          {showDeviceMenu && (
+            <DeviceMenu
+              inputDevices={inputDevices}
+              activeMode={activeMode}
+              onSelect={handleDeviceSelect}
+              onClose={() => setShowDeviceMenu(false)}
+              triggerRef={triggerRef}
+            />
+          )}
+
+          <div className="flex items-center gap-[4px] bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
+            {/* Mute/Unmute Button */}
+            <button
+              onClick={toggleMute}
+              className={`cursor-pointer relative overflow-hidden p-[6px] rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isMuted
+                  ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  : "text-green-600 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-700"
+              }`}
+              title={isMuted ? t("unmute") : t("mute")}
+            >
+              <canvas
+                ref={canvasRef}
+                width={32}
+                height={32}
+                className="absolute inset-0 w-full h-full opacity-30 pointer-events-none"
+              />
+              <div className="relative z-10">
+                {isMuted ? (
+                  <BiMicrophoneOff size={14} />
+                ) : (
+                  <BiMicrophone size={14} />
+                )}
+              </div>
+            </button>
+
+            {/* Device Selection Trigger Button */}
+            <button
+              ref={triggerRef}
+              onClick={() => setShowDeviceMenu(!showDeviceMenu)}
+              className={`cursor-pointer p-[2px] rounded-full transition-colors ${
+                showDeviceMenu
+                  ? "bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200"
+                  : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+              }`}
+              title={t("change_input")}
+            >
+              <BiChevronUp size={16} />
+            </button>
+
+            <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+
+            {/* Copy Join Link Button */}
+            <button
+              onClick={handleCopy}
+              className={`cursor-pointer p-[6px] rounded-full transition-colors ${
+                copied
+                  ? "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400"
+                  : "text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-700"
+              }`}
+              title={t("copy_join_link")}
+            >
+              {copied ? <BiCheck size={14} /> : <BiLink size={14} />}
+            </button>
+
+            <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+
+            {/* End Broadcast Button */}
+            <button
+              onClick={disconnectSession}
+              className="cursor-pointer p-[6px] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={t("end_broadcast")}
+            >
+              <BiPowerOff size={14} />
+            </button>
+          </div>
+
+          {/* Help Button */}
+          <button
+            onClick={() => setShowHelp(true)}
+            className="cursor-pointer flex items-center justify-center bg-white dark:bg-zinc-800 w-[34px] h-[34px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+            title={t("help")}
+          >
+            <BiQuestionMark size={16} />
+          </button>
+        </div>
       </div>
 
       {showHelp && (
@@ -173,6 +409,15 @@ export default function HostAudioSender({
                 </div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {t("mute_toggle")}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-full text-yellow-600 dark:text-yellow-400">
+                  <BiChevronUp size={18} />
+                </div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  {t("change_input")}
                 </p>
               </div>
 

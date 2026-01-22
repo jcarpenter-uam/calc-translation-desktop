@@ -169,5 +169,9 @@
   "help": "Ayuda",
   "host_controls": "Controles del anfitrióno",
   "mute_toggle": "Alternar silencio",
-  "copy_link_desc": "Comparta esto con otras personas que se unirán a su reunión."
+  "copy_link_desc": "Comparta esto con otras personas que se unirán a su reunión.",
+  "select_audio_source": "Seleccionar fuente de audio",
+  "system_audio": "Audio del sistema",
+  "include_mic": "Incluir micrófono",
+  "change_input": "Cambiar entrada"
 }
