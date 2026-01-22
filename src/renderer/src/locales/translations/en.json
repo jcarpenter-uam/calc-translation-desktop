@@ -167,5 +167,9 @@
   "help": "Help",
   "host_controls": "Host Controls",
   "mute_toggle": "Toggle Mute",
-  "copy_link_desc": "Share this with others who will join your meeting."
+  "copy_link_desc": "Share this with others who will join your meeting.",
+  "select_audio_source": "Select Audio Source",
+  "system_audio": "System Audio",
+  "system_and_mic": "System + Mic",
+  "change_input": "Change Input"
 }

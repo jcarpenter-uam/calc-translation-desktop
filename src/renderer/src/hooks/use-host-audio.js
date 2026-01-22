@@ -114,7 +114,7 @@ export function useHostAudio(sessionId, integration, token) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isAudioInitialized]);
+  }, [isAudioInitialized, activeMode]);
 
   const drawVisualizer = () => {
     if (!canvasRef.current || !analyserRef.current) return;
@@ -156,8 +156,45 @@ export function useHostAudio(sessionId, integration, token) {
     draw();
   };
 
+  const cleanupMedia = () => {
+    if (animationFrameRef.current)
+      cancelAnimationFrame(animationFrameRef.current);
+
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+
+    if (micSourceRef.current) {
+      micSourceRef.current.disconnect();
+      micSourceRef.current = null;
+    }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
+    }
+
+    if (sysSourceRef.current) {
+      sysSourceRef.current.disconnect();
+      sysSourceRef.current = null;
+    }
+    if (sysStreamRef.current) {
+      sysStreamRef.current.getTracks().forEach((track) => track.stop());
+      sysStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+
+    analyserRef.current = null;
+  };
+
   const startAudio = async (selection) => {
     try {
+      cleanupMedia();
+
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         const type = hasConnectedOnceRef.current
           ? "session_reconnected"
@@ -274,37 +311,7 @@ export function useHostAudio(sessionId, integration, token) {
   };
 
   const stopAudio = () => {
-    if (animationFrameRef.current)
-      cancelAnimationFrame(animationFrameRef.current);
-
-    if (processorRef.current) {
-      processorRef.current.disconnect();
-      processorRef.current = null;
-    }
-
-    if (micSourceRef.current) {
-      micSourceRef.current.disconnect();
-      micSourceRef.current = null;
-    }
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach((track) => track.stop());
-      micStreamRef.current = null;
-    }
-
-    if (sysSourceRef.current) {
-      sysSourceRef.current.disconnect();
-      sysSourceRef.current = null;
-    }
-    if (sysStreamRef.current) {
-      sysStreamRef.current.getTracks().forEach((track) => track.stop());
-      sysStreamRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-
+    cleanupMedia();
     setIsAudioInitialized(false);
     isAudioInitializedRef.current = false;
     setActiveMode(null);
