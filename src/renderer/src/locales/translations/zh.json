@@ -174,5 +174,9 @@
   "help": "帮助",
   "host_controls": "主持人控制",
   "mute_toggle": "切换静音",
-  "copy_link_desc": "与将要加入会议的其他人分享此链接。"
+  "copy_link_desc": "与将要加入会议的其他人分享此链接。",
+  "select_audio_source": "选择音频源",
+  "system_audio": "系统音频",
+  "include_mic": "包含麦克风",
+  "change_input": "切换输入"
 }

@@ -71,7 +71,7 @@ function DeviceMenu({
     >
       <div className="p-2 space-y-1">
         <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-          Select Audio Source
+          {t("select_audio_source")}
         </div>
 
         {/* System Audio Group */}
@@ -124,7 +124,7 @@ function DeviceMenu({
               }}
               className="text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer select-none"
             >
-              Include Microphone
+              {t("include_mic")}
             </span>
           </div>
         </div>

@@ -170,6 +170,6 @@
   "copy_link_desc": "Share this with others who will join your meeting.",
   "select_audio_source": "Select Audio Source",
   "system_audio": "System Audio",
-  "system_and_mic": "System + Mic",
+  "include_mic": "Include Microphone",
   "change_input": "Change Input"
 }
