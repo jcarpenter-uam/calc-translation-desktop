@@ -10,8 +10,125 @@ import {
   BiX,
   BiDesktop,
   BiChevronUp,
+  BiChevronDown,
   BiLayer,
 } from "react-icons/bi";
+
+function DeviceMenu({ inputDevices, activeMode, onSelect, onClose }) {
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const getButtonClass = (isActive) => {
+    return `cursor-pointer w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-left ${
+      isActive
+        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-medium"
+        : "text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50"
+    }`;
+  };
+
+  return (
+    <div
+      ref={menuRef}
+      className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-in fade-in slide-in-from-bottom-2 z-[110]"
+    >
+      <div className="p-2 space-y-1">
+        <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+          Select Audio Source
+        </div>
+
+        {/* System Audio Option */}
+        <button
+          onClick={() => onSelect("system")}
+          className={getButtonClass(activeMode === "system")}
+          title="System Audio Only"
+        >
+          <BiDesktop
+            className={`shrink-0 ${
+              activeMode === "system"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-blue-500"
+            }`}
+            size={18}
+          />
+          <span className="truncate">System Audio Only</span>
+        </button>
+
+        {/* Both Option */}
+        <button
+          onClick={() => onSelect("both")}
+          className={getButtonClass(activeMode === "both")}
+          title="System + Microphone"
+        >
+          <BiLayer
+            className={`shrink-0 ${
+              activeMode === "both"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-purple-500"
+            }`}
+            size={18}
+          />
+          <span className="truncate">System + Microphone</span>
+        </button>
+
+        <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
+
+        {/* Microphone Options */}
+        {inputDevices.length === 0 ? (
+          <button
+            onClick={() => onSelect(undefined)}
+            className={getButtonClass(
+              activeMode === undefined &&
+                activeMode !== "system" &&
+                activeMode !== "both",
+            )}
+          >
+            <BiMicrophone
+              className={`shrink-0 ${
+                activeMode === undefined &&
+                activeMode !== "system" &&
+                activeMode !== "both"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-green-500"
+              }`}
+              size={18}
+            />
+            <span className="truncate">Default Microphone</span>
+          </button>
+        ) : (
+          inputDevices.map((device) => (
+            <button
+              key={device.deviceId}
+              onClick={() => onSelect(device.deviceId)}
+              className={getButtonClass(activeMode === device.deviceId)}
+              title={device.label || "Microphone"}
+            >
+              <BiMicrophone
+                className={`shrink-0 ${
+                  activeMode === device.deviceId
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-zinc-400"
+                }`}
+                size={18}
+              />
+              <span className="truncate">
+                {device.label || `Microphone ${device.deviceId.slice(0, 4)}...`}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function HostAudioSender({
   isAudioInitialized,
@@ -23,24 +140,13 @@ export default function HostAudioSender({
   disconnectSession,
   joinUrl,
   inputDevices = [],
+  activeMode,
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDeviceMenu, setShowDeviceMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowDeviceMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -85,64 +191,15 @@ export default function HostAudioSender({
 
   if (!isAudioInitialized) {
     return (
-      <div
-        className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100]"
-        ref={menuRef}
-      >
-        {/* Device Selection Menu */}
+      <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-[100]">
+        {/* Reused Device Menu */}
         {showDeviceMenu && (
-          <div className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-in fade-in slide-in-from-bottom-2">
-            <div className="p-2 space-y-1">
-              <div className="px-3 py-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                Select Audio Source
-              </div>
-
-              {/* System Audio Option */}
-              <button
-                onClick={() => handleDeviceSelect("system")}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
-              >
-                <BiDesktop className="text-blue-500" size={18} />
-                <span>System Audio Only</span>
-              </button>
-
-              {/* Both Option */}
-              <button
-                onClick={() => handleDeviceSelect("both")}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
-              >
-                <BiLayer className="text-purple-500" size={18} />
-                <span>System + Microphone</span>
-              </button>
-
-              <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
-
-              {/* Microphone Options */}
-              {inputDevices.length === 0 ? (
-                <button
-                  onClick={() => handleDeviceSelect(undefined)}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
-                >
-                  <BiMicrophone className="text-green-500" size={18} />
-                  <span>Default Microphone</span>
-                </button>
-              ) : (
-                inputDevices.map((device) => (
-                  <button
-                    key={device.deviceId}
-                    onClick={() => handleDeviceSelect(device.deviceId)}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left truncate"
-                  >
-                    <BiMicrophone className="text-zinc-400" size={18} />
-                    <span className="truncate">
-                      {device.label ||
-                        `Microphone ${device.deviceId.slice(0, 4)}...`}
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
+          <DeviceMenu
+            inputDevices={inputDevices}
+            activeMode={activeMode}
+            onSelect={handleDeviceSelect}
+            onClose={() => setShowDeviceMenu(false)}
+          />
         )}
 
         <div className="flex items-center bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
@@ -156,7 +213,7 @@ export default function HostAudioSender({
             }`}
           >
             {showDeviceMenu ? (
-              <BiChevronUp size={14} />
+              <BiChevronDown size={14} />
             ) : (
               <BiMicrophone size={14} />
             )}
@@ -175,19 +232,34 @@ export default function HostAudioSender({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={`fixed bottom-0 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col items-center gap-1 pb-6 px-8 transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
-          isHovered ? "translate-y-0" : "translate-y-[calc(100%-24px)]"
+          isHovered || showDeviceMenu
+            ? "translate-y-0"
+            : "translate-y-[calc(100%-24px)]"
         }`}
       >
         <div
           className={`bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm rounded-t-lg px-6 pt-0.5 pb-1 shadow-sm border-t border-x border-zinc-100 dark:border-zinc-700/50 transition-opacity duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
-            isHovered ? "opacity-0" : "opacity-100"
+            isHovered || showDeviceMenu ? "opacity-0" : "opacity-100"
           }`}
         >
-          <BiChevronUp size={24} className="text-zinc-500 dark:text-zinc-400" />
+          <BiChevronUp
+            size={24}
+            className="text-zinc-500 dark:text-zinc-400 animate-pulse"
+          />
         </div>
 
         {/* Audio Controls Row */}
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
+          {/* Reused Device Menu */}
+          {showDeviceMenu && (
+            <DeviceMenu
+              inputDevices={inputDevices}
+              activeMode={activeMode}
+              onSelect={handleDeviceSelect}
+              onClose={() => setShowDeviceMenu(false)}
+            />
+          )}
+
           <div className="flex items-center gap-[4px] bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
             {/* Mute/Unmute Button */}
             <button
@@ -212,6 +284,19 @@ export default function HostAudioSender({
                   <BiMicrophone size={14} />
                 )}
               </div>
+            </button>
+
+            {/* Device Selection Trigger Button */}
+            <button
+              onClick={() => setShowDeviceMenu(!showDeviceMenu)}
+              className={`p-[2px] rounded-full transition-colors ${
+                showDeviceMenu
+                  ? "bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200"
+                  : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+              }`}
+              title="Change Input Device"
+            >
+              <BiChevronUp size={16} />
             </button>
 
             <div className="w-[1px] h-[16px] bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
