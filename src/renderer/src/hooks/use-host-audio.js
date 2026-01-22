@@ -28,12 +28,17 @@ export function useHostAudio(sessionId, integration, token) {
   const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState("disconnected");
   const [inputDevices, setInputDevices] = useState([]);
+  const [activeMode, setActiveMode] = useState(null);
 
   const wsRef = useRef(null);
   const audioContextRef = useRef(null);
   const processorRef = useRef(null);
-  const sourceRef = useRef(null);
-  const streamRef = useRef(null);
+
+  const micSourceRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const sysSourceRef = useRef(null);
+  const sysStreamRef = useRef(null);
+
   const analyserRef = useRef(null);
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -151,7 +156,7 @@ export function useHostAudio(sessionId, integration, token) {
     draw();
   };
 
-  const startAudio = async (selectedDeviceId) => {
+  const startAudio = async (selection) => {
     try {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         const type = hasConnectedOnceRef.current
@@ -169,52 +174,6 @@ export function useHostAudio(sessionId, integration, token) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioContext({ sampleRate: 16000 });
       audioContextRef.current = ctx;
-
-      let stream;
-
-      if (selectedDeviceId === "system") {
-        const sources = await window.electron.getDesktopSources();
-        const screenSource = sources[0];
-
-        if (!screenSource) throw new Error("No screen source found");
-
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            mandatory: {
-              chromeMediaSource: "desktop",
-              chromeMediaSourceId: screenSource.id,
-            },
-          },
-          video: {
-            mandatory: {
-              chromeMediaSource: "desktop",
-              chromeMediaSourceId: screenSource.id,
-            },
-          },
-        });
-
-        const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack) {
-          videoTrack.stop();
-          stream.removeTrack(videoTrack);
-        }
-      } else {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: selectedDeviceId
-              ? { exact: selectedDeviceId }
-              : undefined,
-            channelCount: 1,
-            sampleRate: 16000,
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
-        });
-      }
-
-      streamRef.current = stream;
-      const source = ctx.createMediaStreamSource(stream);
-      sourceRef.current = source;
 
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 64;
@@ -238,10 +197,71 @@ export function useHostAudio(sessionId, integration, token) {
         }
       };
 
-      source.connect(analyser);
-      source.connect(processor);
+      const setupSystem = async () => {
+        const sources = await window.electron.getDesktopSources();
+        const screenSource = sources[0];
+
+        if (!screenSource) throw new Error("No screen source found");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            mandatory: {
+              chromeMediaSource: "desktop",
+              chromeMediaSourceId: screenSource.id,
+            },
+          },
+          video: {
+            mandatory: {
+              chromeMediaSource: "desktop",
+              chromeMediaSourceId: screenSource.id,
+            },
+          },
+        });
+
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.stop();
+          stream.removeTrack(videoTrack);
+        }
+
+        sysStreamRef.current = stream;
+        const source = ctx.createMediaStreamSource(stream);
+        sysSourceRef.current = source;
+
+        source.connect(analyser);
+        source.connect(processor);
+      };
+
+      const setupMic = async (deviceId) => {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+
+        micStreamRef.current = stream;
+        const source = ctx.createMediaStreamSource(stream);
+        micSourceRef.current = source;
+
+        source.connect(analyser);
+        source.connect(processor);
+      };
+
+      if (selection === "system") {
+        await setupSystem();
+      } else if (selection === "both") {
+        await Promise.all([setupSystem(), setupMic(undefined)]);
+      } else {
+        await setupMic(selection);
+      }
+
       processor.connect(ctx.destination);
 
+      setActiveMode(selection);
       setIsAudioInitialized(true);
       isAudioInitializedRef.current = true;
       setIsMuted(false);
@@ -249,30 +269,45 @@ export function useHostAudio(sessionId, integration, token) {
     } catch (err) {
       console.error("Failed to start audio", err);
       alert("Could not access audio device: " + err.message);
+      stopAudio();
     }
   };
 
   const stopAudio = () => {
     if (animationFrameRef.current)
       cancelAnimationFrame(animationFrameRef.current);
+
     if (processorRef.current) {
       processorRef.current.disconnect();
       processorRef.current = null;
     }
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
+
+    if (micSourceRef.current) {
+      micSourceRef.current.disconnect();
+      micSourceRef.current = null;
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
     }
+
+    if (sysSourceRef.current) {
+      sysSourceRef.current.disconnect();
+      sysSourceRef.current = null;
+    }
+    if (sysStreamRef.current) {
+      sysStreamRef.current.getTracks().forEach((track) => track.stop());
+      sysStreamRef.current = null;
+    }
+
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
+
     setIsAudioInitialized(false);
     isAudioInitializedRef.current = false;
+    setActiveMode(null);
   };
 
   const toggleMute = () => {
@@ -301,5 +336,6 @@ export function useHostAudio(sessionId, integration, token) {
     toggleMute,
     disconnectSession,
     inputDevices,
+    activeMode,
   };
 }

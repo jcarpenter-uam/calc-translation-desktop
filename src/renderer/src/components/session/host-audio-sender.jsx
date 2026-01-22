@@ -10,6 +10,7 @@ import {
   BiX,
   BiDesktop,
   BiChevronUp,
+  BiLayer,
 } from "react-icons/bi";
 
 export default function HostAudioSender({
@@ -96,7 +97,15 @@ export default function HostAudioSender({
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
               >
                 <BiDesktop className="text-blue-500" size={18} />
-                <span>System Audio</span>
+                <span>System Audio Only</span>
+              </button>
+
+              <button
+                onClick={() => handleDeviceSelect("both")}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 rounded-lg transition-colors text-left"
+              >
+                <BiLayer className="text-purple-500" size={18} />
+                <span>System + Microphone</span>
               </button>
 
               <div className="h-px bg-zinc-100 dark:bg-zinc-700 my-1" />
