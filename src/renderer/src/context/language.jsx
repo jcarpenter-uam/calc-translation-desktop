@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 
 const LanguageContext = createContext();
 
-const STORAGE_KEY = "app-language";
+const STORAGE_KEY_UI = "app-ui-language";
+const STORAGE_KEY_TARGET = "app-target-language";
 
 /**
  * Context for per user storage of preffered language with 3 steps for selecting the default.
@@ -12,60 +13,63 @@ const STORAGE_KEY = "app-language";
  * 2. If no saved value, check the browser's language
  * 3. Fallback to English
  */
-function getInitialLanguage() {
+function getInitialLanguage(storageKey) {
   try {
-    const storedLanguage = window.localStorage.getItem(STORAGE_KEY);
+    const storedLanguage = window.localStorage.getItem(storageKey);
     if (storedLanguage) {
       log.info(
-        `Language: Found saved language in localStorage: ${storedLanguage}`,
+        `Language: Found saved ${storageKey} in localStorage: ${storedLanguage}`,
       );
       return storedLanguage;
     }
   } catch (error) {
-    log.error("Language: Error reading from localStorage", error);
+    log.error(`Language: Error reading ${storageKey} from localStorage`, error);
   }
 
   const browserLang = window.navigator.language;
-  if (browserLang.startsWith("zh")) {
-    log.info(`Language: Detected browser language: chinese`);
-    return "zh";
-  }
-
-  if (browserLang.startsWith("es")) {
-    log.info(`Language: Detected browser language: spanish`);
-    return "es";
-  }
-
-  log.info(`Language: Falling back to default: english`);
+  if (browserLang.startsWith("zh")) return "zh";
+  if (browserLang.startsWith("es")) return "es";
   return "en";
 }
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguageState] = useState(getInitialLanguage);
+  const [uiLanguage, setUiLanguageState] = useState(() =>
+    getInitialLanguage(STORAGE_KEY_UI),
+  );
+  const [targetLanguage, setTargetLanguageState] = useState(() =>
+    getInitialLanguage(STORAGE_KEY_TARGET),
+  );
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    i18n.changeLanguage(language);
-  }, []);
+    i18n.changeLanguage(uiLanguage);
+  }, [uiLanguage, i18n]);
 
-  const setLanguage = (newLang) => {
-    setLanguageState(newLang);
-    i18n.changeLanguage(newLang);
-
+  const setUiLanguage = (newLang) => {
+    setUiLanguageState(newLang);
     try {
-      window.localStorage.setItem(STORAGE_KEY, newLang);
-      log.info(
-        `Language: Saved language preference to localStorage: ${newLang}`,
-      );
+      window.localStorage.setItem(STORAGE_KEY_UI, newLang);
     } catch (error) {
-      log.error("Language: Error writing to localStorage", error);
+      log.error("Language: Error writing uiLanguage to localStorage", error);
     }
   };
 
-  const value = { language, setLanguage };
+  const setTargetLanguage = (newLang) => {
+    setTargetLanguageState(newLang);
+    try {
+      window.localStorage.setItem(STORAGE_KEY_TARGET, newLang);
+    } catch (error) {
+      log.error(
+        "Language: Error writing targetLanguage to localStorage",
+        error,
+      );
+    }
+  };
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider
+      value={{ uiLanguage, setUiLanguage, targetLanguage, setTargetLanguage }}
+    >
       {children}
     </LanguageContext.Provider>
   );

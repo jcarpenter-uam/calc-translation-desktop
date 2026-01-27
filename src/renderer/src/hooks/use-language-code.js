@@ -4,31 +4,25 @@ import { useLanguage } from "../context/language";
 
 export function useLanguageCode() {
   const { user, setUser } = useAuth();
-  const { language: uiLanguage, setLanguage: setUiLanguage } = useLanguage();
+  const { uiLanguage, setUiLanguage, targetLanguage, setTargetLanguage } =
+    useLanguage();
 
   const setLanguageCode = useCallback(
     async (newLang) => {
+      setTargetLanguage(newLang);
+
       if (user) {
         setUser({ ...user, language_code: newLang });
-
         try {
-          if (window.electron && window.electron.updateUserLanguage) {
-            const result = await window.electron.updateUserLanguage(newLang);
-
-            if (result.status === "error") {
-              console.error("IPC Error updating language:", result.message);
-            }
-          } else {
-            console.warn(
-              "Electron IPC not available. Language not synced to server.",
-            );
+          if (window.electron?.updateUserLanguage) {
+            await window.electron.updateUserLanguage(newLang);
           }
         } catch (err) {
           console.error("Failed to sync language preference:", err);
         }
       }
     },
-    [user, setUser],
+    [user, setUser, setTargetLanguage],
   );
 
   return {
@@ -36,5 +30,7 @@ export function useLanguageCode() {
     setLanguageCode,
     uiLanguage,
     setUiLanguage,
+    targetLanguage,
+    setTargetLanguage,
   };
 }
