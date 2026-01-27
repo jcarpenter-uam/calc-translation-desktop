@@ -1,4 +1,5 @@
 {
+  "start_on_boot_label": "Mulai saat booting",
   "login": "Masuk",
   "login_description": "Masukkan email kerja Anda untuk dialihkan ke halaman login perusahaan.",
   "email_label": "Alamat Email",

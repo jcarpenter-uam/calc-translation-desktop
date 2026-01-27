@@ -1,4 +1,5 @@
 {
+  "start_on_boot_label": "Start on Boot",
   "login": "Login",
   "login_description": "Enter your work email to be redirected to your company's login page.",
   "email_label": "Email Address",

@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld("electron", {
   toggleAlwaysOnTop: () => ipcRenderer.invoke("toggle-always-on-top"),
   writeToClipboard: (text) => ipcRenderer.invoke("clipboard-write", text),
   getDesktopSources: () => ipcRenderer.invoke("desktop:get-sources"),
+  setStartOnBoot: (value) => ipcRenderer.send("set-start-on-boot", value),
+  getStartOnBoot: () => ipcRenderer.invoke("get-start-on-boot"),
 
   // Features
   downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),

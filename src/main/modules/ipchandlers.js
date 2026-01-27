@@ -119,6 +119,17 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.on("set-start-on-boot", (event, shouldStart) => {
+    app.setLoginItemSettings({
+      openAtLogin: shouldStart,
+      path: app.getPath("exe"),
+    });
+  });
+
+  ipcMain.handle("get-start-on-boot", () => {
+    return app.getLoginItemSettings().openAtLogin;
+  });
+
   ipcMain.handle("minimize-window", () => {
     ipcHandlerLog.info("Minimizing window.");
     mainWindow.minimize();

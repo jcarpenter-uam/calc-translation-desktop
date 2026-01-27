@@ -1,4 +1,5 @@
 {
+  "start_on_boot_label": "Iniciar al arrancar",
   "login": "Iniciar sesión",
   "login_description": "Ingrese su correo electrónico de trabajo para ser redirigido a la página de inicio de sesión de su empresa.",
   "email_label": "Dirección de correo electrónico",

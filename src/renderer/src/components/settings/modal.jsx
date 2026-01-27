@@ -7,6 +7,7 @@ import { useSettings } from "../../context/settings.jsx";
 import BetaToggle from "./beta-toggle.jsx";
 import UiLanguageToggle from "./ui-translation.jsx";
 import DisplayMode from "./display-mode.jsx";
+import BootToggle from "./boot-toggle.jsx";
 import { useTranslation } from "react-i18next";
 
 const SettingsRow = ({ label, children }) => (
@@ -78,6 +79,10 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={t("pin_label")}>
             <PinToggle />
+          </SettingsRow>
+          <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
+          <SettingsRow label={t("start_on_boot_label")}>
+            <BootToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
           <SettingsRow label={t("language_label")}>

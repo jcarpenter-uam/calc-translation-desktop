@@ -1,4 +1,5 @@
 {
+  "start_on_boot_label": "开机自启",
   "login": "登录",
   "login_description": "请输入您的工作邮箱，我们将跳转至您公司的登录页面。",
   "email_label": "邮箱地址",
