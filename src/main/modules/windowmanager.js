@@ -2,6 +2,11 @@ import { BrowserWindow } from "electron";
 import { join } from "path";
 import log from "electron-log/main";
 import { is } from "@electron-toolkit/utils";
+import {
+  getIsUpdatePending,
+  getPendingUpdateInfo,
+  showUpdateDialog,
+} from "./autoupdate";
 
 const windowLog = log.scope("window");
 
@@ -26,6 +31,14 @@ export function createMainWindow() {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
+
+    if (getIsUpdatePending()) {
+      const info = getPendingUpdateInfo();
+      windowLog.info(
+        `Pending update ${info?.version} found on window creation. Prompting user.`,
+      );
+      showUpdateDialog(mainWindow, info);
+    }
   });
 
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {

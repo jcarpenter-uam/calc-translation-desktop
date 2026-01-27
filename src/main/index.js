@@ -5,7 +5,10 @@ import log from "electron-log/main";
 import { createMainWindow } from "./modules/windowmanager";
 import { registerIpcHandlers } from "./modules/ipchandlers";
 import { createApplicationMenu } from "./modules/appmenu";
-import { setupAutoUpdaterListeners } from "./modules/autoupdate";
+import {
+  setupAutoUpdaterListeners,
+  checkForUpdates,
+} from "./modules/autoupdate";
 
 log.initialize();
 log.errorHandler.startCatching();
@@ -17,6 +20,14 @@ app.whenReady().then(() => {
 
   setupAutoUpdaterListeners();
   mainLog.info("Auto updater listeners set up.");
+
+  checkForUpdates();
+
+  const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000;
+  setInterval(() => {
+    mainLog.info("Running periodic background update check...");
+    checkForUpdates();
+  }, UPDATE_CHECK_INTERVAL);
 
   createMainWindow();
 
