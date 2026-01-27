@@ -33,8 +33,7 @@ if (!gotTheLock) {
     setupAutoUpdaterListeners();
     checkForUpdates();
 
-    // const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000;
-    const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes for testing
+    const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000;
     setInterval(() => {
       mainLog.info("Running periodic background update check...");
       checkForUpdates();
