@@ -14,7 +14,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const [infoMessage, setInfoMessage] = useState(null);
-  const { language } = useLanguage();
+  const { uiLanguage } = useLanguage();
 
   useEffect(() => {
     if (user) {
@@ -36,7 +36,7 @@ export default function Login() {
     setError(null);
 
     try {
-      const response = await window.electron.requestLogin(email, language);
+      const response = await window.electron.requestLogin(email, uiLanguage);
 
       if (response.status !== "ok") {
         throw new Error(response.message || "An unknown error occurred.");
