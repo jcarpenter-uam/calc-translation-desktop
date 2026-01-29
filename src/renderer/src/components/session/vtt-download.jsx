@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
  */
 function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
   const [isLoading, setIsLoading] = useState(false);
-  const { language } = useLanguage();
+  const { targetLanguage } = useLanguage();
   const { t } = useTranslation();
 
   const handleDownload = async () => {
@@ -21,7 +21,7 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
         integration,
         sessionId,
         token,
-        language,
+        language: targetLanguage,
       });
 
       if (response.status !== "ok") {
@@ -33,7 +33,7 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
       const link = document.createElement("a");
       link.href = blobUrl;
 
-      link.setAttribute("download", `meeting_transcript_${language}.vtt`);
+      link.setAttribute("download", `meeting_transcript_${targetLanguage}.vtt`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
