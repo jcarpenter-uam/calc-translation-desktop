@@ -44,7 +44,6 @@ export default function SessionPage() {
   const handleAuthFailure = useCallback(() => {
     setIsAuthorized(false);
     setShowUnauthorized(true);
-    navigate("/");
   }, []);
 
   useEffect(() => {
