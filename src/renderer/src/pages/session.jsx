@@ -59,8 +59,12 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
+  // const wsUrl = isAuthorized
+  //   ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+  //   : null;
+
   const wsUrl = isAuthorized
-    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+    ? `wss://4a67f7e14781.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
