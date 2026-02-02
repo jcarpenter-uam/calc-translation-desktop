@@ -13,8 +13,7 @@ import { createAuthWindow } from "./auth";
 
 const ipcHandlerLog = log.scope("ipchandler");
 
-// const API_BASE_URL = "https://translator.my-uam.com";
-const API_BASE_URL = "https://4a67f7e14781.ngrok-free.app";
+const API_BASE_URL = "https://translator.my-uam.com";
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");
