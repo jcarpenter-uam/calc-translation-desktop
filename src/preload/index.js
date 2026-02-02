@@ -29,8 +29,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("auth:join-calendar", payload),
 
   // Auth
-  requestLogin: (email, language) =>
-    ipcRenderer.invoke("auth:request-login", email, language),
+  requestLogin: (email, language, provider) =>
+    ipcRenderer.invoke("auth:request-login", email, language, provider),
   startAuthFlow: (url) => ipcRenderer.invoke("start-auth-flow", url),
   getUser: () => ipcRenderer.invoke("auth:get-user"),
   logout: () => ipcRenderer.invoke("auth:logout"),

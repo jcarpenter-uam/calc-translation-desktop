@@ -206,44 +206,52 @@ export function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("auth:request-login", async (event, email, language) => {
-    ipcHandlerLog.info(
-      `Requesting login URL for: ${email} with language: ${language}`,
-    );
-    try {
-      const { data, headers } = await makeApiRequest(
-        "/api/auth/login",
-        "POST",
-        { email, language },
+  ipcMain.handle(
+    "auth:request-login",
+    async (event, email, language, provider = null) => {
+      ipcHandlerLog.info(
+        `Requesting login URL for: ${email} with language: ${language} (Provider: ${provider})`,
       );
+      try {
+        const body = { email, language };
+        if (provider) {
+          body.provider = provider;
+        }
 
-      const rawCookies = headers["set-cookie"] || [];
-
-      if (rawCookies.length > 0) {
-        ipcHandlerLog.info(
-          `Syncing ${rawCookies.length} cookies from API to AuthWindow session.`,
+        const { data, headers } = await makeApiRequest(
+          "/api/auth/login",
+          "POST",
+          body,
         );
 
-        const cookiePromises = rawCookies.map((cookieStr) => {
-          const { name, value } = parseCookie(cookieStr);
-          return session.defaultSession.cookies.set({
-            url: API_BASE_URL,
-            name,
-            value,
-            secure: true,
-            sameSite: "no_restriction",
+        const rawCookies = headers["set-cookie"] || [];
+
+        if (rawCookies.length > 0) {
+          ipcHandlerLog.info(
+            `Syncing ${rawCookies.length} cookies from API to AuthWindow session.`,
+          );
+
+          const cookiePromises = rawCookies.map((cookieStr) => {
+            const { name, value } = parseCookie(cookieStr);
+            return session.defaultSession.cookies.set({
+              url: API_BASE_URL,
+              name,
+              value,
+              secure: true,
+              sameSite: "no_restriction",
+            });
           });
-        });
 
-        await Promise.all(cookiePromises);
+          await Promise.all(cookiePromises);
+        }
+
+        return { status: "ok", data: data };
+      } catch (error) {
+        ipcHandlerLog.error("Login request failed:", error);
+        return { status: "error", message: error.message };
       }
-
-      return { status: "ok", data: data };
-    } catch (error) {
-      ipcHandlerLog.error("Login request failed:", error);
-      return { status: "error", message: error.message };
-    }
-  });
+    },
+  );
 
   ipcMain.handle("start-auth-flow", async (event, loginUrl) => {
     ipcHandlerLog.info("Starting auth flow with URL:", loginUrl);

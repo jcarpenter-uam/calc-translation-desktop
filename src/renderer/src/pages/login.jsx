@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { EnvelopeSimple } from "@phosphor-icons/react";
+import { FaMicrosoft, FaGoogle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/auth";
 import { useLanguage } from "../context/language.jsx";
@@ -12,6 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [availableProviders, setAvailableProviders] = useState([]);
   const [searchParams] = useSearchParams();
   const [infoMessage, setInfoMessage] = useState(null);
   const { uiLanguage } = useLanguage();
@@ -26,34 +28,44 @@ export default function Login() {
     const reason = searchParams.get("reason");
     if (reason === "zoom_link_required") {
       sessionStorage.setItem("zoom_link_pending", "true");
-      setInfoMessage("Please log in to finish linking your new Zoom account.");
+      setInfoMessage(t("zoom_link_info"));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (event, forcedProvider = null) => {
+    if (event) event.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await window.electron.requestLogin(email, uiLanguage);
+      const response = await window.electron.requestLogin(
+        email,
+        uiLanguage,
+        forcedProvider,
+      );
 
       if (response.status !== "ok") {
-        throw new Error(response.message || "An unknown error occurred.");
+        const errorDetail = response.message || t("login_error_generic");
+        if (response.status === 403)
+          throw new Error(t("domain_not_configured"));
+        throw new Error(errorDetail);
       }
 
       const data = response.data;
 
-      if (data.login_url) {
+      if (data.action === "select_provider") {
+        setAvailableProviders(data.providers);
+        setIsLoading(false);
+      } else if (data.login_url) {
         await window.electron.startAuthFlow(data.login_url);
-
         await checkAuth();
       } else {
-        throw new Error("Could not retrieve login URL.");
+        throw new Error(t("invalid_server_response"));
       }
     } catch (err) {
       setError(err.message);
       setIsLoading(false);
+      setAvailableProviders([]);
     }
   };
 
@@ -67,7 +79,9 @@ export default function Login() {
                 {t("login")}
               </h1>
               <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                {t("login_description")}
+                {availableProviders.length > 0
+                  ? t("select_provider_hint")
+                  : t("login_description")}
               </p>
             </div>
 
@@ -80,53 +94,90 @@ export default function Login() {
 
           {/* Right Column: The Form */}
           <div className="w-full max-w-sm mx-auto sm:ml-auto">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1"
+            {availableProviders.length > 0 ? (
+              <div className="space-y-3 animate-fade-in">
+                {availableProviders.includes("microsoft") && (
+                  <button
+                    onClick={() => handleSubmit(null, "microsoft")}
+                    disabled={isLoading}
+                    className="cursor-pointer w-full py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium rounded-xl border border-zinc-300 dark:border-zinc-600 flex items-center justify-center gap-3 transition-colors"
+                  >
+                    <FaMicrosoft size={24} className="text-[#00a4ef]" />
+                    {t("signin_microsoft")}
+                  </button>
+                )}
+
+                {availableProviders.includes("google") && (
+                  <button
+                    onClick={() => handleSubmit(null, "google")}
+                    disabled={isLoading}
+                    className="cursor-pointer w-full py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-900 dark:text-zinc-100 font-medium rounded-xl border border-zinc-300 dark:border-zinc-600 flex items-center justify-center gap-3 transition-colors"
+                  >
+                    <FaGoogle size={24} className="text-red-500" />
+                    {t("signin_google")}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setAvailableProviders([]);
+                    setEmail("");
+                  }}
+                  className="cursor-pointer block w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mt-4 underline"
                 >
-                  {t("email_label")}
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-blue-500 transition-colors">
-                    <EnvelopeSimple size={20} weight="duotone" />
-                  </div>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("email_placeholder")}
-                    required
-                    className="
-                        block w-full pl-10 pr-3 py-2.5 
-                        bg-white dark:bg-zinc-800
-                        border border-zinc-300 dark:border-zinc-600
-                        rounded-xl 
-                        text-zinc-900 dark:text-white 
-                        placeholder-zinc-400 dark:placeholder-zinc-500 
-                        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-                        transition-all duration-200 ease-out
-                      "
-                  />
-                </div>
+                  {t("use_different_email")}
+                </button>
               </div>
-
-              {error && (
-                <div className="text-red-600 dark:text-red-400 text-sm font-medium text-center">
-                  <strong>{t("error_label")}</strong> {error}
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1"
+                  >
+                    {t("email_label")}
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-blue-500 transition-colors">
+                      <EnvelopeSimple size={20} weight="duotone" />
+                    </div>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={t("email_placeholder")}
+                      required
+                      disabled={isLoading}
+                      className="
+                          block w-full pl-10 pr-3 py-2.5 
+                          bg-white dark:bg-zinc-800
+                          border border-zinc-300 dark:border-zinc-600
+                          rounded-xl 
+                          text-zinc-900 dark:text-white 
+                          placeholder-zinc-400 dark:placeholder-zinc-500 
+                          focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
+                          transition-all duration-200 ease-out
+                        "
+                    />
+                  </div>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="cursor-pointer w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isLoading ? t("redirecting") : t("continue")}
-              </button>
-            </form>
+                {error && (
+                  <div className="text-red-600 dark:text-red-400 text-sm font-medium text-center">
+                    <strong>{t("error_label")}</strong> {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="cursor-pointer w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? t("processing") : t("continue")}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>
