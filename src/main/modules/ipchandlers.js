@@ -6,7 +6,11 @@ import {
   clipboard,
   desktopCapturer,
 } from "electron";
-import { getMainWindow } from "./windowmanager";
+import {
+  getMainWindow,
+  createOverlayWindow,
+  closeOverlayWindow,
+} from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
 import { createAuthWindow } from "./auth";
@@ -150,6 +154,16 @@ export function registerIpcHandlers() {
   ipcMain.handle("close-window", () => {
     ipcHandlerLog.info("Closing window.");
     mainWindow.close();
+  });
+
+  ipcMain.handle("overlay:open", (event, routePath) => {
+    ipcHandlerLog.info(`Opening overlay window for route: ${routePath}`);
+    createOverlayWindow(routePath);
+  });
+
+  ipcMain.handle("overlay:close", () => {
+    ipcHandlerLog.info("Closing overlay window.");
+    closeOverlayWindow();
   });
 
   ipcMain.handle("get-app-version", () => {

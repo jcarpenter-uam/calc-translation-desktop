@@ -1,9 +1,14 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Header from "./header";
 import FontSize from "./font-size";
+import Overlay from "../misc/overlay";
 
 export default function Layout() {
+  const location = useLocation();
+
+  const isSessionPage = location.pathname.startsWith("/sessions/");
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -12,6 +17,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <FontSize />
+      {isSessionPage && <Overlay />}
     </div>
   );
 }

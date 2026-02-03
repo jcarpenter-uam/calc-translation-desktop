@@ -55,3 +55,47 @@ export function createMainWindow() {
 export function getMainWindow() {
   return mainWindow;
 }
+
+let overlayWindow;
+
+export function createOverlayWindow(routePath = "/session") {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.focus();
+    return;
+  }
+
+  overlayWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: true,
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    overlayWindow.loadURL(
+      `${process.env["ELECTRON_RENDERER_URL"]}#${routePath}`,
+    );
+  } else {
+    const url = new URL(join(__dirname, "../renderer/index.html"), "file:");
+    url.hash = routePath;
+    overlayWindow.loadURL(url.href);
+  }
+
+  overlayWindow.on("closed", () => {
+    overlayWindow = null;
+  });
+
+  return overlayWindow;
+}
+
+export function closeOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.close();
+  }
+}

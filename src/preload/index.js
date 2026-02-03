@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("users:update-language", languageCode),
   getMetrics: () => ipcRenderer.invoke("admin:get-metrics"),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
+  openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
+  closeOverlay: () => ipcRenderer.invoke("overlay:close"),
 
   // Calendar
   getCalendarEvents: (start, end) =>
