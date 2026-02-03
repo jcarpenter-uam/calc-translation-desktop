@@ -7,7 +7,7 @@ export default function Overlay() {
   };
 
   return (
-    <div className="fixed bottom-[24px] right-[24px] z-50 transition-opacity duration-300 ease-in-out opacity-[0.2] hover:opacity-100">
+    <div className="fixed bottom-[24px] right-[130px] z-50 transition-opacity duration-300 ease-in-out opacity-[0.2] hover:opacity-100">
       <div className="flex items-center gap-[4px] bg-white dark:bg-zinc-800 p-[4px] rounded-full shadow-xl border border-zinc-200 dark:border-zinc-700">
         <button
           onClick={handletoggle}
