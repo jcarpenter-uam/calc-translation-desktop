@@ -1,9 +1,15 @@
 import React from "react";
 import { FaExternalLinkAlt } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
 
 export default function Overlay() {
+  const location = useLocation();
+
   const handletoggle = () => {
-    console.log("Opening overlay");
+    const currentPath = location.pathname;
+    const overlayPath =
+      currentPath.replace("/sessions/", "/overlay/session/") + location.search;
+    window.electron.openOverlay(overlayPath);
   };
 
   return (
