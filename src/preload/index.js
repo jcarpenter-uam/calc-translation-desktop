@@ -22,6 +22,13 @@ contextBridge.exposeInMainWorld("electron", {
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
   openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
   closeOverlay: () => ipcRenderer.invoke("overlay:close"),
+  onOverlayStateChanged: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on("overlay-state-changed", subscription);
+    return () => {
+      ipcRenderer.removeListener("overlay-state-changed", subscription);
+    };
+  },
 
   // Calendar
   getCalendarEvents: (start, end) =>

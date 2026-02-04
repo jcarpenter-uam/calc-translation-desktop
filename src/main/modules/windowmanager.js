@@ -64,6 +64,11 @@ export function createOverlayWindow(routePath = "/session") {
     return;
   }
 
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("overlay-state-changed", { isOpen: true });
+    mainWindow.minimize();
+  }
+
   overlayWindow = new BrowserWindow({
     width: 400,
     height: 300,
@@ -89,6 +94,14 @@ export function createOverlayWindow(routePath = "/session") {
 
   overlayWindow.on("closed", () => {
     overlayWindow = null;
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-state-changed", { isOpen: false });
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
   });
 
   return overlayWindow;
