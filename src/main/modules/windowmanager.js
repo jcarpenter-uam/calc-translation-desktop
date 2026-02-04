@@ -70,9 +70,11 @@ export function createOverlayWindow(routePath = "/session") {
   }
 
   overlayWindow = new BrowserWindow({
-    width: 400,
-    height: 300,
+    width: 800,
+    height: 200,
     frame: false,
+    transparent: true,
+    hasShadow: false,
     alwaysOnTop: true,
     resizable: true,
     webPreferences: {
