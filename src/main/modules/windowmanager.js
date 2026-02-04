@@ -112,3 +112,9 @@ export function closeOverlayWindow() {
     overlayWindow.close();
   }
 }
+
+export function setOverlayIgnoreMouseEvents(ignore, options) {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setIgnoreMouseEvents(ignore, options);
+  }
+}

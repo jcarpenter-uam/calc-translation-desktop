@@ -10,6 +10,7 @@ import {
   getMainWindow,
   createOverlayWindow,
   closeOverlayWindow,
+  setOverlayIgnoreMouseEvents,
 } from "./windowmanager";
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
@@ -165,6 +166,13 @@ export function registerIpcHandlers() {
     ipcHandlerLog.info("Closing overlay window.");
     closeOverlayWindow();
   });
+
+  ipcMain.handle(
+    "overlay:set-ignore-mouse-events",
+    (event, ignore, options) => {
+      setOverlayIgnoreMouseEvents(ignore, options);
+    },
+  );
 
   ipcMain.handle("get-app-version", () => {
     const version = app.getVersion();

@@ -22,14 +22,39 @@ function useQuery() {
 }
 
 export default function OverlaySessionPage() {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    window.electron.setIgnoreMouseEvents(true, { forward: true });
+
+    const handleMouseEnter = () => {
+      window.electron.setIgnoreMouseEvents(false);
+    };
+
+    const handleMouseLeave = () => {
+      window.electron.setIgnoreMouseEvents(true, { forward: true });
+    };
+
+    const el = containerRef.current;
+    if (el) {
+      el.addEventListener("mouseenter", handleMouseEnter);
+      el.addEventListener("mouseleave", handleMouseLeave);
+    }
+
+    return () => {
+      if (el) {
+        el.removeEventListener("mouseenter", handleMouseEnter);
+        el.removeEventListener("mouseleave", handleMouseLeave);
+      }
+    };
+  }, []);
+
   const params = useParams();
   const integration = params.integration;
   const sessionId = params["*"];
 
   const query = useQuery();
   const token = query.get("token");
-
-  const isHost = false;
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
@@ -71,11 +96,12 @@ export default function OverlaySessionPage() {
   );
 
   return (
-    <div className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl">
-      {/* Draggable Header Area */}
+    <div
+      ref={containerRef}
+      className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl"
+    >
       <div className="absolute top-0 left-0 w-full h-12 app-region-drag z-10" />
 
-      {/* Close Button */}
       <button
         onClick={() => window.electron.closeOverlay()}
         className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-white hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm"
@@ -83,7 +109,6 @@ export default function OverlaySessionPage() {
         <FaTimes size={14} />
       </button>
 
-      {/* Content Area */}
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto scrollbar-none p-4 pt-8"

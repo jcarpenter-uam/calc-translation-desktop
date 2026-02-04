@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld("electron", {
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
   openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
   closeOverlay: () => ipcRenderer.invoke("overlay:close"),
+  setIgnoreMouseEvents: (ignore, options) =>
+    ipcRenderer.invoke("overlay:set-ignore-mouse-events", ignore, options),
   onOverlayStateChanged: (callback) => {
     const subscription = (_event, data) => callback(data);
     ipcRenderer.on("overlay-state-changed", subscription);
