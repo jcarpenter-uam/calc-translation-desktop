@@ -71,7 +71,7 @@ export default function OverlaySessionPage() {
   );
 
   return (
-    <div className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/60 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl">
+    <div className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl">
       {/* Draggable Header Area */}
       <div className="absolute top-0 left-0 w-full h-12 app-region-drag z-10" />
 
