@@ -27,25 +27,28 @@ export default function OverlaySessionPage() {
   useEffect(() => {
     window.electron.setIgnoreMouseEvents(true, { forward: true });
 
-    const handleMouseEnter = () => {
-      window.electron.setIgnoreMouseEvents(false);
+    const handleMouseMove = (e) => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const isInside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (isInside) {
+        window.electron.setIgnoreMouseEvents(false);
+      } else {
+        window.electron.setIgnoreMouseEvents(true, { forward: true });
+      }
     };
 
-    const handleMouseLeave = () => {
-      window.electron.setIgnoreMouseEvents(true, { forward: true });
-    };
-
-    const el = containerRef.current;
-    if (el) {
-      el.addEventListener("mouseenter", handleMouseEnter);
-      el.addEventListener("mouseleave", handleMouseLeave);
-    }
+    window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      if (el) {
-        el.removeEventListener("mouseenter", handleMouseEnter);
-        el.removeEventListener("mouseleave", handleMouseLeave);
-      }
+      window.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
 
