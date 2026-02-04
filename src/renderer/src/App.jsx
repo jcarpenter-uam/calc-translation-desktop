@@ -5,7 +5,7 @@ import Login from "./pages/login";
 import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
 import AdminPage from "./pages/admin";
-import OverlayLayout from "./components/general/overlay-layout";
+import OverlaySessionPage from "./pages/overlay-session";
 
 export default function App() {
   return (
@@ -31,10 +31,10 @@ export default function App() {
               <Route path="/admin" element={<AdminPage />} />
             </Route>
           </Route>
-          <Route element={<OverlayLayout />}>
+          <Route element={<ProtectedRoute />}>
             <Route
               path="/overlay/session/:integration/*"
-              element={<SessionPage />}
+              element={<OverlaySessionPage />}
             />
           </Route>
         </Routes>
