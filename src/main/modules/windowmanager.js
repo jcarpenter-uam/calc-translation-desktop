@@ -74,9 +74,7 @@ export function createOverlayWindow(routePath = "/session") {
     height: 200,
     frame: false,
     transparent: true,
-    hasShadow: false,
     alwaysOnTop: true,
-    resizable: true,
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,

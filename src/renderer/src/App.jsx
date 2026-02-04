@@ -9,7 +9,7 @@ import OverlaySessionPage from "./pages/overlay-session";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
+    <div className="min-h-screen">
       <HashRouter>
         {/* <ScrollToTop /> */}
         <Routes>

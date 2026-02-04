@@ -10,7 +10,7 @@ export default function Layout() {
   const isSessionPage = location.pathname.startsWith("/sessions/");
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
       <Header />
 
       <main className="flex-grow w-full mx-auto flex flex-col">

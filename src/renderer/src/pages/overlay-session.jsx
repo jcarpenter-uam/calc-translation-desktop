@@ -22,15 +22,6 @@ function useQuery() {
 }
 
 export default function OverlaySessionPage() {
-  useEffect(() => {
-    document.documentElement.style.backgroundColor = "transparent";
-    document.body.style.backgroundColor = "transparent";
-    return () => {
-      document.documentElement.style.backgroundColor = "";
-      document.body.style.backgroundColor = "";
-    };
-  }, []);
-
   const params = useParams();
   const integration = params.integration;
   const sessionId = params["*"];
@@ -87,7 +78,7 @@ export default function OverlaySessionPage() {
       {/* Close Button */}
       <button
         onClick={() => window.electron.closeOverlay()}
-        className="cursor-pointer absolute top-2 right-2 z-50 p-2 bg-black/5 hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm"
+        className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-white hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm"
       >
         <FaTimes size={14} />
       </button>
