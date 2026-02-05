@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("electron", {
   getDesktopSources: () => ipcRenderer.invoke("desktop:get-sources"),
   setStartOnBoot: (value) => ipcRenderer.send("set-start-on-boot", value),
   getStartOnBoot: () => ipcRenderer.invoke("get-start-on-boot"),
+  getWindowBounds: () => ipcRenderer.invoke("get-window-bounds"),
+  setWindowBounds: (bounds) => ipcRenderer.send("set-window-bounds", bounds),
 
   // Features
   downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),

@@ -157,6 +157,14 @@ export function registerIpcHandlers() {
     mainWindow.close();
   });
 
+  ipcMain.handle("get-window-bounds", () => {
+    return mainWindow.getBounds();
+  });
+
+  ipcMain.on("set-window-bounds", (event, bounds) => {
+    mainWindow.setBounds(bounds);
+  });
+
   ipcMain.handle("overlay:open", (event, routePath) => {
     ipcHandlerLog.info(`Opening overlay window for route: ${routePath}`);
     createOverlayWindow(routePath);

@@ -17,6 +17,7 @@ import Notification from "../components/misc/notification.jsx";
 import BackfillLoading from "../components/session/backfill-loading.jsx";
 import WaitingRoom from "../components/session/waiting.jsx";
 import DownloadVttButton from "../components/session/vtt-download.jsx";
+import ResizeHandles from "../components/general/resize-handles.jsx";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -150,6 +151,7 @@ export default function OverlaySessionPage() {
         message={notification.message}
         visible={notification.visible}
       />
+      <ResizeHandles />
     </div>
   );
 }
