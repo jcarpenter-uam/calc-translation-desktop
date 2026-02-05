@@ -20,6 +20,25 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("users:update-language", languageCode),
   getMetrics: () => ipcRenderer.invoke("admin:get-metrics"),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
+  openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
+  closeOverlay: () => ipcRenderer.invoke("overlay:close"),
+  setIgnoreMouseEvents: (ignore, options) =>
+    ipcRenderer.invoke("overlay:set-ignore-mouse-events", ignore, options),
+  onOverlayStateChanged: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on("overlay-state-changed", subscription);
+    return () => {
+      ipcRenderer.removeListener("overlay-state-changed", subscription);
+    };
+  },
+  syncSessionData: (data) => ipcRenderer.send("sync-session-data", data),
+  onRestoreSessionData: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on("restore-session-data", subscription);
+    return () => {
+      ipcRenderer.removeListener("restore-session-data", subscription);
+    };
+  },
 
   // Calendar
   getCalendarEvents: (start, end) =>

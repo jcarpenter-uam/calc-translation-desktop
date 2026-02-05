@@ -55,3 +55,66 @@ export function createMainWindow() {
 export function getMainWindow() {
   return mainWindow;
 }
+
+let overlayWindow;
+
+export function createOverlayWindow(routePath = "/session") {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.focus();
+    return;
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("overlay-state-changed", { isOpen: true });
+    mainWindow.minimize();
+  }
+
+  overlayWindow = new BrowserWindow({
+    width: 800,
+    height: 200,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    overlayWindow.loadURL(
+      `${process.env["ELECTRON_RENDERER_URL"]}#${routePath}`,
+    );
+  } else {
+    const url = new URL(join(__dirname, "../renderer/index.html"), "file:");
+    url.hash = routePath;
+    overlayWindow.loadURL(url.href);
+  }
+
+  overlayWindow.on("closed", () => {
+    overlayWindow = null;
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("overlay-state-changed", { isOpen: false });
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  });
+
+  return overlayWindow;
+}
+
+export function closeOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.close();
+  }
+}
+
+export function setOverlayIgnoreMouseEvents(ignore, options) {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setIgnoreMouseEvents(ignore, options);
+  }
+}

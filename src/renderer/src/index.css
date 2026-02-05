@@ -21,16 +21,16 @@
 /* Hides the vertical scrollbar */
 @layer base {
   html {
-    background-color: #ffffff;
-    color: #18181b;
+    /* background-color: #ffffff; */
+    /* color: #18181b; */
     transition-property: font-size;
     transition-duration: 200ms;
     transition-timing-function: ease-out;
   }
-  html.dark {
-    background-color: #18181b;
-    color: #f4f4f5;
-  }
+  /* html.dark { */
+  /*   background-color: #18181b; */
+  /*   color: #f4f4f5; */
+  /* } */
   body {
     -ms-overflow-style: none;
     scrollbar-width: none;

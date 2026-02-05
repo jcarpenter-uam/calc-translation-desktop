@@ -16,16 +16,25 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [sessionStatus, setSessionStatus] = useState("connecting");
   const [isStopped, setIsStopped] = useState(false);
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
 
   const ws = useRef(null);
 
   useEffect(() => {
-    if (!wsUrl || isStopped) return;
+    if (window.electron && window.electron.onOverlayStateChanged) {
+      return window.electron.onOverlayStateChanged(({ isOpen }) => {
+        setIsOverlayOpen(isOpen);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!wsUrl || isStopped || isOverlayOpen) return;
 
     let reconnectTimeoutId;
 
     function connect() {
-      if (isStopped || !wsUrl) return;
+      if (isStopped || isOverlayOpen || !wsUrl) return;
 
       if (typeof wsUrl !== "string") {
         return;
@@ -164,7 +173,7 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
         ws.current.close();
       }
     };
-  }, [wsUrl, sessionId, onUnauthorized, isStopped]);
+  }, [wsUrl, sessionId, onUnauthorized, isStopped, isOverlayOpen]);
 
   return { transcripts, isDownloadable, isBackfilling, sessionStatus };
 }

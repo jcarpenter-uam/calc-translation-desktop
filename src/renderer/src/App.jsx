@@ -5,10 +5,11 @@ import Login from "./pages/login";
 import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
 import AdminPage from "./pages/admin";
+import OverlaySessionPage from "./pages/overlay-session";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 transition-colors">
+    <div className="min-h-screen">
       <HashRouter>
         {/* <ScrollToTop /> */}
         <Routes>
@@ -29,6 +30,12 @@ export default function App() {
             <Route element={<ProtectedRoute adminOnly={true} />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
+          </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route
+              path="/overlay/session/:integration/*"
+              element={<OverlaySessionPage />}
+            />
           </Route>
         </Routes>
       </HashRouter>

@@ -8,8 +8,17 @@ const SCROLL_PADDING_BOTTOM = 96;
  * A custom React hook that provides "smart" auto-scrolling for a dynamic list of content.
  * It automatically scrolls to the bottom when new items are added, but only if the user is already
  * near the bottom. It also provides notifications to the user about the auto-scroll status.
+ * * @param {Array} list - The dependency list that triggers scroll checks (e.g. transcripts).
+ * @param {React.RefObject} lastElementRef - Ref to the last element in the list.
+ * @param {any} extraDependency - Additional dependency to trigger scroll logic.
+ * @param {React.RefObject} [scrollContainerRef] - Optional ref to the scrollable container element. If null, defaults to window.
  */
-export function useSmartScroll(list, lastElementRef, extraDependency = null) {
+export function useSmartScroll(
+  list,
+  lastElementRef,
+  extraDependency = null,
+  scrollContainerRef = null,
+) {
   const [notification, setNotification] = useState({
     message: "",
     visible: false,
@@ -37,16 +46,30 @@ export function useSmartScroll(list, lastElementRef, extraDependency = null) {
       if (ignoreScrollEventsRef.current) {
         return;
       }
-      const scrollElement = window.document.documentElement;
-      const { clientHeight } = scrollElement;
 
       let isAtTarget = false;
-      if (lastElementRef.current) {
-        const { bottom } = lastElementRef.current.getBoundingClientRect();
-        isAtTarget = bottom <= clientHeight + 20;
+      const container = scrollContainerRef?.current;
+
+      if (container) {
+        if (lastElementRef.current) {
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = lastElementRef.current.getBoundingClientRect();
+          isAtTarget = elementRect.bottom <= containerRect.bottom + 20;
+        } else {
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          isAtTarget = scrollHeight - scrollTop <= clientHeight + 20;
+        }
       } else {
-        const { scrollTop, scrollHeight } = scrollElement;
-        isAtTarget = scrollHeight - scrollTop <= clientHeight + 1;
+        const scrollElement = window.document.documentElement;
+        const { clientHeight } = scrollElement;
+
+        if (lastElementRef.current) {
+          const { bottom } = lastElementRef.current.getBoundingClientRect();
+          isAtTarget = bottom <= clientHeight + 20;
+        } else {
+          const { scrollTop, scrollHeight } = scrollElement;
+          isAtTarget = scrollHeight - scrollTop <= clientHeight + 1;
+        }
       }
 
       if (isAtTarget && !isAutoScrollEnabled) {
@@ -62,28 +85,55 @@ export function useSmartScroll(list, lastElementRef, extraDependency = null) {
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isAutoScrollEnabled, t, lastElementRef]);
+    const target = scrollContainerRef?.current || window;
+    target.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => target.removeEventListener("scroll", handleScroll);
+  }, [isAutoScrollEnabled, t, lastElementRef, scrollContainerRef]);
 
   useLayoutEffect(() => {
     if (isAutoScrollEnabled) {
       log.debug("Auto-scrolling to bottom.");
-      if (lastElementRef.current) {
-        const { bottom } = lastElementRef.current.getBoundingClientRect();
-        const targetScrollY =
-          window.scrollY + bottom - window.innerHeight + SCROLL_PADDING_BOTTOM;
 
-        window.scrollTo({
-          top: targetScrollY,
-          behavior: "auto",
-        });
+      const container = scrollContainerRef?.current;
+
+      if (container) {
+        if (lastElementRef.current) {
+          const elementRect = lastElementRef.current.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const offset = elementRect.bottom - containerRect.bottom;
+
+          container.scrollBy({
+            top: offset + SCROLL_PADDING_BOTTOM,
+            behavior: "auto",
+          });
+        } else {
+          ignoreScrollEventsRef.current = true;
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: "auto",
+          });
+        }
       } else {
-        ignoreScrollEventsRef.current = true;
-        window.scrollTo({
-          top: window.document.documentElement.scrollHeight,
-          behavior: "auto",
-        });
+        if (lastElementRef.current) {
+          const { bottom } = lastElementRef.current.getBoundingClientRect();
+          const targetScrollY =
+            window.scrollY +
+            bottom -
+            window.innerHeight +
+            SCROLL_PADDING_BOTTOM;
+
+          window.scrollTo({
+            top: targetScrollY,
+            behavior: "auto",
+          });
+        } else {
+          ignoreScrollEventsRef.current = true;
+          window.scrollTo({
+            top: window.document.documentElement.scrollHeight,
+            behavior: "auto",
+          });
+        }
       }
 
       if (scrollCooldownTimer.current) {
@@ -93,7 +143,13 @@ export function useSmartScroll(list, lastElementRef, extraDependency = null) {
         ignoreScrollEventsRef.current = false;
       }, 100);
     }
-  }, [list, lastElementRef, isAutoScrollEnabled, extraDependency]);
+  }, [
+    list,
+    lastElementRef,
+    isAutoScrollEnabled,
+    extraDependency,
+    scrollContainerRef,
+  ]);
 
   return notification;
 }

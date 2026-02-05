@@ -33,6 +33,7 @@ export default function SessionPage() {
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
   const { uiLanguage, targetLanguage } = useLanguage();
+  const [restoredSession, setRestoredSession] = useState(null);
   const { t } = useTranslation();
 
   const hostAudioProps = useHostAudio(
@@ -63,8 +64,31 @@ export default function SessionPage() {
     ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
-  const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
-    useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
+  const {
+    transcripts: streamTranscripts,
+    isDownloadable: streamIsDownloadable,
+    isBackfilling,
+    sessionStatus,
+  } = useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
+
+  useEffect(() => {
+    if (!window.electron?.onRestoreSessionData) return;
+
+    const removeListener = window.electron.onRestoreSessionData((data) => {
+      if (data.sessionId === sessionId) {
+        setRestoredSession(data);
+      }
+    });
+
+    return () => {
+      removeListener();
+    };
+  }, [sessionId]);
+
+  const transcripts = restoredSession
+    ? restoredSession.transcripts
+    : streamTranscripts;
+  const isDownloadable = restoredSession ? true : streamIsDownloadable;
 
   const lastTopTextRef = React.useRef(null);
   const scrollDependencies = useMemo(() => {
