@@ -84,6 +84,12 @@ export default function OverlaySessionPage() {
 
   return (
     <div className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl">
+      <div
+        style={{ WebkitAppRegion: "drag" }}
+        className="absolute top-0 left-0 right-0 h-10 flex items-center justify-center z-40 cursor-move group"
+      >
+        <div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" />
+      </div>
       <button
         onClick={handleClose}
         style={{ WebkitAppRegion: "no-drag" }}
