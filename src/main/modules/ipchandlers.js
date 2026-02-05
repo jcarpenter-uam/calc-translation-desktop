@@ -174,6 +174,12 @@ export function registerIpcHandlers() {
     },
   );
 
+  ipcMain.on("sync-session-data", (event, data) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("restore-session-data", data);
+    }
+  });
+
   ipcMain.handle("get-app-version", () => {
     const version = app.getVersion();
     ipcHandlerLog.info(`Getting app version: ${version}`);

@@ -1,9 +1,9 @@
 import React, {
-  useEffect,
   useState,
   useCallback,
   useMemo,
   useRef,
+  useEffect,
 } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { FaTimes } from "react-icons/fa";
@@ -23,46 +23,6 @@ function useQuery() {
 }
 
 export default function OverlaySessionPage() {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    window.electron.setIgnoreMouseEvents(true, { forward: true });
-    let isIgnoring = true;
-
-    const handleMouseMove = (e) => {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-
-      const isInteractive = el && el.closest(".pointer-events-auto");
-
-      if (isInteractive) {
-        if (isIgnoring) {
-          window.electron.setIgnoreMouseEvents(false);
-          isIgnoring = false;
-        }
-      } else {
-        if (!isIgnoring) {
-          window.electron.setIgnoreMouseEvents(true, { forward: true });
-          isIgnoring = true;
-        }
-      }
-    };
-
-    const handleMouseLeave = () => {
-      if (!isIgnoring) {
-        window.electron.setIgnoreMouseEvents(true, { forward: true });
-        isIgnoring = true;
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseleave", handleMouseLeave);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, []);
-
   const params = useParams();
   const integration = params.integration;
   const sessionId = params["*"];
@@ -95,6 +55,19 @@ export default function OverlaySessionPage() {
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
     useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
+  const handleClose = useCallback(() => {
+    if (isDownloadable && transcripts.length > 0) {
+      if (window.electron.syncSessionData) {
+        window.electron.syncSessionData({
+          sessionId,
+          transcripts,
+        });
+      }
+    }
+
+    window.electron.closeOverlay();
+  }, [isDownloadable, transcripts, sessionId]);
+
   const lastTopTextRef = useRef(null);
   const scrollContainerRef = useRef(null);
 
@@ -110,21 +83,11 @@ export default function OverlaySessionPage() {
   );
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl pointer-events-none"
-    >
-      <div
-        style={{ WebkitAppRegion: "drag" }}
-        className="absolute top-2 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-zinc-300/50 dark:bg-zinc-700/50 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-50 pointer-events-auto hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors backdrop-blur-md"
-      >
-        <div className="w-8 h-1 bg-zinc-400 dark:bg-zinc-500 rounded-full" />
-      </div>
-
+    <div className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl">
       <button
-        onClick={() => window.electron.closeOverlay()}
+        onClick={handleClose}
         style={{ WebkitAppRegion: "no-drag" }}
-        className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-white hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm pointer-events-auto"
+        className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-zinc-500 hover:bg-red-500 hover:text-white rounded-full transition-colors backdrop-blur-sm"
       >
         <FaTimes size={14} />
       </button>
@@ -165,14 +128,12 @@ export default function OverlaySessionPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {t("meeting_ended")}
                 </p>
-                <div className="pointer-events-auto">
-                  <DownloadVttButton
-                    isDownloadable={isDownloadable}
-                    integration={integration}
-                    sessionId={sessionId}
-                    token={token}
-                  />
-                </div>
+                <DownloadVttButton
+                  isDownloadable={isDownloadable}
+                  integration={integration}
+                  sessionId={sessionId}
+                  token={token}
+                />
               </div>
             )}
           </div>

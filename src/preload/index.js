@@ -31,6 +31,14 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.removeListener("overlay-state-changed", subscription);
     };
   },
+  syncSessionData: (data) => ipcRenderer.send("sync-session-data", data),
+  onRestoreSessionData: (callback) => {
+    const subscription = (_event, data) => callback(data);
+    ipcRenderer.on("restore-session-data", subscription);
+    return () => {
+      ipcRenderer.removeListener("restore-session-data", subscription);
+    };
+  },
 
   // Calendar
   getCalendarEvents: (start, end) =>
