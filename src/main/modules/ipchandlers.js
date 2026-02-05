@@ -5,6 +5,7 @@ import {
   session,
   clipboard,
   desktopCapturer,
+  BrowserWindow,
 } from "electron";
 import {
   getMainWindow,
@@ -157,12 +158,16 @@ export function registerIpcHandlers() {
     mainWindow.close();
   });
 
-  ipcMain.handle("get-window-bounds", () => {
-    return mainWindow.getBounds();
+  ipcMain.handle("get-window-bounds", (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return win ? win.getBounds() : null;
   });
 
   ipcMain.on("set-window-bounds", (event, bounds) => {
-    mainWindow.setBounds(bounds);
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setBounds(bounds);
+    }
   });
 
   ipcMain.handle("overlay:open", (event, routePath) => {

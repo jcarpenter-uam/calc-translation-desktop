@@ -45,8 +45,8 @@ export default function ResizeHandles() {
 
         const { x, y, width, height } = initialBounds.current;
 
-        const minWidth = 400;
-        const minHeight = 200;
+        const minWidth = 200;
+        const minHeight = 100;
 
         let newX = x;
         let newY = y;
