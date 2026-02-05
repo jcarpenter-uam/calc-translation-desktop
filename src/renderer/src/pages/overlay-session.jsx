@@ -26,29 +26,39 @@ export default function OverlaySessionPage() {
 
   useEffect(() => {
     window.electron.setIgnoreMouseEvents(true, { forward: true });
+    let isIgnoring = true;
 
     const handleMouseMove = (e) => {
-      const el = containerRef.current;
-      if (!el) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
 
-      const rect = el.getBoundingClientRect();
-      const isInside =
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom;
+      const isInteractive = el && el.closest(".pointer-events-auto");
 
-      if (isInside) {
-        window.electron.setIgnoreMouseEvents(false);
+      if (isInteractive) {
+        if (isIgnoring) {
+          window.electron.setIgnoreMouseEvents(false);
+          isIgnoring = false;
+        }
       } else {
+        if (!isIgnoring) {
+          window.electron.setIgnoreMouseEvents(true, { forward: true });
+          isIgnoring = true;
+        }
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (!isIgnoring) {
         window.electron.setIgnoreMouseEvents(true, { forward: true });
+        isIgnoring = true;
       }
     };
 
     window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
 
@@ -101,13 +111,13 @@ export default function OverlaySessionPage() {
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl"
+      className="relative flex flex-col h-screen w-screen overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl pointer-events-none"
     >
-      <div className="absolute top-0 left-0 w-full h-12 app-region-drag z-10" />
+      <div className="absolute top-0 left-0 w-full h-12 app-region-drag z-10 pointer-events-auto" />
 
       <button
         onClick={() => window.electron.closeOverlay()}
-        className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-white hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm"
+        className="cursor-pointer absolute top-2 right-2 z-50 p-2 text-white hover:bg-red-500 hover:text-white rounded-full app-region-no-drag transition-colors backdrop-blur-sm pointer-events-auto"
       >
         <FaTimes size={14} />
       </button>
@@ -117,33 +127,40 @@ export default function OverlaySessionPage() {
         className="flex-1 overflow-y-auto scrollbar-none p-4 pt-8"
       >
         {showUnauthorized ? (
-          <Unauthorized message={t("access_denied_session_message")} />
+          <div className="pointer-events-auto">
+            <Unauthorized message={t("access_denied_session_message")} />
+          </div>
         ) : sessionStatus === "waiting" ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full pointer-events-auto">
             <WaitingRoom />
           </div>
         ) : (
           <div className="w-full pb-6 px-4">
-            {isBackfilling && <BackfillLoading />}
+            {isBackfilling && (
+              <div className="pointer-events-auto">
+                <BackfillLoading />
+              </div>
+            )}
 
             {transcripts
               .filter((t) => !isBackfilling || !t.isBackfill)
               .map((t, index, array) => (
-                <Transcript
-                  key={t.id}
-                  {...t}
-                  topTextRef={
-                    !isDownloadable && index === array.length - 1
-                      ? lastTopTextRef
-                      : null
-                  }
-                />
+                <div key={t.id} className="pointer-events-auto">
+                  <Transcript
+                    {...t}
+                    topTextRef={
+                      !isDownloadable && index === array.length - 1
+                        ? lastTopTextRef
+                        : null
+                    }
+                  />
+                </div>
               ))}
 
             {isDownloadable && (
               <div
                 ref={lastTopTextRef}
-                className="mt-4 p-4 rounded-lg bg-white/80 dark:bg-zinc-800/80 text-center"
+                className="mt-4 p-4 rounded-lg bg-white/80 dark:bg-zinc-800/80 text-center pointer-events-auto"
               >
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {t("meeting_ended")}
@@ -154,10 +171,12 @@ export default function OverlaySessionPage() {
         )}
       </div>
 
-      <Notification
-        message={notification.message}
-        visible={notification.visible}
-      />
+      <div className="pointer-events-auto">
+        <Notification
+          message={notification.message}
+          visible={notification.visible}
+        />
+      </div>
     </div>
   );
 }
