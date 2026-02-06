@@ -6,6 +6,7 @@ import LandingPage from "./pages/landing";
 import SessionPage from "./pages/session";
 import AdminPage from "./pages/admin";
 import OverlaySessionPage from "./pages/overlay-session";
+import StandalonePage from "./pages/standalone";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
                 path="/sessions/:integration/*"
                 element={<SessionPage />}
               />
+              <Route path="/standalone/host" element={<StandalonePage />} />
             </Route>
 
             {/* Routes for admin users only */}
