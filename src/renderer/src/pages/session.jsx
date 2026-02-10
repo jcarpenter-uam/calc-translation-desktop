@@ -69,6 +69,7 @@ export default function SessionPage() {
     isDownloadable: streamIsDownloadable,
     isBackfilling,
     sessionStatus,
+    isSharedTwoWayMode,
   } = useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
   useEffect(() => {
@@ -129,6 +130,7 @@ export default function SessionPage() {
                   ? lastTopTextRef
                   : null
               }
+              forceBothLanguages={isSharedTwoWayMode}
             />
           ))}
         {isDownloadable && (
