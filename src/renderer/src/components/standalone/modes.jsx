@@ -261,10 +261,10 @@ export default function TranslationModes({ onSubmit }) {
             <button
               type="button"
               onClick={handleOneWayStart}
-              className="cursor-pointer group w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-900/20 hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              className="cursor-pointer group w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-900/20 hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
               <div className="p-1 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
-                <BiPlay className="w-6 h-6 ml-0.5" />
+                <BiPlay className="w-4 h-4 ml-0.5" />
               </div>
               {t("standalone_one_way_start")}
             </button>
@@ -303,10 +303,10 @@ export default function TranslationModes({ onSubmit }) {
               type="button"
               onClick={handleTwoWayStart}
               disabled={twoWayLangs.length !== 2}
-              className="cursor-pointer group w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-lg rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="cursor-pointer group w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <div className="p-1 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
-                <BiPlay className="w-6 h-6 ml-0.5" />
+                <BiPlay className="w-4 h-4 ml-0.5" />
               </div>
               {t("standalone_two_way_start")}
             </button>
