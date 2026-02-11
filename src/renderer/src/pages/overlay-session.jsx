@@ -57,8 +57,13 @@ export default function OverlaySessionPage() {
     ? `wss://2495-158-120-147-235.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
-  const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
-    useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
+  const {
+    transcripts,
+    isDownloadable,
+    isBackfilling,
+    sessionStatus,
+    isSharedTwoWayMode,
+  } = useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
   const handleClose = useCallback(() => {
     if (isDownloadable && transcripts.length > 0) {
@@ -128,6 +133,8 @@ export default function OverlaySessionPage() {
                       ? lastTopTextRef
                       : null
                   }
+                  forceBothLanguages={isSharedTwoWayMode}
+                  preferredLanguage={targetLanguage}
                 />
               ))}
 

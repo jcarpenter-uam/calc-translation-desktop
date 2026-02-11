@@ -21,16 +21,26 @@ export default function Transcript({
   const primaryTextClass = `m-0 leading-relaxed text-base sm:text-lg font-medium text-zinc-900 dark:text-zinc-100 ${textOpacity}`;
   const secondaryTextClass = `m-0 leading-relaxed text-sm text-zinc-500 dark:text-zinc-400 ${textOpacity}`;
 
+  const normalizeLanguageCode = (language) => {
+    if (typeof language !== "string") return "";
+    return language.toLowerCase().split(/[-_]/)[0];
+  };
+
   const renderContent = () => {
     if (forceBothLanguages) {
       const hasBothVersions =
         translation && transcription && translation !== transcription;
+      const normalizedPreferredLanguage =
+        normalizeLanguageCode(preferredLanguage);
+      const normalizedSourceLanguage = normalizeLanguageCode(source_language);
+      const normalizedTargetLanguage = normalizeLanguageCode(target_language);
       const canPrioritizePreferredLanguage =
-        preferredLanguage &&
-        (preferredLanguage === source_language ||
-          preferredLanguage === target_language);
+        normalizedPreferredLanguage &&
+        (normalizedPreferredLanguage === normalizedSourceLanguage ||
+          normalizedPreferredLanguage === normalizedTargetLanguage);
       const shouldShowSourceLanguageOnTop =
-        canPrioritizePreferredLanguage && preferredLanguage === source_language;
+        canPrioritizePreferredLanguage &&
+        normalizedPreferredLanguage === normalizedSourceLanguage;
 
       if (hasBothVersions) {
         const topText = shouldShowSourceLanguageOnTop
