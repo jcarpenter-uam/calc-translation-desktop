@@ -54,7 +54,7 @@ export default function OverlaySessionPage() {
   //   : null;
 
   const wsUrl = isAuthorized
-    ? `wss://4a67f7e14781.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+    ? `wss://2495-158-120-147-235.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
