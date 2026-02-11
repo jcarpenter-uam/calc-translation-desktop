@@ -118,9 +118,23 @@ export default function LandingPage() {
       const { sessionId, token, type, joinUrl } = responseData;
 
       const isHost = integration === "standalone" && data.mode === "host";
+      let shareableJoinUrl = joinUrl;
+
+      if (isHost) {
+        try {
+          const parsedJoinUrl = new URL(joinUrl);
+          parsedJoinUrl.pathname = `/sessions/standalone/${encodeURIComponent(sessionId)}`;
+          parsedJoinUrl.search = "";
+          parsedJoinUrl.hash = "";
+          shareableJoinUrl = parsedJoinUrl.toString();
+        } catch {
+          const baseJoinUrl = joinUrl ? joinUrl.replace(/\/+$/, "") : "";
+          shareableJoinUrl = `${baseJoinUrl}/sessions/standalone/${encodeURIComponent(sessionId)}`;
+        }
+      }
 
       navigate(
-        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}&joinUrl=${encodeURIComponent(joinUrl)}${isHost ? "&isHost=true" : ""}`,
+        `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}&joinUrl=${encodeURIComponent(shareableJoinUrl)}${isHost ? "&isHost=true" : ""}`,
       );
     } catch (err) {
       console.error("Join failed:", err);
