@@ -8,9 +8,6 @@ export default function Transcript({
   speaker,
   translation,
   transcription,
-  source_language,
-  target_language,
-  preferredLanguage,
   isFinalized = false,
   topTextRef,
   forceBothLanguages = false,
@@ -23,29 +20,13 @@ export default function Transcript({
 
   const renderContent = () => {
     if (forceBothLanguages) {
-      const hasBothVersions =
-        translation && transcription && translation !== transcription;
-      const canPrioritizePreferredLanguage =
-        preferredLanguage &&
-        (preferredLanguage === source_language ||
-          preferredLanguage === target_language);
-      const shouldShowSourceLanguageOnTop =
-        canPrioritizePreferredLanguage && preferredLanguage === source_language;
-
-      if (hasBothVersions) {
-        const topText = shouldShowSourceLanguageOnTop
-          ? transcription
-          : translation;
-        const bottomText = shouldShowSourceLanguageOnTop
-          ? translation
-          : transcription;
-
+      if (translation && transcription && translation !== transcription) {
         return (
           <>
             <p ref={topTextRef} className={primaryTextClass}>
-              {topText}
+              {translation}
             </p>
-            <p className={secondaryTextClass}>{bottomText}</p>
+            <p className={secondaryTextClass}>{transcription}</p>
           </>
         );
       }

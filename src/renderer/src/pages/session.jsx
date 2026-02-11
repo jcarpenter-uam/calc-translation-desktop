@@ -32,7 +32,7 @@ export default function SessionPage() {
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
-  const { targetLanguage } = useLanguage();
+  const { uiLanguage, targetLanguage } = useLanguage();
   const [restoredSession, setRestoredSession] = useState(null);
   const { t } = useTranslation();
 
@@ -135,7 +135,6 @@ export default function SessionPage() {
                   : null
               }
               forceBothLanguages={isSharedTwoWayMode}
-              preferredLanguage={targetLanguage}
             />
           ))}
         {isDownloadable && (
