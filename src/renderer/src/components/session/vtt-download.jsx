@@ -12,7 +12,7 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
   const { t } = useTranslation();
 
   const handleDownload = async () => {
-    if (isLoading || !isDownloadable) return;
+    if (isLoading || !isDownloadable || !integration || !sessionId) return;
 
     setIsLoading(true);
 
@@ -33,7 +33,10 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
       const link = document.createElement("a");
       link.href = blobUrl;
 
-      const disposition = response.headers.get("content-disposition") || "";
+      const dispositionHeader = response?.headers?.["content-disposition"];
+      const disposition = Array.isArray(dispositionHeader)
+        ? dispositionHeader[0]
+        : dispositionHeader || "";
       const filenameMatch = disposition.match(
         /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i,
       );

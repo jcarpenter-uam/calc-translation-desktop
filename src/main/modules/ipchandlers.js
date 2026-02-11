@@ -578,7 +578,7 @@ export function registerIpcHandlers() {
             ipcHandlerLog.info("Download request finished.");
             if (response.statusCode >= 200 && response.statusCode < 300) {
               const buffer = Buffer.concat(chunks);
-              resolve({ status: "ok", data: buffer });
+              resolve({ status: "ok", data: buffer, headers: response.headers });
             } else {
               const responseBody = Buffer.concat(chunks).toString();
               let errorMessage = `Download failed with status: ${response.statusCode}`;
