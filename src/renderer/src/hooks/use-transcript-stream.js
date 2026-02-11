@@ -144,11 +144,14 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
               const originalTranscript = newTranscripts[existingIndex];
               const updatedTranscript = {
                 ...originalTranscript,
-                transcription: data.transcription,
-                translation: data.translation,
-                source_language: data.source_language,
-                target_language: data.target_language,
-                isFinalized: data.isfinalize,
+                transcription:
+                  data.transcription ?? originalTranscript.transcription,
+                translation: data.translation ?? originalTranscript.translation,
+                source_language:
+                  data.source_language ?? originalTranscript.source_language,
+                target_language:
+                  data.target_language ?? originalTranscript.target_language,
+                isFinalized: data.isfinalize ?? originalTranscript.isFinalized,
                 type: data.type,
               };
               newTranscripts[existingIndex] = updatedTranscript;
