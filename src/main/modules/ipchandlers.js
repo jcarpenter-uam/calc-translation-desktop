@@ -19,8 +19,7 @@ import { createAuthWindow } from "./auth";
 
 const ipcHandlerLog = log.scope("ipchandler");
 
-// const API_BASE_URL = "https://translator.my-uam.com";
-const API_BASE_URL = "https://2495-158-120-147-235.ngrok-free.app";
+const API_BASE_URL = "https://translator.my-uam.com";
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");
@@ -578,7 +577,11 @@ export function registerIpcHandlers() {
             ipcHandlerLog.info("Download request finished.");
             if (response.statusCode >= 200 && response.statusCode < 300) {
               const buffer = Buffer.concat(chunks);
-              resolve({ status: "ok", data: buffer, headers: response.headers });
+              resolve({
+                status: "ok",
+                data: buffer,
+                headers: response.headers,
+              });
             } else {
               const responseBody = Buffer.concat(chunks).toString();
               let errorMessage = `Download failed with status: ${response.statusCode}`;

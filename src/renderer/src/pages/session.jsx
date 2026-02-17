@@ -71,12 +71,8 @@ export default function SessionPage() {
 
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
-  // const wsUrl = isAuthorized
-  //   ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
-  //   : null;
-
   const wsUrl = isAuthorized
-    ? `wss://2495-158-120-147-235.ngrok-free.app/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+    ? `wss://translator.my-uam.com/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
   const {
@@ -131,7 +127,9 @@ export default function SessionPage() {
   return (
     <>
       <div className="w-full pb-6 px-4">
-        {isHost && <HostAudioSender {...hostAudioProps} joinUrl={hostCopyJoinUrl} />}
+        {isHost && (
+          <HostAudioSender {...hostAudioProps} joinUrl={hostCopyJoinUrl} />
+        )}
 
         {isBackfilling && <BackfillLoading />}
         {transcripts
