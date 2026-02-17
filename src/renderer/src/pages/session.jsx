@@ -23,23 +23,13 @@ export default function SessionPage() {
   const integration = params.integration;
   const sessionId = params["*"];
   const navigate = useNavigate();
+  const location = useLocation();
 
   const query = useQuery();
   const token = query.get("token");
 
   const isHost = query.get("isHost") === "true";
-  const joinUrl = query.get("joinUrl");
-  const hostCopyJoinUrl = useMemo(() => {
-    if (!isHost || integration !== "standalone" || !sessionId) {
-      return joinUrl;
-    }
-
-    if (typeof window !== "undefined" && window.location?.origin) {
-      return `${window.location.origin}/sessions/standalone/${encodeURIComponent(sessionId)}`;
-    }
-
-    return `/sessions/standalone/${encodeURIComponent(sessionId)}`;
-  }, [integration, isHost, joinUrl, sessionId]);
+  const joinUrl = location.state?.joinUrl;
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
@@ -128,7 +118,7 @@ export default function SessionPage() {
     <>
       <div className="w-full pb-6 px-4">
         {isHost && (
-          <HostAudioSender {...hostAudioProps} joinUrl={hostCopyJoinUrl} />
+          <HostAudioSender {...hostAudioProps} joinUrl={joinUrl} />
         )}
 
         {isBackfilling && <BackfillLoading />}
