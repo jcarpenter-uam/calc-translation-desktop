@@ -146,6 +146,7 @@ export default function SessionPage() {
                   : null
               }
               forceBothLanguages={isSharedTwoWayMode}
+              preferredLanguage={targetLanguage}
             />
           ))}
         {isDownloadable && (

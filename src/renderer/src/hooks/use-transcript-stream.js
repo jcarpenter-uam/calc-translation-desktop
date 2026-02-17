@@ -94,14 +94,14 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
 
           if (data.type === "status") {
             setSessionStatus(data.status);
+            if (typeof data.shared_two_way_mode === "boolean") {
+              setIsSharedTwoWayMode(data.shared_two_way_mode);
+            }
             return;
           }
 
           if (data.type === "session_start") {
             setSessionStatus("active");
-            if (typeof data.shared_two_way_mode === "boolean") {
-              setIsSharedTwoWayMode(data.shared_two_way_mode);
-            }
             return;
           }
 
