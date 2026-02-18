@@ -7,17 +7,20 @@ import { ThemeProvider } from "./context/theme.jsx";
 import { LanguageProvider } from "./context/language.jsx";
 import { SettingsProvider } from "./context/settings.jsx";
 import { AuthProvider } from "./context/auth";
+import { NetworkProvider } from "./context/network.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <SettingsProvider>
-            <App />
-          </SettingsProvider>
-        </LanguageProvider>
-      </ThemeProvider>
+      <NetworkProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <SettingsProvider>
+              <App />
+            </SettingsProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </NetworkProvider>
     </AuthProvider>
   </StrictMode>,
 );

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNetwork } from "../context/network.jsx";
 
 function floatTo16BitPCM(input) {
   const output = new Int16Array(input.length);
@@ -24,6 +25,7 @@ const SILENCE_PCM = floatTo16BitPCM(SILENCE_SAMPLES);
 const SILENCE_BASE64 = arrayBufferToBase64(SILENCE_PCM);
 
 export function useHostAudio(sessionId, integration, token) {
+  const { wsBaseUrl } = useNetwork();
   const [isAudioInitialized, setIsAudioInitialized] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState("disconnected");
@@ -68,7 +70,7 @@ export function useHostAudio(sessionId, integration, token) {
   useEffect(() => {
     if (!sessionId || !integration || !token) return;
 
-    const wsUrl = `${window.electron.wsBaseUrl}/ws/transcribe/${integration}/${sessionId}?token=${token}`;
+    const wsUrl = `${wsBaseUrl}/ws/transcribe/${integration}/${sessionId}?token=${token}`;
     console.log("Host connecting to:", wsUrl);
 
     const ws = new WebSocket(wsUrl);
@@ -103,7 +105,7 @@ export function useHostAudio(sessionId, integration, token) {
       if (ws.readyState === WebSocket.OPEN) ws.close();
       stopAudio();
     };
-  }, [integration, sessionId, token]);
+  }, [integration, sessionId, token, wsBaseUrl]);
 
   useEffect(() => {
     if (isAudioInitialized && canvasRef.current && analyserRef.current) {

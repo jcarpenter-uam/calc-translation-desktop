@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import DownloadVttButton from "../components/session/vtt-download.jsx";
 import Transcript from "../components/session/transcript.jsx";
@@ -8,32 +8,28 @@ import Notification from "../components/misc/notification.jsx";
 import BackfillLoading from "../components/session/backfill-loading.jsx";
 import WaitingRoom from "../components/session/waiting.jsx";
 import HostAudioSender from "../components/session/host-audio-sender.jsx";
+import SessionEndedPanel from "../components/session/session-ended-panel.jsx";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
+import { useSessionRoute } from "../hooks/use-session-route.js";
 import { useLanguage } from "../context/language.jsx";
+import { useNetwork } from "../context/network.jsx";
 import { useTranslation } from "react-i18next";
 import { useHostAudio } from "../hooks/use-host-audio.js";
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
-
 export default function SessionPage() {
-  const params = useParams();
-  const integration = params.integration;
-  const sessionId = params["*"];
+  const { integration, sessionId, token } = useSessionRoute();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const query = useQuery();
-  const token = query.get("token");
+  const { wsBaseUrl } = useNetwork();
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const isHost = query.get("isHost") === "true";
   const joinUrl = location.state?.joinUrl;
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
-  const { uiLanguage, targetLanguage } = useLanguage();
+  const { targetLanguage } = useLanguage();
   const [restoredSession, setRestoredSession] = useState(null);
   const { t } = useTranslation();
 
@@ -62,7 +58,7 @@ export default function SessionPage() {
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
   const wsUrl = isAuthorized
-    ? `${window.electron.wsBaseUrl}/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+    ? `${wsBaseUrl}/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
   const {
@@ -138,29 +134,18 @@ export default function SessionPage() {
             />
           ))}
         {isDownloadable && (
-          <div
-            ref={lastTopTextRef}
-            className="mt-8 mb-8 mx-4 sm:mx-0 p-6 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm text-center"
+          <SessionEndedPanel
+            topTextRef={lastTopTextRef}
+            title={t("meeting_ended")}
+            description={t("meeting_ended_description")}
           >
-            <div className="flex flex-col items-center justify-center space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {t("meeting_ended")}
-              </h3>
-
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md leading-snug">
-                {t("meeting_ended_description")}
-              </p>
-
-              <div className="pt-2">
-                <DownloadVttButton
-                  isDownloadable={isDownloadable}
-                  integration={integration}
-                  sessionId={sessionId}
-                  token={token}
-                />
-              </div>
-            </div>
-          </div>
+            <DownloadVttButton
+              isDownloadable={isDownloadable}
+              integration={integration}
+              sessionId={sessionId}
+              token={token}
+            />
+          </SessionEndedPanel>
         )}
       </div>
       <Notification

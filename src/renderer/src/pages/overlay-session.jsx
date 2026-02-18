@@ -5,31 +5,25 @@ import React, {
   useRef,
   useEffect,
 } from "react";
-import { useParams, useLocation } from "react-router-dom";
 import { FaTimes } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
 import { useLanguage } from "../context/language.jsx";
+import { useSessionRoute } from "../hooks/use-session-route.js";
+import { useNetwork } from "../context/network.jsx";
 import Transcript from "../components/session/transcript.jsx";
 import Unauthorized from "../components/auth/unauthorized.jsx";
 import Notification from "../components/misc/notification.jsx";
 import BackfillLoading from "../components/session/backfill-loading.jsx";
 import WaitingRoom from "../components/session/waiting.jsx";
 import DownloadVttButton from "../components/session/vtt-download.jsx";
+import SessionEndedPanel from "../components/session/session-ended-panel.jsx";
 import ResizeHandles from "../components/general/resize-handles.jsx";
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
-
 export default function OverlaySessionPage() {
-  const params = useParams();
-  const integration = params.integration;
-  const sessionId = params["*"];
-
-  const query = useQuery();
-  const token = query.get("token");
+  const { integration, sessionId, token } = useSessionRoute();
+  const { wsBaseUrl } = useNetwork();
 
   const [isAuthorized, setIsAuthorized] = useState(!!token);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
@@ -50,7 +44,7 @@ export default function OverlaySessionPage() {
   const encodedSessionId = isAuthorized ? encodeURIComponent(sessionId) : null;
 
   const wsUrl = isAuthorized
-    ? `${window.electron.wsBaseUrl}/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
+    ? `${wsBaseUrl}/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
   const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
@@ -128,20 +122,18 @@ export default function OverlaySessionPage() {
               ))}
 
             {isDownloadable && (
-              <div
-                ref={lastTopTextRef}
-                className="mt-4 p-4 rounded-lg bg-white/80 dark:bg-zinc-800/80 text-center flex flex-col items-center gap-3"
+              <SessionEndedPanel
+                variant="compact"
+                topTextRef={lastTopTextRef}
+                title={t("meeting_ended")}
               >
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("meeting_ended")}
-                </p>
                 <DownloadVttButton
                   isDownloadable={isDownloadable}
                   integration={integration}
                   sessionId={sessionId}
                   token={token}
                 />
-              </div>
+              </SessionEndedPanel>
             )}
           </div>
         )}
