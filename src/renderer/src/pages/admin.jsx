@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
-import MetricsViewing from "../components/admin/metrics.jsx";
 import LogViewing from "../components/admin/log-viewing.jsx";
 
 export default function AdminPage() {
@@ -12,10 +11,6 @@ export default function AdminPage() {
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsError, setLogsError] = useState(null);
-  const [serverMetrics, setServerMetrics] = useState(null);
-  const [zoomMetrics, setZoomMetrics] = useState(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-  const [metricsError, setMetricsError] = useState(null);
 
   const fetchLogs = async () => {
     try {
@@ -36,27 +31,6 @@ export default function AdminPage() {
     const interval = setInterval(fetchLogs, 3000);
     return () => clearInterval(interval);
   }, []);
-
-  const fetchMetrics = async () => {
-    setMetricsLoading(true);
-    try {
-      const response = await window.electron.getMetrics();
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to fetch metrics");
-      }
-
-      setServerMetrics(response.data.server);
-      setZoomMetrics(response.data.zoom);
-
-      setMetricsError(null);
-    } catch (err) {
-      console.error("Metrics fetch error:", err);
-      setMetricsError(err.message);
-    } finally {
-      setMetricsLoading(false);
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -204,14 +178,6 @@ export default function AdminPage() {
           onCreateTenant={handleCreateTenant}
           onUpdateTenant={handleUpdateTenant}
           onDeleteTenant={handleDeleteTenant}
-        />
-        <hr className="border-zinc-200 dark:border-zinc-700" />
-        <MetricsViewing
-          serverMetrics={serverMetrics}
-          zoomMetrics={zoomMetrics}
-          loading={metricsLoading}
-          error={metricsError}
-          onRefresh={fetchMetrics}
         />
         <hr className="border-zinc-200 dark:border-zinc-700" />
         <LogViewing
