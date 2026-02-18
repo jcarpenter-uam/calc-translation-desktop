@@ -1,150 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
 import LogViewing from "../components/admin/log-viewing.jsx";
+import { useAdminData } from "../hooks/use-admin-data.js";
 
 export default function AdminPage() {
-  const [users, setUsers] = useState([]);
-  const [tenants, setTenants] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [logsLoading, setLogsLoading] = useState(false);
-  const [logsError, setLogsError] = useState(null);
-
-  const fetchLogs = async () => {
-    try {
-      const response = await window.electron.getLogs();
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to fetch logs");
-      }
-
-      setLogs(response.data.logs || []);
-      setLogsError(null);
-    } catch (err) {
-      console.error("Log fetch failed", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [userResponse, tenantResponse] = await Promise.all([
-          window.electron.getUsers(),
-          window.electron.getTenants(),
-        ]);
-
-        if (userResponse.status !== "ok") {
-          throw new Error(userResponse.message || "Failed to fetch users");
-        }
-        if (tenantResponse.status !== "ok") {
-          throw new Error(tenantResponse.message || "Failed to fetch tenants");
-        }
-
-        setUsers(userResponse.data);
-        setTenants(tenantResponse.data);
-        setError(null);
-      } catch (err) {
-        console.error("Admin Page Fetch Error:", err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleSetUserAdminStatus = async (userId, isAdmin) => {
-    try {
-      const response = await window.electron.setUserAdminStatus(userId, {
-        is_admin: isAdmin,
-      });
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to set admin status");
-      }
-
-      const updatedUser = response.data;
-
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, ...updatedUser } : user,
-        ),
-      );
-    } catch (err) {
-      console.error("Set admin status error:", err);
-    }
-  };
-
-  const handleDeleteUser = async (userId) => {
-    try {
-      const response = await window.electron.deleteUser(userId);
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to delete user");
-      }
-
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-  };
-
-  const handleCreateTenant = async (createData) => {
-    try {
-      const response = await window.electron.createTenant(createData);
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to create tenant");
-      }
-
-      const newTenant = response.data;
-      setTenants((prevTenants) => [...prevTenants, newTenant]);
-    } catch (err) {
-      console.error("Create tenant error:", err);
-    }
-  };
-
-  const handleUpdateTenant = async (tenantId, updateData) => {
-    try {
-      const response = await window.electron.updateTenant(tenantId, updateData);
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to update tenant");
-      }
-
-      const updatedTenant = response.data;
-      setTenants((prevTenants) =>
-        prevTenants.map((t) => (t.tenant_id === tenantId ? updatedTenant : t)),
-      );
-    } catch (err) {
-      console.error("Update tenant error:", err);
-    }
-  };
-
-  const handleDeleteTenant = async (tenantId) => {
-    try {
-      const response = await window.electron.deleteTenant(tenantId);
-
-      if (response.status !== "ok") {
-        throw new Error(response.message || "Failed to delete tenant");
-      }
-
-      setTenants((prevTenants) =>
-        prevTenants.filter((t) => t.tenant_id !== tenantId),
-      );
-    } catch (err) {
-      console.error("Delete tenant error:", err);
-    }
-  };
+  const {
+    users,
+    tenants,
+    logs,
+    isLoading,
+    error,
+    logsLoading,
+    logsError,
+    fetchLogs,
+    handleSetUserAdminStatus,
+    handleDeleteUser,
+    handleCreateTenant,
+    handleUpdateTenant,
+    handleDeleteTenant,
+  } = useAdminData();
 
   const renderContent = () => {
     if (isLoading) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ZoomForm,
@@ -7,6 +7,8 @@ import {
 import { BiLogoZoom, BiCalendar, BiUser } from "react-icons/bi";
 import { useTranslation } from "react-i18next";
 import { useCalendar } from "../hooks/use-calendar.js";
+import { useCalendarAutoSync } from "../hooks/use-calendar-auto-sync.js";
+import { usePendingZoomLink } from "../hooks/use-pending-zoom-link.js";
 import { CalendarView } from "../components/calender/view.jsx";
 
 const getCurrentWorkWeek = () => {
@@ -38,55 +40,13 @@ export default function LandingPage() {
     syncCalendar,
   } = useCalendar(dateRange.start, dateRange.end);
 
-  useEffect(() => {
-    const SYNC_KEY = "calendar_last_synced_at";
-    const TTL = 12 * 60 * 60 * 1000; // 12 hours
-    const now = Date.now();
-    const lastSync = localStorage.getItem(SYNC_KEY);
-
-    if (!lastSync || now - parseInt(lastSync, 10) > TTL) {
-      syncCalendar();
-      localStorage.setItem(SYNC_KEY, now.toString());
-      console.log("Calendar auto synced");
-    }
-  }, [syncCalendar]);
-
-  useEffect(() => {
-    const checkPendingZoomLink = async () => {
-      const needsLink = sessionStorage.getItem("zoom_link_pending");
-
-      if (needsLink === "true") {
-        try {
-          console.log("Found pending Zoom link, attempting to link account...");
-          alert(t("finishing_zoom_setup"));
-
-          const response = await window.electron.linkPendingZoom();
-
-          if (response.status !== "ok") {
-            throw new Error(response.message || "Failed to link Zoom account.");
-          }
-
-          console.log("Zoom account linked successfully!");
-          alert(t("zoom_linked_success"));
-        } catch (error) {
-          console.error("Zoom link error:", error);
-          alert(t("zoom_link_failed", { error: error.message }));
-        } finally {
-          sessionStorage.removeItem("zoom_link_pending");
-        }
-      }
-    };
-
-    checkPendingZoomLink();
-  }, []);
+  useCalendarAutoSync(syncCalendar);
+  usePendingZoomLink(t);
 
   const handleJoin = async (data, source = "manual") => {
     setError(null);
     try {
       let response;
-      const headers = {
-        "Content-Type": "application/json",
-      };
 
       if (source === "calendar") {
         response = await window.electron.joinCalendarSession({

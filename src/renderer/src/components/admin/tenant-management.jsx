@@ -9,7 +9,6 @@ import {
   FaGoogle,
   FaCheckCircle,
   FaExclamationCircle,
-  FaLink,
   FaUnlink,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -25,19 +24,82 @@ const normalizeDomains = (domains) => {
   });
 };
 
+const getCreateTenantInitialFormData = () => ({
+  tenant_id: "",
+  domains: "",
+  client_id: "",
+  client_secret: "",
+  organization_name: "",
+  provider_type: "microsoft",
+});
+
+const parseDomainString = (domains, providerType) =>
+  domains
+    .split(",")
+    .map((d) => d.trim())
+    .filter((d) => d.length > 0)
+    .map((d) => ({ domain: d, provider: providerType }));
+
+const getTenantEditInitialFormData = (tenant, msConfig, googleConfig) => ({
+  organization_name: tenant.organization_name || "",
+
+  microsoft_client_id: msConfig.client_id || "",
+  microsoft_secret: "",
+  microsoft_tenant_hint: msConfig.tenant_hint || "",
+
+  google_client_id: googleConfig.client_id || "",
+  google_secret: "",
+  google_tenant_hint: googleConfig.tenant_hint || "",
+});
+
+const buildTenantUpdateData = ({
+  tenant,
+  formData,
+  domainObjects,
+  activeTab,
+  msConfig,
+  googleConfig,
+}) => {
+  const updateData = {
+    domains: domainObjects,
+    provider_type: activeTab,
+  };
+
+  if (formData.organization_name !== tenant.organization_name) {
+    updateData.organization_name = formData.organization_name;
+  }
+
+  if (activeTab === "microsoft") {
+    if (formData.microsoft_client_id !== msConfig.client_id) {
+      updateData.client_id = formData.microsoft_client_id;
+    }
+    if (formData.microsoft_secret) {
+      updateData.client_secret = formData.microsoft_secret;
+    }
+    if (formData.microsoft_tenant_hint !== msConfig.tenant_hint) {
+      updateData.tenant_hint = formData.microsoft_tenant_hint;
+    }
+  } else if (activeTab === "google") {
+    if (formData.google_client_id !== googleConfig.client_id) {
+      updateData.client_id = formData.google_client_id;
+    }
+    if (formData.google_secret) {
+      updateData.client_secret = formData.google_secret;
+    }
+    if (formData.google_tenant_hint !== googleConfig.tenant_hint) {
+      updateData.tenant_hint = formData.google_tenant_hint;
+    }
+  }
+
+  return updateData;
+};
+
 /**
  * Form to create a new tenant.
  */
 function CreateTenantForm({ onCreate }) {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    tenant_id: "",
-    domains: "",
-    client_id: "",
-    client_secret: "",
-    organization_name: "",
-    provider_type: "microsoft",
-  });
+  const [formData, setFormData] = useState(getCreateTenantInitialFormData);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,31 +109,12 @@ function CreateTenantForm({ onCreate }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Split string into array
-    const rawDomains = formData.domains
-      .split(",")
-      .map((d) => d.trim())
-      .filter((d) => d.length > 0);
-
-    // Convert to objects, pinning them to the selected provider type by default
-    const domainObjects = rawDomains.map((d) => ({
-      domain: d,
-      provider: formData.provider_type,
-    }));
-
     onCreate({
       ...formData,
-      domains: domainObjects,
+      domains: parseDomainString(formData.domains, formData.provider_type),
     });
 
-    setFormData({
-      tenant_id: "",
-      domains: "",
-      client_id: "",
-      client_secret: "",
-      organization_name: "",
-      provider_type: "microsoft",
-    });
+    setFormData(getCreateTenantInitialFormData());
   };
 
   return (
@@ -293,7 +336,7 @@ function DomainEditor({ domains, onChange }) {
 /**
  * A row that supports editing multiple providers (Microsoft & Google) for a single tenant.
  */
-function TenantRow({ tenant, onUpdate, onDelete, onRefresh }) {
+function TenantRow({ tenant, onUpdate, onDelete }) {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("microsoft");
@@ -309,19 +352,9 @@ function TenantRow({ tenant, onUpdate, onDelete, onRefresh }) {
     setDomainObjects(normalizeDomains(tenant.domains));
   }, [tenant.domains]);
 
-  const [formData, setFormData] = useState({
-    organization_name: tenant.organization_name || "",
-
-    // Microsoft
-    microsoft_client_id: msConfig.client_id || "",
-    microsoft_secret: "",
-    microsoft_tenant_hint: msConfig.tenant_hint || "",
-
-    // Google
-    google_client_id: googleConfig.client_id || "",
-    google_secret: "",
-    google_tenant_hint: googleConfig.tenant_hint || "",
-  });
+  const [formData, setFormData] = useState(() =>
+    getTenantEditInitialFormData(tenant, msConfig, googleConfig),
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -329,38 +362,14 @@ function TenantRow({ tenant, onUpdate, onDelete, onRefresh }) {
   };
 
   const handleSave = () => {
-    const updateData = {};
-
-    if (formData.organization_name !== tenant.organization_name) {
-      updateData.organization_name = formData.organization_name;
-    }
-
-    // Always send domains on save to ensure pinning is updated.
-    updateData.domains = domainObjects;
-
-    updateData.provider_type = activeTab;
-
-    if (activeTab === "microsoft") {
-      if (formData.microsoft_client_id !== msConfig.client_id) {
-        updateData.client_id = formData.microsoft_client_id;
-      }
-      if (formData.microsoft_secret) {
-        updateData.client_secret = formData.microsoft_secret;
-      }
-      if (formData.microsoft_tenant_hint !== msConfig.tenant_hint) {
-        updateData.tenant_hint = formData.microsoft_tenant_hint;
-      }
-    } else if (activeTab === "google") {
-      if (formData.google_client_id !== googleConfig.client_id) {
-        updateData.client_id = formData.google_client_id;
-      }
-      if (formData.google_secret) {
-        updateData.client_secret = formData.google_secret;
-      }
-      if (formData.google_tenant_hint !== googleConfig.tenant_hint) {
-        updateData.tenant_hint = formData.google_tenant_hint;
-      }
-    }
+    const updateData = buildTenantUpdateData({
+      tenant,
+      formData,
+      domainObjects,
+      activeTab,
+      msConfig,
+      googleConfig,
+    });
 
     if (Object.keys(updateData).length > 0) {
       onUpdate(tenant.tenant_id, updateData);
@@ -369,17 +378,7 @@ function TenantRow({ tenant, onUpdate, onDelete, onRefresh }) {
   };
 
   const handleCancel = () => {
-    setFormData({
-      organization_name: tenant.organization_name || "",
-
-      microsoft_client_id: msConfig.client_id || "",
-      microsoft_secret: "",
-      microsoft_tenant_hint: msConfig.tenant_hint || "",
-
-      google_client_id: googleConfig.client_id || "",
-      google_secret: "",
-      google_tenant_hint: googleConfig.tenant_hint || "",
-    });
+    setFormData(getTenantEditInitialFormData(tenant, msConfig, googleConfig));
     setDomainObjects(normalizeDomains(tenant.domains));
     setIsEditing(false);
   };
@@ -391,33 +390,6 @@ function TenantRow({ tenant, onUpdate, onDelete, onRefresh }) {
       )
     ) {
       onDelete(tenant.tenant_id);
-    }
-  };
-
-  const handleDeleteAuth = async (provider) => {
-    const activeMethods = Object.keys(authMethods).filter(
-      (k) => authMethods[k].has_secret,
-    );
-    const isLastMethod =
-      activeMethods.length <= 1 && activeMethods.includes(provider);
-
-    const confirmMessage = isLastMethod
-      ? t("tenant_delete_last_auth_confirm", { provider })
-      : t("tenant_delete_auth_confirm", { provider });
-
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      // NOTE: Desktop uses a different mechanism for deletes usually,
-      // but here we might need to rely on the parent or implement an IPC call.
-      // Assuming parent handles deletes via prop for now or we use window.electron if available.
-      // But based on provided `preload/index.js`, there is no specific `deleteTenantAuth` method.
-      // We will skip implementation of granular auth delete for desktop unless requested,
-      // OR implement a generic update that removes credentials.
-      alert("Granular auth deletion not yet supported in desktop admin view.");
-    } catch (error) {
-      console.error("Error deleting auth method:", error);
-      alert(t("error_generic"));
     }
   };
 
@@ -711,7 +683,6 @@ export default function TenantManagement({
   onCreateTenant,
   onUpdateTenant,
   onDeleteTenant,
-  onRefresh,
 }) {
   const { t } = useTranslation();
 
@@ -729,7 +700,6 @@ export default function TenantManagement({
               tenant={tenant}
               onUpdate={onUpdateTenant}
               onDelete={onDeleteTenant}
-              onRefresh={onRefresh}
             />
           ))
         ) : (
