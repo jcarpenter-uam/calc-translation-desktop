@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { BASE_DOMAIN, WS_BASE_URL } from "../shared/network";
 
 contextBridge.exposeInMainWorld("electron", {
+  baseDomain: BASE_DOMAIN,
+  wsBaseUrl: WS_BASE_URL,
+
   // App Controls
   minimize: () => ipcRenderer.invoke("minimize-window"),
   maximize: () => ipcRenderer.invoke("maximize-window"),

@@ -16,10 +16,9 @@ import {
 import log from "electron-log/main";
 import { setPrereleaseChannel } from "./autoupdate";
 import { createAuthWindow } from "./auth";
+import { API_BASE_URL } from "../../shared/network";
 
 const ipcHandlerLog = log.scope("ipchandler");
-
-const API_BASE_URL = "https://translator.my-uam.com";
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");
