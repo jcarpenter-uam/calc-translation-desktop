@@ -55,7 +55,7 @@ export default function SettingsModal({ isOpen, onClose }) {
       role="dialog"
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-zinc-900 shadow-2xl app-region-drag"
+        className="w-full max-w-md max-h-[calc(100vh-2rem)] overflow-hidden rounded-lg bg-white dark:bg-zinc-900 shadow-2xl app-region-drag flex flex-col"
         onClick={handlePanelClick}
       >
         <header className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-700/80 px-4 py-2">
@@ -72,7 +72,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           </button>
         </header>
 
-        <main className="px-6 py-3 space-y-2">
+        <main className="px-6 py-3 space-y-2 overflow-y-auto min-h-0 app-region-no-drag scrollbar-none">
           <SettingsRow label={t("theme_label")}>
             <Theme />
           </SettingsRow>
