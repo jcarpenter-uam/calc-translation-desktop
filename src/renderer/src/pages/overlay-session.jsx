@@ -47,8 +47,13 @@ export default function OverlaySessionPage() {
     ? `${wsBaseUrl}/ws/view/${integration}/${encodedSessionId}?token=${token}&language=${targetLanguage}`
     : null;
 
-  const { transcripts, isDownloadable, isBackfilling, sessionStatus } =
-    useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
+  const {
+    transcripts,
+    isDownloadable,
+    isBackfilling,
+    sessionStatus,
+    isSharedTwoWayMode,
+  } = useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
   const handleClose = useCallback(() => {
     if (isDownloadable && transcripts.length > 0) {
@@ -118,6 +123,8 @@ export default function OverlaySessionPage() {
                       ? lastTopTextRef
                       : null
                   }
+                  forceBothLanguages={isSharedTwoWayMode}
+                  preferredLanguage={targetLanguage}
                 />
               ))}
 
