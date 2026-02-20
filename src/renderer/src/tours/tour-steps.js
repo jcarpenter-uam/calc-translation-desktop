@@ -158,11 +158,14 @@ export function getOnboardingTourSteps(navigate, t) {
       group: TOUR_GROUP,
       title: t("tour_calendar_join_title"),
       content: t("tour_calendar_join_content"),
-      beforeEnter: async () => {
+      beforeEnter: async (_currentStep, nextStep) => {
         await ensureLandingClean();
         const calendarTab = document.querySelector("#landing-calendar-tab-desktop");
         calendarTab?.click();
         await waitForSelector("#landing-calendar-panel-desktop");
+        nextStep.target =
+          document.querySelector("#landing-calendar-panel-desktop") || document.body;
+        nextStep.dialogTarget = calendarTab || nextStep.target;
       },
     },
     {
@@ -170,11 +173,14 @@ export function getOnboardingTourSteps(navigate, t) {
       group: TOUR_GROUP,
       title: t("tour_zoom_integration_title"),
       content: t("tour_zoom_integration_content"),
-      beforeEnter: async () => {
+      beforeEnter: async (_currentStep, nextStep) => {
         await ensureLandingClean();
         const zoomTab = document.querySelector("#landing-zoom-tab-desktop");
         zoomTab?.click();
         await waitForSelector("#landing-zoom-panel-desktop");
+        nextStep.target =
+          document.querySelector("#landing-zoom-panel-desktop") || document.body;
+        nextStep.dialogTarget = zoomTab || nextStep.target;
       },
     },
     {
@@ -182,13 +188,16 @@ export function getOnboardingTourSteps(navigate, t) {
       group: TOUR_GROUP,
       title: t("tour_standalone_mode_title"),
       content: t("tour_standalone_mode_content"),
-      beforeEnter: async () => {
+      beforeEnter: async (_currentStep, nextStep) => {
         await ensureLandingClean();
         const standaloneTab = document.querySelector(
           "#landing-standalone-tab-desktop",
         );
         standaloneTab?.click();
         await waitForSelector("#landing-standalone-panel-desktop");
+        nextStep.target =
+          document.querySelector("#landing-standalone-panel-desktop") || document.body;
+        nextStep.dialogTarget = standaloneTab || nextStep.target;
       },
     },
     {
