@@ -7,11 +7,13 @@ import SessionPage from "./pages/session";
 import AdminPage from "./pages/admin";
 import OverlaySessionPage from "./pages/overlay-session";
 import StandalonePage from "./pages/standalone";
+import OnboardingTour from "./components/misc/onboarding-tour";
 
 export default function App() {
   return (
     <div className="min-h-screen">
       <HashRouter>
+        <OnboardingTour />
         {/* <ScrollToTop /> */}
         <Routes>
           <Route element={<Layout />}>

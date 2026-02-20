@@ -10,8 +10,8 @@ import DisplayMode from "./display-mode.jsx";
 import BootToggle from "./boot-toggle.jsx";
 import { useTranslation } from "react-i18next";
 
-const SettingsRow = ({ label, children }) => (
-  <div className="flex items-center justify-between">
+const SettingsRow = ({ id, label, children }) => (
+  <div id={id} className="flex items-center justify-between">
     <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
       {label}
     </span>
@@ -55,6 +55,7 @@ export default function SettingsModal({ isOpen, onClose }) {
       role="dialog"
     >
       <div
+        id="settings-modal-desktop"
         className="w-full max-w-md max-h-[calc(100vh-2rem)] overflow-hidden rounded-lg bg-white dark:bg-zinc-900 shadow-2xl app-region-drag flex flex-col"
         onClick={handlePanelClick}
       >
@@ -63,6 +64,7 @@ export default function SettingsModal({ isOpen, onClose }) {
             {t("settings_title")}
           </h3>
           <button
+            id="settings-close-btn-desktop"
             type="button"
             onClick={onClose}
             className="p-2 rounded-full text-zinc-600 dark:text-zinc-400 transition-colors app-region-no-drag hover:bg-red-500/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
@@ -73,7 +75,7 @@ export default function SettingsModal({ isOpen, onClose }) {
         </header>
 
         <main className="px-6 py-3 space-y-2 overflow-y-auto min-h-0 app-region-no-drag scrollbar-none">
-          <SettingsRow label={t("theme_label")}>
+          <SettingsRow id="settings-theme-row-desktop" label={t("theme_label")}>
             <Theme />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
@@ -85,17 +87,38 @@ export default function SettingsModal({ isOpen, onClose }) {
             <BootToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={t("language_label")}>
+          <SettingsRow
+            id="settings-language-row-desktop"
+            label={t("language_label")}
+          >
             <Language />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={t("translate_ui")}>
+          <SettingsRow
+            id="settings-ui-translation-row-desktop"
+            label={t("translate_ui")}
+          >
             <UiLanguageToggle />
           </SettingsRow>
           <div className="border-b border-zinc-200/80 dark:border-zinc-700/80 !my-2"></div>
-          <SettingsRow label={t("display_mode_label")}>
+          <SettingsRow
+            id="settings-display-mode-row-desktop"
+            label={t("display_mode_label")}
+          >
             <DisplayMode />
           </SettingsRow>
+          <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-700/80 !mt-4">
+            <button
+              id="settings-restart-tour-btn-desktop"
+              onClick={() => {
+                onClose();
+                window.dispatchEvent(new CustomEvent("restart-onboarding-tour"));
+              }}
+              className="w-full px-3 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              {t("redo_onboarding_tour_btn")}
+            </button>
+          </div>
         </main>
         <footer className="px-6 py-3 flex justify-between items-center border-t border-zinc-200/80 dark:border-zinc-700/80">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">

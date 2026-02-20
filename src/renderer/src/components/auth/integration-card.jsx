@@ -16,7 +16,11 @@ export function ZoomForm({ onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id="landing-zoom-panel-desktop"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
       <div>
         <label
           htmlFor="joinUrl"
@@ -112,7 +116,11 @@ export function StandaloneForm({ onSubmit }) {
   };
 
   return (
-    <form onSubmit={handleJoinSubmit} className="space-y-4">
+    <form
+      id="landing-standalone-panel-desktop"
+      onSubmit={handleJoinSubmit}
+      className="space-y-4"
+    >
       <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 mb-3">
         {t("standalone_mode_description")}
       </p>
@@ -154,6 +162,7 @@ export function StandaloneForm({ onSubmit }) {
         </p>
         <Link
           to="/standalone/host"
+          id="landing-to-standalone-btn-desktop"
           className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600/90 text-white font-semibold rounded-lg hover:bg-green-700/90 transition-colors cursor-pointer"
         >
           <BiPlay className="w-6 h-6" />

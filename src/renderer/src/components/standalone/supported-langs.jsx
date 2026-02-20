@@ -88,7 +88,10 @@ export default function SupportedLangs() {
   const seamlessList = [...languages, ...languages];
 
   return (
-    <section className="w-full flex flex-col items-center justify-center overflow-hidden">
+    <section
+      id="standalone-supported-langs-desktop"
+      className="w-full flex flex-col items-center justify-center overflow-hidden"
+    >
       <style>
         {`
           @keyframes infinite-scroll {

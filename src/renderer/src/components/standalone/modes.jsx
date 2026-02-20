@@ -241,7 +241,10 @@ export default function TranslationModes({ onSubmit }) {
     <section className="w-full py-10 px-6 flex justify-center">
       <div className="max-w-7xl w-full grid md:grid-cols-2 gap-20">
         {/* === One-Way === */}
-        <div className="flex flex-col h-full p-6 rounded-2xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-300">
+        <div
+          id="standalone-one-way-card-desktop"
+          className="flex flex-col h-full p-6 rounded-2xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-300"
+        >
           <div className="flex-grow">
             <OneWay />
           </div>
@@ -282,7 +285,10 @@ export default function TranslationModes({ onSubmit }) {
         </div>
 
         {/* === Two-Way === */}
-        <div className="flex flex-col h-full p-6 rounded-2xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-300">
+        <div
+          id="standalone-two-way-card-desktop"
+          className="flex flex-col h-full p-6 rounded-2xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 transition-all duration-300"
+        >
           <div className="flex-grow">
             <TwoWay />
           </div>

@@ -89,8 +89,9 @@ export default function LandingPage() {
     }
   };
 
-  const SidebarItem = ({ id, label, icon, activeClass }) => (
+  const SidebarItem = ({ id, label, icon, activeClass, tourId }) => (
     <button
+      id={tourId}
       onClick={() => setIntegration(id)}
       className={`cursor-pointer w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-r-2 ${
         integration === id
@@ -129,6 +130,7 @@ export default function LandingPage() {
         <div className="flex flex-col">
           <SidebarItem
             id="calendar"
+            tourId="landing-calendar-tab-desktop"
             label={t("calendar_view")}
             icon={<BiCalendar className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
@@ -152,12 +154,14 @@ export default function LandingPage() {
         <div className="flex flex-col">
           <SidebarItem
             id="zoom"
+            tourId="landing-zoom-tab-desktop"
             label={t("integration_zoom")}
             icon={<BiLogoZoom className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
           />
           <SidebarItem
             id="standalone"
+            tourId="landing-standalone-tab-desktop"
             label={t("integration_standalone")}
             icon={<BiUser className="h-5 w-5" />}
             activeClass="border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
@@ -168,7 +172,7 @@ export default function LandingPage() {
       {/* Main Content Area */}
       <div className="flex-1 bg-white dark:bg-zinc-900/50 overflow-hidden flex flex-col">
         {integration === "calendar" ? (
-          <div className="h-full p-6 overflow-hidden">
+          <div id="landing-calendar-panel-desktop" className="h-full p-6 overflow-hidden">
             <CalendarView
               events={events}
               loading={calendarLoading}
@@ -181,7 +185,10 @@ export default function LandingPage() {
             />
           </div>
         ) : (
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div
+            id="landing-manual-join-desktop"
+            className="flex-1 p-6 overflow-y-auto"
+          >
             <div className="max-w-md mx-auto">
               {renderIntegrationForm()}
 

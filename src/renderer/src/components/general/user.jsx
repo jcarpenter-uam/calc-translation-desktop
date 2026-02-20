@@ -52,6 +52,7 @@ export default function UserAvatar() {
     <>
       <div className="relative" ref={dropdownRef}>
         <button
+          id="user-avatar-btn-desktop"
           onClick={() => setIsOpen(!isOpen)}
           title={t("user_menu_tooltip", { name })}
           className="
@@ -124,6 +125,7 @@ export default function UserAvatar() {
 
               <li>
                 <button
+                  id="user-settings-btn-desktop"
                   onClick={() => {
                     setIsOpen(false);
                     setIsSettingsOpen(true);
