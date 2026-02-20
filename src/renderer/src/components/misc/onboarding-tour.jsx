@@ -38,8 +38,10 @@ function applyTourUtilityClasses(tg) {
   if (!dialog) {
     return;
   }
+  dialog.style.setProperty("-webkit-app-region", "no-drag");
 
   addClasses(dialog, [
+    "app-region-no-drag",
     "w-[min(460px,calc(100vw-2rem))]",
     "max-w-[min(460px,calc(100vw-2rem))]",
     "rounded-xl",
@@ -51,6 +53,7 @@ function applyTourUtilityClasses(tg) {
 
   addClasses(dialog.querySelector(".tg-dialog-title"), ["text-zinc-900"]);
   addClasses(dialog.querySelector(".tg-dialog-body"), ["break-words", "text-zinc-700"]);
+  addClasses(dialog.querySelector(".tg-dialog-header"), ["relative", "pr-12"]);
 
   addClasses(dialog.querySelector(".tg-dialog-progress-bar"), ["bg-zinc-100"]);
   addClasses(dialog.querySelector("#tg-dialog-progbar"), ["bg-blue-500"]);
@@ -84,6 +87,7 @@ function applyTourUtilityClasses(tg) {
   const prevBtn = dialog.querySelector("#tg-dialog-prev-btn");
   const nextBtn = dialog.querySelector("#tg-dialog-next-btn");
   [prevBtn, nextBtn].forEach((btn) => {
+    btn?.style.setProperty("-webkit-app-region", "no-drag");
     addClasses(btn, [
       "min-w-[72px]",
       "cursor-pointer",
@@ -97,14 +101,30 @@ function applyTourUtilityClasses(tg) {
   });
   addClasses(nextBtn, ["!ml-0", "justify-self-end"]);
 
-  addClasses(dialog.querySelector("#tg-dialog-close-btn"), [
-    "ml-3",
+  const closeBtn = dialog.querySelector("#tg-dialog-close-btn");
+  closeBtn?.style.setProperty("-webkit-app-region", "no-drag");
+  addClasses(closeBtn, [
+    "!absolute",
+    "!right-5",
+    "!top-6",
+    "!m-0",
     "!h-[22px]",
     "!w-[22px]",
     "!opacity-100",
+    "!z-10",
+    "!pointer-events-auto",
+    "flex",
+    "items-center",
+    "justify-center",
+    "rounded",
+    "cursor-pointer",
+    "leading-none",
+    "select-none",
+    "hover:bg-red-50",
     "text-red-500",
     "hover:text-red-600",
   ]);
+  addClasses(closeBtn?.querySelector("svg"), ["pointer-events-none"]);
 }
 
 function getTourOptions(navigate, t) {
@@ -210,6 +230,9 @@ async function startTourWhenReady({
   try {
     await tg.setOptions(getTourOptions(navigate, t));
     await tg.start(TOUR_GROUP);
+    applyTourUtilityClasses(tg);
+    await waitForFrames();
+    await tg.updatePositions();
   } catch (error) {
     console.error("Failed to start onboarding tour", error);
     hasAttemptedStartRef.current = false;
