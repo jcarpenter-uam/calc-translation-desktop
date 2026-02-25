@@ -479,6 +479,15 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("admin:get-reviews", async () => {
+    try {
+      const { data } = await makeApiRequest("/api/reviews/", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle(
     "download-vtt",
     async (event, { integration, sessionId, token, language }) => {

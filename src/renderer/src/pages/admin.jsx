@@ -2,6 +2,7 @@ import React from "react";
 import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
 import LogViewing from "../components/admin/log-viewing.jsx";
+import ReviewsManagement from "../components/admin/reviews.jsx";
 import { useAdminData } from "../hooks/use-admin-data.js";
 
 export default function AdminPage() {
@@ -14,6 +15,10 @@ export default function AdminPage() {
     logsLoading,
     logsError,
     fetchLogs,
+    reviews,
+    reviewsLoading,
+    reviewsError,
+    fetchReviews,
     handleSetUserAdminStatus,
     handleDeleteUser,
     handleCreateTenant,
@@ -53,6 +58,13 @@ export default function AdminPage() {
           onCreateTenant={handleCreateTenant}
           onUpdateTenant={handleUpdateTenant}
           onDeleteTenant={handleDeleteTenant}
+        />
+        <hr className="border-zinc-200 dark:border-zinc-700" />
+        <ReviewsManagement
+          reviews={reviews}
+          loading={reviewsLoading}
+          error={reviewsError}
+          onRefresh={fetchReviews}
         />
         <hr className="border-zinc-200 dark:border-zinc-700" />
         <LogViewing

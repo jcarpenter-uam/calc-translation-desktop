@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("electron", {
   updateUserLanguage: (languageCode) =>
     ipcRenderer.invoke("users:update-language", languageCode),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
+  getReviews: () => ipcRenderer.invoke("admin:get-reviews"),
   openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
   closeOverlay: () => ipcRenderer.invoke("overlay:close"),
   setIgnoreMouseEvents: (ignore, options) =>

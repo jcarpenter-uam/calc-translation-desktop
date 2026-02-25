@@ -6,6 +6,9 @@ export function useAdminData() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -17,6 +20,23 @@ export function useAdminData() {
       setLogs(response.data.logs || []);
     } catch (err) {
       console.error("Log fetch failed", err);
+    }
+  }, []);
+
+  const fetchReviews = useCallback(async () => {
+    setReviewsLoading(true);
+    setReviewsError(null);
+    try {
+      const response = await window.electron.getReviews();
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to fetch reviews");
+      }
+      setReviews(response.data || []);
+    } catch (err) {
+      console.error("Review fetch failed", err);
+      setReviewsError(err.message);
+    } finally {
+      setReviewsLoading(false);
     }
   }, []);
 
@@ -55,6 +75,10 @@ export function useAdminData() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleSetUserAdminStatus = useCallback(async (userId, isAdmin) => {
     try {
@@ -144,11 +168,15 @@ export function useAdminData() {
     users,
     tenants,
     logs,
+    reviews,
     isLoading,
     error,
     logsLoading: false,
     logsError: null,
     fetchLogs,
+    reviewsLoading,
+    reviewsError,
+    fetchReviews,
     handleSetUserAdminStatus,
     handleDeleteUser,
     handleCreateTenant,
