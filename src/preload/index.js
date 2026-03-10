@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld("electron", {
   downloadVtt: (payload) => ipcRenderer.invoke("download-vtt", payload),
   updateUserLanguage: (languageCode) =>
     ipcRenderer.invoke("users:update-language", languageCode),
+  updateUserOnboardingTourCompleted: (completed) =>
+    ipcRenderer.invoke("users:update-onboarding-tour", completed),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
   getReviews: () => ipcRenderer.invoke("admin:get-reviews"),
   openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),

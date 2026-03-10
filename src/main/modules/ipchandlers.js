@@ -329,6 +329,28 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("users:update-onboarding-tour", async (event, completed) => {
+    ipcHandlerLog.info(
+      `Updating onboarding tour completion status to: ${Boolean(completed)}`,
+    );
+    try {
+      const { data } = await makeApiRequest(
+        "/api/users/me/onboarding-tour",
+        "POST",
+        {
+          onboarding_tour_completed: Boolean(completed),
+        },
+      );
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error(
+        "Failed to update onboarding tour completion:",
+        error.message,
+      );
+      return { status: "error", message: error.message };
+    }
+  });
+
   ipcMain.handle("auth:logout", async () => {
     ipcHandlerLog.info("Logging out via IPC...");
     try {
