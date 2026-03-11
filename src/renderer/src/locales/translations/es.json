@@ -177,6 +177,8 @@
   "change_input": "Cambiar entrada",
   "translate_ui": "Traducir interfaz",
   "redo_onboarding_tour_btn": "Repetir recorrido de introducción",
+  "tour_fullscreen_title": "Consejo para mejor experiencia",
+  "tour_fullscreen_content": "Para una mejor experiencia durante el recorrido, activa la pantalla completa antes de continuar.",
   "tour_user_menu_title": "Menú de usuario",
   "tour_user_menu_content": "Usa el menú del avatar para ir al inicio, cerrar sesión y abrir la configuración.",
   "tour_settings_shortcut_title": "Acceso a configuración",

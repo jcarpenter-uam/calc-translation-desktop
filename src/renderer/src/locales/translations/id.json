@@ -182,6 +182,8 @@
   "change_input": "Ganti Input",
   "translate_ui": "Terjemahkan antarmuka",
   "redo_onboarding_tour_btn": "Ulangi Tur Onboarding",
+  "tour_fullscreen_title": "Tips Pengalaman Terbaik",
+  "tour_fullscreen_content": "Untuk pengalaman tur terbaik, aktifkan layar penuh aplikasi sebelum melanjutkan.",
   "tour_user_menu_title": "Menu Pengguna",
   "tour_user_menu_content": "Gunakan menu avatar untuk tombol beranda, keluar, dan pengaturan aplikasi.",
   "tour_settings_shortcut_title": "Pintasan Pengaturan",

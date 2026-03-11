@@ -182,6 +182,8 @@
   "change_input": "切换输入",
   "translate_ui": "翻译界面",
   "redo_onboarding_tour_btn": "重新开始新手引导",
+  "tour_fullscreen_title": "最佳体验提示",
+  "tour_fullscreen_content": "为获得最佳引导体验，请先将应用切换为全屏后再继续。",
   "tour_user_menu_title": "用户菜单",
   "tour_user_menu_content": "使用头像菜单可返回首页、退出登录和打开设置。",
   "tour_settings_shortcut_title": "设置入口",

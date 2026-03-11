@@ -175,6 +175,8 @@
   "change_input": "Change Input",
   "translate_ui": "Translate UI",
   "redo_onboarding_tour_btn": "Redo Onboarding Tour",
+  "tour_fullscreen_title": "Best Experience Tip",
+  "tour_fullscreen_content": "For the best tour experience, please switch the app to fullscreen before continuing.",
   "tour_user_menu_title": "User Menu",
   "tour_user_menu_content": "Use the avatar menu for a home button, signing out, and app settings.",
   "tour_settings_shortcut_title": "Settings Shortcut",

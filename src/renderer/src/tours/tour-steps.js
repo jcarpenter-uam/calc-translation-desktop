@@ -92,6 +92,13 @@ export function getOnboardingTourSteps(navigate, t) {
 
   return [
     {
+      target: "body",
+      group: TOUR_GROUP,
+      title: t("tour_fullscreen_title"),
+      content: t("tour_fullscreen_content"),
+      beforeEnter: ensureLandingClean,
+    },
+    {
       target: "#user-avatar-btn-desktop",
       group: TOUR_GROUP,
       title: t("tour_user_menu_title"),
