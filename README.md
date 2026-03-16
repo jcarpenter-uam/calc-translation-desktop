@@ -1,4 +1,4 @@
-# CALC Translation Desktop
+# CALC Translation Client
 
 ## Latest Releases
 
