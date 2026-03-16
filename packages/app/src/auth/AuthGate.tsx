@@ -11,9 +11,9 @@ export function AuthGate({ children }: AuthGateProps) {
 
   if (status === "loading") {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-16 text-slate-100">
-        <div className="mx-auto max-w-xl rounded-2xl border border-slate-700 bg-slate-900/80 p-8 shadow-xl">
-          <p className="text-sm text-slate-300">Checking session...</p>
+      <main className="min-h-screen bg-canvas px-6 py-16 text-ink">
+        <div className="mx-auto max-w-xl rounded-2xl border border-line bg-panel/90 p-8 shadow-panel">
+          <p className="text-sm text-ink-muted">Checking session...</p>
         </div>
       </main>
     );

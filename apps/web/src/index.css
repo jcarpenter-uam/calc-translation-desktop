@@ -2,7 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --color-canvas: 255 255 255;
+  --color-panel: 255 255 255;
+  --color-line: 228 228 231;
+  --color-ink: 24 24 27;
+  --color-ink-muted: 82 82 91;
+  --color-accent: 59 130 246;
+  --color-accent-hover: 37 99 235;
+  --color-accent-contrast: 8 47 73;
+  --color-lime: 132 204 22;
+  --color-lime-hover: 101 163 13;
+  --color-lime-contrast: 54 83 20;
+  --color-shadow: 39 39 42;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: 9 9 11;
+  --color-panel: 24 24 27;
+  --color-line: 63 63 70;
+  --color-ink: 244 244 245;
+  --color-ink-muted: 161 161 170;
+  --color-accent: 96 165 250;
+  --color-accent-hover: 147 197 253;
+  --color-accent-contrast: 8 47 73;
+  --color-lime: 163 230 53;
+  --color-lime-hover: 190 242 100;
+  --color-lime-contrast: 54 83 20;
+  --color-shadow: 24 24 27;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --color-canvas: 9 9 11;
+    --color-panel: 24 24 27;
+    --color-line: 63 63 70;
+    --color-ink: 244 244 245;
+    --color-ink-muted: 161 161 170;
+    --color-accent: 96 165 250;
+    --color-accent-hover: 147 197 253;
+    --color-accent-contrast: 8 47 73;
+    --color-lime: 163 230 53;
+    --color-lime-hover: 190 242 100;
+    --color-lime-contrast: 54 83 20;
+    --color-shadow: 24 24 27;
+  }
+}
+
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", sans-serif;
+  background: rgb(var(--color-canvas));
+  color: rgb(var(--color-ink));
 }
