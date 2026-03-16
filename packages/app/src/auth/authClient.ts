@@ -3,36 +3,25 @@ export type AuthUser = {
   name: string | null;
   email: string | null;
   role: string;
+  languageCode: string | null;
 };
 
-type MeResponse = {
+export type TenantInfo = {
+  id: string;
+  name: string | null;
+};
+
+export type MeResponse = {
   user: AuthUser;
-  tenantId: string | null;
+  tenant: TenantInfo | null;
 };
 
-function getApiBaseUrl() {
+export function getApiBaseUrl() {
   const env = globalThis as typeof globalThis & {
     __APP_API_BASE_URL__?: string;
   };
 
   return env.__APP_API_BASE_URL__ || "/api";
-}
-
-export async function fetchMe() {
-  const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch session: ${response.status}`);
-  }
-
-  return (await response.json()) as MeResponse;
 }
 
 export function startLogin(email: string, returnTo: string) {

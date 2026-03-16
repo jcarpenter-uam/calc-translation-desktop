@@ -5,7 +5,7 @@ type AuthenticatedHomeProps = {
 };
 
 export function Home({ platform }: AuthenticatedHomeProps) {
-  const { user, tenantId, logoutAndReset } = useAuth();
+  const { user, tenantId, tenantName, logoutAndReset } = useAuth();
 
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
@@ -36,7 +36,7 @@ export function Home({ platform }: AuthenticatedHomeProps) {
               <p className="rounded-xl border border-line/70 bg-canvas px-4 py-3 text-ink-muted">
                 Tenant:{" "}
                 <span className="font-semibold text-ink">
-                  {tenantId || "unknown"}
+                  {tenantName || tenantId || "unknown"}
                 </span>
               </p>
             </div>

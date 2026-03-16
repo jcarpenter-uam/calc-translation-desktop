@@ -8,17 +8,32 @@ import {
 import { SettingsModal } from "../settings/SettingsModal";
 
 export function UserMenu() {
-  const { status, user, logoutAndReset } = useAuth();
+  const { status, user, logoutAndReset, updateLanguagePreference } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [language, setLanguage] = useState<string>(readInitialLanguage);
   const menuRef = useRef<any>(null);
 
   const isAuthenticated = status === "authenticated";
+  const isAdmin =
+    user?.role === "tenant_admin" || user?.role === "super_admin";
   const displayUser = useMemo(
     () => user?.name || user?.email || "Unknown user",
     [user?.email, user?.name],
   );
+
+  const navigateToHashRoute = (route: "dashboard" | "admin") => {
+    const browser = globalThis as typeof globalThis & {
+      location?: { hash?: string };
+    };
+
+    if (!browser.location) {
+      return;
+    }
+
+    browser.location.hash = route === "admin" ? "#/admin" : "#/";
+    setIsOpen(false);
+  };
 
   useEffect(() => {
     const browser = globalThis as any;
@@ -49,6 +64,24 @@ export function UserMenu() {
     const browser = globalThis as any;
     browser?.localStorage?.setItem?.(LANGUAGE_STORAGE_KEY, language);
   }, [language]);
+
+  useEffect(() => {
+    if (user?.languageCode) {
+      setLanguage(user.languageCode);
+    }
+  }, [user?.languageCode]);
+
+  const onLanguageChange = async (nextLanguage: string) => {
+    setLanguage(nextLanguage);
+
+    try {
+      await updateLanguagePreference(nextLanguage);
+    } catch {
+      if (user?.languageCode) {
+        setLanguage(user.languageCode);
+      }
+    }
+  };
 
   const onMenuKeyDown = (event: any) => {
     if (event.key === "Escape") {
@@ -94,6 +127,26 @@ export function UserMenu() {
               Settings
             </button>
 
+            <button
+              type="button"
+              onClick={() => navigateToHashRoute("dashboard")}
+              className="mb-3 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+              role="menuitem"
+            >
+              Dashboard
+            </button>
+
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => navigateToHashRoute("admin")}
+                className="mb-3 w-full rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-left text-sm font-semibold text-lime transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                role="menuitem"
+              >
+                Admin Console
+              </button>
+            ) : null}
+
             {isAuthenticated ? (
               <div className="mb-3 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-muted">
                 <p>
@@ -120,7 +173,9 @@ export function UserMenu() {
         isOpen={isSettingsOpen}
         language={language}
         onClose={() => setIsSettingsOpen(false)}
-        onLanguageChange={setLanguage}
+        onLanguageChange={(value) => {
+          void onLanguageChange(value);
+        }}
       />
     </>
   );

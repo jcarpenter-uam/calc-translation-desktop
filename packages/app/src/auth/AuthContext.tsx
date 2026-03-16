@@ -2,12 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
-import { fetchMe, logout, type AuthUser } from "./authClient";
+import { logout, type AuthUser } from "./authClient";
+import { ApiError } from "../hooks/api";
+import { useCurrentUser, useUpdateMyLanguage } from "../hooks/auth";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -15,8 +15,10 @@ type AuthContextValue = {
   status: AuthStatus;
   user: AuthUser | null;
   tenantId: string | null;
+  tenantName: string | null;
   refreshSession: () => Promise<void>;
   logoutAndReset: () => Promise<void>;
+  updateLanguagePreference: (languageCode: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -26,49 +28,61 @@ type AuthProviderProps = {
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [status, setStatus] = useState<AuthStatus>("loading");
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [tenantId, setTenantId] = useState<string | null>(null);
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: mutateCurrentUser,
+  } = useCurrentUser();
+  const updateMyLanguage = useUpdateMyLanguage();
+
+  const isUnauthorized = error instanceof ApiError && error.status === 401;
+  const status: AuthStatus = isLoading
+    ? "loading"
+    : data?.user
+      ? "authenticated"
+      : isUnauthorized
+        ? "unauthenticated"
+        : "unauthenticated";
+  const user = data?.user || null;
+  const tenantId = data?.tenant?.id || null;
+  const tenantName = data?.tenant?.name || null;
 
   const refreshSession = useCallback(async () => {
-    setStatus("loading");
-    try {
-      const session = await fetchMe();
-
-      if (!session) {
-        setUser(null);
-        setTenantId(null);
-        setStatus("unauthenticated");
-        return;
-      }
-
-      setUser(session.user);
-      setTenantId(session.tenantId);
-      setStatus("authenticated");
-    } catch {
-      setUser(null);
-      setTenantId(null);
-      setStatus("unauthenticated");
-    }
-  }, []);
+    await mutateCurrentUser();
+  }, [mutateCurrentUser]);
 
   const logoutAndReset = useCallback(async () => {
     try {
       await logout();
     } finally {
-      setUser(null);
-      setTenantId(null);
-      setStatus("unauthenticated");
+      await mutateCurrentUser();
     }
-  }, []);
+  }, [mutateCurrentUser]);
 
-  useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
+  const updateLanguagePreference = useCallback(async (languageCode: string) => {
+    await updateMyLanguage(languageCode);
+  }, [updateMyLanguage]);
 
   const value = useMemo(
-    () => ({ status, user, tenantId, refreshSession, logoutAndReset }),
-    [status, user, tenantId, refreshSession, logoutAndReset],
+    () => ({
+      status,
+      user,
+      tenantId,
+      tenantName,
+      refreshSession,
+      logoutAndReset,
+      updateLanguagePreference,
+    }),
+    [
+      status,
+      user,
+      tenantId,
+      tenantName,
+      refreshSession,
+      logoutAndReset,
+      updateLanguagePreference,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
