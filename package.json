@@ -1,0 +1,22 @@
+{
+  "name": "calc-translation",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k \"bun run dev:web\" \"bun run dev:desktop\"",
+    "dev:web": "bun run --cwd apps/web dev",
+    "dev:desktop": "concurrently -k \"bun run --cwd apps/desktop/renderer dev\" \"wait-on tcp:5174 && bun run --cwd apps/desktop dev\""
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "typescript": "^5.9.3",
+    "wait-on": "^9.0.4"
+  },
+  "workspaces": [
+    "apps/*",
+    "apps/desktop/*",
+    "packages/*"
+  ]
+}
