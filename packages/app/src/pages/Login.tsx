@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { startLogin } from "./authClient";
+import { startLogin } from "../auth/authClient";
 
-export function LoginView() {
+export function Login() {
   const [email, setEmail] = useState("");
 
   const onSubmit = (event: any) => {
@@ -17,8 +17,8 @@ export function LoginView() {
   };
 
   return (
-    <main className="min-h-screen bg-canvas px-6 py-16 text-ink">
-      <div className="mx-auto max-w-xl rounded-2xl border border-line bg-panel/90 p-8 shadow-panel">
+    <main className="box-border flex min-h-screen items-center justify-center bg-canvas px-6 py-8 text-ink">
+      <div className="mx-auto w-full max-w-2xl rounded-2xl border border-line bg-panel/90 p-8 shadow-panel">
         <p className="mb-2 text-xs uppercase tracking-[0.2em] text-accent">
           calc-translation
         </p>

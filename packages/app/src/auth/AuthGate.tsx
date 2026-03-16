@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useAuth } from "./AuthContext";
-import { LoginView } from "./LoginView";
+import { Login } from "../pages/Login";
 
 type AuthGateProps = {
   children: ReactNode;
@@ -20,7 +20,7 @@ export function AuthGate({ children }: AuthGateProps) {
   }
 
   if (status === "unauthenticated") {
-    return <LoginView />;
+    return <Login />;
   }
 
   return <>{children}</>;
