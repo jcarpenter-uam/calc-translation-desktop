@@ -2,7 +2,7 @@ import { FaGithub } from "react-icons/fa";
 
 export function AppFooter() {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 border-t border-line bg-panel/90 px-4 py-2 backdrop-blur">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 px-4 py-4">
       <div className="flex w-full justify-end">
         <a
           href="https://github.com/jcarpenter-uam/calc-translation"
