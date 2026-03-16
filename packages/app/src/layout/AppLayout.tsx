@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ThemeToggle } from "../theme/ThemeToggle";
+import { UserMenu } from "./UserMenu";
 import { AppFooter } from "./AppFooter";
 
 type AppLayoutProps = {
@@ -15,7 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       <div className="fixed left-4 top-4 z-50 pb-4">
-        <ThemeToggle />
+        <UserMenu />
       </div>
 
       <div className="relative z-10 pt-12">{children}</div>

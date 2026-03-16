@@ -11,13 +11,13 @@ type AppProps = {
 export function App({ platform }: AppProps) {
   return (
     <ThemeProvider>
-      <AppLayout>
-        <AuthProvider>
+      <AuthProvider>
+        <AppLayout>
           <AuthGate>
             <Home platform={platform} />
           </AuthGate>
-        </AuthProvider>
-      </AppLayout>
+        </AppLayout>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
