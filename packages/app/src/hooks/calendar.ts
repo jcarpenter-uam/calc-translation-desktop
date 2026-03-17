@@ -27,16 +27,36 @@ type CalendarSyncResponse = {
   prunedCount: number;
 };
 
-export const calendarEventsKey = (limit = 8) =>
-  buildApiUrl(`/user/calendar/events?limit=${limit}`);
+type CalendarEventsOptions = {
+  limit?: number;
+  from?: string;
+  enabled?: boolean;
+};
+
+function buildCalendarEventsPath({ limit = 8, from }: CalendarEventsOptions = {}) {
+  const params = new URLSearchParams();
+  params.set("limit", String(limit));
+
+  if (from) {
+    params.set("from", from);
+  }
+
+  return `/user/calendar/events?${params.toString()}`;
+}
+
+export const calendarEventsKey = (options: CalendarEventsOptions = {}) =>
+  buildApiUrl(buildCalendarEventsPath(options));
 
 /**
  * Reads upcoming synced calendar events for the authenticated user.
  */
-export function useCalendarEvents(limit = 8, enabled = true) {
+export function useCalendarEvents(options: CalendarEventsOptions = {}) {
+  const { enabled = true } = options;
+  const path = buildCalendarEventsPath(options);
+
   return useSWR<CalendarEventsResponse, ApiError>(
-    enabled ? calendarEventsKey(limit) : null,
-    () => apiRequest<CalendarEventsResponse>(`/user/calendar/events?limit=${limit}`),
+    enabled ? buildApiUrl(path) : null,
+    () => apiRequest<CalendarEventsResponse>(path),
     {
       revalidateOnFocus: true,
       shouldRetryOnError: (error: ApiError) => error.status >= 500,
@@ -47,7 +67,7 @@ export function useCalendarEvents(limit = 8, enabled = true) {
 /**
  * Triggers provider-backed calendar sync and refreshes cached event list.
  */
-export function useSyncCalendar(limit = 8) {
+export function useSyncCalendar(options: CalendarEventsOptions = {}) {
   const { mutate } = useSWRConfig();
 
   return async () => {
@@ -55,7 +75,7 @@ export function useSyncCalendar(limit = 8) {
       method: "POST",
     });
 
-    await mutate(calendarEventsKey(limit));
+    await mutate(calendarEventsKey(options));
     return result;
   };
 }

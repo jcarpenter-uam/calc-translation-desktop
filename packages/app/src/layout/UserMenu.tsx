@@ -15,25 +15,10 @@ export function UserMenu() {
   const menuRef = useRef<any>(null);
 
   const isAuthenticated = status === "authenticated";
-  const isAdmin =
-    user?.role === "tenant_admin" || user?.role === "super_admin";
   const displayUser = useMemo(
     () => user?.name || user?.email || "Unknown user",
     [user?.email, user?.name],
   );
-
-  const navigateToHashRoute = (route: "dashboard" | "admin") => {
-    const browser = globalThis as typeof globalThis & {
-      location?: { hash?: string };
-    };
-
-    if (!browser.location) {
-      return;
-    }
-
-    browser.location.hash = route === "admin" ? "#/admin" : "#/";
-    setIsOpen(false);
-  };
 
   useEffect(() => {
     const browser = globalThis as any;
@@ -126,26 +111,6 @@ export function UserMenu() {
             >
               Settings
             </button>
-
-            <button
-              type="button"
-              onClick={() => navigateToHashRoute("dashboard")}
-              className="mb-3 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-              role="menuitem"
-            >
-              Dashboard
-            </button>
-
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => navigateToHashRoute("admin")}
-                className="mb-3 w-full rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-left text-sm font-semibold text-lime transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                role="menuitem"
-              >
-                Admin Console
-              </button>
-            ) : null}
 
             {isAuthenticated ? (
               <div className="mb-3 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-muted">

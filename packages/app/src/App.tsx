@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AuthGate } from "./auth/AuthGate";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { AppLayout } from "./layout/AppLayout";
 import { Home } from "./pages/Home";
 import { AdminPage } from "./pages/Admin";
+import { CalendarPage } from "./pages/Calendar";
+import { RouteProvider, useAppRoute } from "./routing/RouteContext";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { SWRConfig } from "swr";
 
@@ -11,37 +13,9 @@ type AppProps = {
   platform: "web" | "desktop";
 };
 
-type AppRoute = "home" | "admin";
-
-function resolveRouteFromHash(hashValue: string) {
-  return hashValue === "#/admin" ? "admin" : "home";
-}
-
-function AppContent({ platform }: AppProps) {
+function AppContent({ platform: _platform }: AppProps) {
   const { user } = useAuth();
-  const [route, setRoute] = useState<AppRoute>(() => {
-    const browser = globalThis as typeof globalThis & {
-      location?: { hash?: string };
-    };
-    return resolveRouteFromHash(browser.location?.hash || "");
-  });
-
-  useEffect(() => {
-    const browser = globalThis as typeof globalThis & {
-      location?: { hash?: string };
-      addEventListener?: (name: string, handler: () => void) => void;
-      removeEventListener?: (name: string, handler: () => void) => void;
-    };
-
-    const onHashChange = () => {
-      setRoute(resolveRouteFromHash(browser.location?.hash || ""));
-    };
-
-    browser.addEventListener?.("hashchange", onHashChange);
-    return () => {
-      browser.removeEventListener?.("hashchange", onHashChange);
-    };
-  }, []);
+  const { route, navigateTo } = useAppRoute();
 
   const isAdmin = useMemo(() => {
     return user?.role === "tenant_admin" || user?.role === "super_admin";
@@ -54,6 +28,13 @@ function AppContent({ platform }: AppProps) {
           <p className="text-sm text-ink-muted">
             You do not have permission to access the admin console.
           </p>
+          <button
+            type="button"
+            onClick={() => navigateTo("home")}
+            className="mt-4 rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </main>
     );
@@ -63,7 +44,11 @@ function AppContent({ platform }: AppProps) {
     return <AdminPage />;
   }
 
-  return <Home platform={platform} />;
+  if (route === "calendar") {
+    return <CalendarPage />;
+  }
+
+  return <Home />;
 }
 
 export function App({ platform }: AppProps) {
@@ -76,11 +61,13 @@ export function App({ platform }: AppProps) {
     >
       <ThemeProvider>
         <AuthProvider>
-          <AppLayout>
-            <AuthGate>
-              <AppContent platform={platform} />
-            </AuthGate>
-          </AppLayout>
+          <RouteProvider>
+            <AppLayout>
+              <AuthGate>
+                <AppContent platform={platform} />
+              </AuthGate>
+            </AppLayout>
+          </RouteProvider>
         </AuthProvider>
       </ThemeProvider>
     </SWRConfig>

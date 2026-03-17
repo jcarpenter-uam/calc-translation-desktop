@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { UserMenu } from "./UserMenu";
 import { AppFooter } from "./AppFooter";
+import { AppNavbar } from "./AppNavbar";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -14,8 +15,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-lime/15 blur-3xl" />
       </div>
 
-      <div className="fixed left-4 top-4 z-50 pb-4">
+      <div className="fixed left-4 top-4 z-50 flex items-center gap-2 pb-4">
         <UserMenu />
+        <AppNavbar />
       </div>
 
       <div className="relative z-10 pt-12">{children}</div>
