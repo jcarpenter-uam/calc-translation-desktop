@@ -1,9 +1,15 @@
 import useSWR, { useSWRConfig } from "swr";
 import { type AuthUser, type TenantInfo } from "./auth";
-import { apiRequest, ApiError, buildApiUrl, withTenantQuery } from "./api";
+import { apiRequest, ApiError, buildApiUrl } from "./api";
 
 type TenantUsersResponse = {
   users: AuthUser[];
+  pageInfo?: {
+    limit: number;
+    offset: number;
+    returned: number;
+    hasMore: boolean;
+  };
 };
 
 type TenantsResponse = {
@@ -15,7 +21,6 @@ export type UpdateUserPayload = {
   email?: string | null;
   languageCode?: string | null;
   role?: "user" | "tenant_admin" | "super_admin";
-  tenantId?: string;
 };
 
 type UpdateUserResponse = {
@@ -29,10 +34,32 @@ type DeleteUserResponse = {
 
 export const tenantsKey = () => buildApiUrl("/tenants/");
 
-export const tenantUsersKey = (tenantId: string | null) =>
-  tenantId
-    ? buildApiUrl(`/users/?tenantId=${encodeURIComponent(tenantId)}`)
-    : buildApiUrl("/users/");
+function buildTenantUsersPath(
+  tenantId: string,
+  options?: { q?: string | null },
+) {
+  const query = new URLSearchParams();
+  const searchValue = options?.q?.trim();
+  if (searchValue) {
+    query.set("q", searchValue);
+  }
+
+  const suffix = query.toString();
+  return `/tenants/${encodeURIComponent(tenantId)}/users${
+    suffix ? `?${suffix}` : ""
+  }`;
+}
+
+export const tenantUsersKey = (
+  tenantId: string | null,
+  options?: { q?: string | null },
+) => {
+  if (!tenantId) {
+    return null;
+  }
+
+  return buildApiUrl(buildTenantUsersPath(tenantId, options));
+};
 
 /**
  * Lists available tenants for admin actions.
@@ -61,13 +88,13 @@ export function useTenantUsers(enabled: boolean) {
 export function useTenantUsersForTenant(
   tenantId: string | null,
   enabled: boolean,
+  options?: { q?: string | null },
 ) {
-  const path = withTenantQuery("/users/", tenantId);
-  const key = tenantUsersKey(tenantId);
+  const key = tenantUsersKey(tenantId, options);
 
   return useSWR<TenantUsersResponse, ApiError>(
-    enabled ? key : null,
-    () => apiRequest<TenantUsersResponse>(path),
+    enabled && key ? key : null,
+    () => apiRequest<TenantUsersResponse>(buildTenantUsersPath(tenantId!, options)),
     {
       revalidateOnFocus: false,
       shouldRetryOnError: (error: ApiError) => error.status >= 500,
@@ -84,16 +111,21 @@ export function useUpdateTenantUser() {
   return async (
     id: string,
     payload: UpdateUserPayload,
-    tenantId?: string | null,
+    tenantId: string,
   ) => {
-    const path = withTenantQuery(`/users/${id}`, tenantId);
+    const path = `/tenants/${encodeURIComponent(tenantId)}/users/${encodeURIComponent(id)}`;
     const response = await apiRequest<UpdateUserResponse>(path, {
       method: "PATCH",
       body: JSON.stringify(payload),
     });
 
+    const tenantUsersPrefix = buildApiUrl(
+      `/tenants/${encodeURIComponent(tenantId)}/users`,
+    );
+
     await mutate<TenantUsersResponse>(
-      tenantUsersKey(tenantId || null),
+      (key: unknown) =>
+        typeof key === "string" && key.startsWith(tenantUsersPrefix),
       (currentValue?: TenantUsersResponse) => {
         if (!currentValue) {
           return currentValue;
@@ -118,14 +150,19 @@ export function useUpdateTenantUser() {
 export function useDeleteTenantUser() {
   const { mutate } = useSWRConfig();
 
-  return async (id: string, tenantId?: string | null) => {
-    const path = withTenantQuery(`/users/${id}`, tenantId);
+  return async (id: string, tenantId: string) => {
+    const path = `/tenants/${encodeURIComponent(tenantId)}/users/${encodeURIComponent(id)}`;
     const response = await apiRequest<DeleteUserResponse>(path, {
       method: "DELETE",
     });
 
+    const tenantUsersPrefix = buildApiUrl(
+      `/tenants/${encodeURIComponent(tenantId)}/users`,
+    );
+
     await mutate<TenantUsersResponse>(
-      tenantUsersKey(tenantId || null),
+      (key: unknown) =>
+        typeof key === "string" && key.startsWith(tenantUsersPrefix),
       (currentValue?: TenantUsersResponse) => {
         if (!currentValue) {
           return currentValue;

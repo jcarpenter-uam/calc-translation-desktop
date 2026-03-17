@@ -69,12 +69,3 @@ function safeJsonParse(value: string) {
     return null;
   }
 }
-
-export function withTenantQuery(basePath: string, tenantId?: string | null) {
-  if (!tenantId) {
-    return basePath;
-  }
-
-  const separator = basePath.includes("?") ? "&" : "?";
-  return `${basePath}${separator}tenantId=${encodeURIComponent(tenantId)}`;
-}

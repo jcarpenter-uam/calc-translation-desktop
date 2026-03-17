@@ -7,11 +7,19 @@ import {
   type ReactNode,
 } from "react";
 
-export type AppRoute = "home" | "calendar" | "admin";
+export type AppRoute = "home" | "calendar" | "admin" | "meeting";
+
+export type MeetingRouteState = {
+  meetingId: string;
+  readableId: string;
+  ticket: string;
+};
 
 type RouteContextValue = {
   route: AppRoute;
+  meeting: MeetingRouteState | null;
   navigateTo: (route: AppRoute) => void;
+  navigateToMeeting: (meeting: MeetingRouteState) => void;
 };
 
 const RouteContext = createContext<RouteContextValue | null>(null);
@@ -21,6 +29,10 @@ type RouteProviderProps = {
 };
 
 function resolveRouteFromHash(hashValue: string): AppRoute {
+  if (hashValue.startsWith("#/meeting")) {
+    return "meeting";
+  }
+
   if (hashValue === "#/admin") {
     return "admin";
   }
@@ -32,7 +44,37 @@ function resolveRouteFromHash(hashValue: string): AppRoute {
   return "home";
 }
 
-function routeToHash(route: AppRoute): string {
+function readMeetingFromHash(hashValue: string): MeetingRouteState | null {
+  if (!hashValue.startsWith("#/meeting")) {
+    return null;
+  }
+
+  const queryString = hashValue.includes("?") ? hashValue.split("?")[1] : "";
+  const params = new URLSearchParams(queryString || "");
+  const meetingId = params.get("meetingId");
+  const readableId = params.get("readableId");
+  const ticket = params.get("ticket");
+
+  if (!meetingId || !readableId || !ticket) {
+    return null;
+  }
+
+  return { meetingId, readableId, ticket };
+}
+
+function routeToHash(route: AppRoute, meeting?: MeetingRouteState | null): string {
+  if (route === "meeting") {
+    if (!meeting) {
+      return "#/";
+    }
+
+    const params = new URLSearchParams();
+    params.set("meetingId", meeting.meetingId);
+    params.set("readableId", meeting.readableId);
+    params.set("ticket", meeting.ticket);
+    return `#/meeting?${params.toString()}`;
+  }
+
   if (route === "admin") {
     return "#/admin";
   }
@@ -44,15 +86,24 @@ function routeToHash(route: AppRoute): string {
   return "#/";
 }
 
-function readCurrentRoute() {
+function readCurrentLocation() {
   const browser = globalThis as typeof globalThis & {
     location?: { hash?: string };
   };
-  return resolveRouteFromHash(browser.location?.hash || "");
+  const hashValue = browser.location?.hash || "";
+
+  return {
+    route: resolveRouteFromHash(hashValue),
+    meeting: readMeetingFromHash(hashValue),
+  };
 }
 
 export function RouteProvider({ children }: RouteProviderProps) {
-  const [route, setRoute] = useState<AppRoute>(readCurrentRoute);
+  const initialLocation = readCurrentLocation();
+  const [route, setRoute] = useState<AppRoute>(initialLocation.route);
+  const [meeting, setMeeting] = useState<MeetingRouteState | null>(
+    initialLocation.meeting,
+  );
 
   useEffect(() => {
     const browser = globalThis as typeof globalThis & {
@@ -62,7 +113,9 @@ export function RouteProvider({ children }: RouteProviderProps) {
     };
 
     const onHashChange = () => {
-      setRoute(resolveRouteFromHash(browser.location?.hash || ""));
+      const nextHash = browser.location?.hash || "";
+      setRoute(resolveRouteFromHash(nextHash));
+      setMeeting(readMeetingFromHash(nextHash));
     };
 
     browser.addEventListener?.("hashchange", onHashChange);
@@ -74,20 +127,37 @@ export function RouteProvider({ children }: RouteProviderProps) {
   const value = useMemo<RouteContextValue>(() => {
     return {
       route,
+      meeting,
       navigateTo: (nextRoute) => {
         const browser = globalThis as typeof globalThis & {
           location?: { hash?: string };
         };
-        const nextHash = routeToHash(nextRoute);
+        const nextHash = routeToHash(nextRoute, null);
 
         if (browser.location) {
           browser.location.hash = nextHash;
         }
 
         setRoute(nextRoute);
+        if (nextRoute !== "meeting") {
+          setMeeting(null);
+        }
+      },
+      navigateToMeeting: (nextMeeting) => {
+        const browser = globalThis as typeof globalThis & {
+          location?: { hash?: string };
+        };
+        const nextHash = routeToHash("meeting", nextMeeting);
+
+        if (browser.location) {
+          browser.location.hash = nextHash;
+        }
+
+        setRoute("meeting");
+        setMeeting(nextMeeting);
       },
     };
-  }, [route]);
+  }, [meeting, route]);
 
   return <RouteContext.Provider value={value}>{children}</RouteContext.Provider>;
 }

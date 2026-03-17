@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../hooks/api";
 import {
@@ -73,26 +73,13 @@ export function AdminPanel() {
     useTenantUsersForTenant(
       effectiveTenantId || null,
       isAdmin && Boolean(effectiveTenantId),
+      { q: search },
     );
 
   const updateTenantUser = useUpdateTenantUser();
   const deleteTenantUser = useDeleteTenantUser();
 
-  const filteredUsers = useMemo(() => {
-    const allUsers = usersData?.users || [];
-    const query = search.trim().toLowerCase();
-    if (!query) {
-      return allUsers;
-    }
-
-    return allUsers.filter((entry) => {
-      const haystack = [entry.name, entry.email, entry.role, entry.languageCode]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [search, usersData?.users]);
+  const filteredUsers = usersData?.users || [];
 
   if (!isAdmin) {
     return null;
@@ -128,7 +115,6 @@ export function AdminPanel() {
         email: editEmail.trim() || null,
         languageCode: editLanguageCode.trim() || null,
         role: editRole,
-        tenantId: effectiveTenantId,
       };
 
       await updateTenantUser(editingUserId, payload, effectiveTenantId);
