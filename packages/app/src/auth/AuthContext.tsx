@@ -31,6 +31,7 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
+// TODO: Figure out WTF I want to do for auth for desktop
 export function AuthProvider({ children }: AuthProviderProps) {
   const {
     data,
@@ -44,9 +45,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const status: AuthStatus = isLoading
     ? "loading"
     : isUnauthorized
-        ? "unauthenticated"
-        : data?.user
-          ? "authenticated"
+      ? "unauthenticated"
+      : data?.user
+        ? "authenticated"
         : "unauthenticated";
   const user = data?.user || null;
   const tenantId = data?.tenant?.id || null;
@@ -65,9 +66,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [mutateCurrentUser]);
 
-  const updateLanguagePreference = useCallback(async (languageCode: string) => {
-    await updateMyLanguage(languageCode);
-  }, [updateMyLanguage]);
+  const updateLanguagePreference = useCallback(
+    async (languageCode: string) => {
+      await updateMyLanguage(languageCode);
+    },
+    [updateMyLanguage],
+  );
 
   const value = useMemo(
     () => ({
