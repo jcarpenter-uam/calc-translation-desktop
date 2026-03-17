@@ -5,9 +5,13 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
-import { logout, type AuthUser } from "./authClient";
 import { ApiError } from "../hooks/api";
-import { useCurrentUser, useUpdateMyLanguage } from "../hooks/auth";
+import {
+  logout,
+  type AuthUser,
+  useCurrentUser,
+  useUpdateMyLanguage,
+} from "../hooks/auth";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -39,10 +43,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isUnauthorized = error instanceof ApiError && error.status === 401;
   const status: AuthStatus = isLoading
     ? "loading"
-    : data?.user
-      ? "authenticated"
-      : isUnauthorized
+    : isUnauthorized
         ? "unauthenticated"
+        : data?.user
+          ? "authenticated"
         : "unauthenticated";
   const user = data?.user || null;
   const tenantId = data?.tenant?.id || null;
@@ -56,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await logout();
     } finally {
+      await mutateCurrentUser(undefined, { revalidate: false });
       await mutateCurrentUser();
     }
   }, [mutateCurrentUser]);

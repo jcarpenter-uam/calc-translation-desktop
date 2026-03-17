@@ -1,5 +1,5 @@
 import useSWR, { useSWRConfig } from "swr";
-import { type AuthUser, type TenantInfo } from "../auth/authClient";
+import { type AuthUser, type TenantInfo } from "./auth";
 import { apiRequest, ApiError, buildApiUrl, withTenantQuery } from "./api";
 
 type TenantUsersResponse = {

@@ -1,9 +1,18 @@
-import { getApiBaseUrl } from "../auth/authClient";
-
 type ApiErrorShape = {
   error?: string;
   message?: string;
 };
+
+/**
+ * Defines the baseURL for the api
+ */
+export function getApiBaseUrl() {
+  const env = globalThis as typeof globalThis & {
+    __APP_API_BASE_URL__?: string;
+  };
+
+  return env.__APP_API_BASE_URL__ || "/api";
+}
 
 /**
  * Typed API error with HTTP status and optional payload.

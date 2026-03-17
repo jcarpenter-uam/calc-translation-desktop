@@ -1,6 +1,23 @@
 import useSWR, { useSWRConfig } from "swr";
-import { type AuthUser, type MeResponse } from "../auth/authClient";
 import { apiRequest, ApiError, buildApiUrl } from "./api";
+
+export type AuthUser = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: string;
+  languageCode: string | null;
+};
+
+export type TenantInfo = {
+  id: string;
+  name: string | null;
+};
+
+export type MeResponse = {
+  user: AuthUser;
+  tenant: TenantInfo | null;
+};
 
 type UpdateMeResponse = {
   message: string;
@@ -8,6 +25,37 @@ type UpdateMeResponse = {
 };
 
 export const currentUserKey = () => buildApiUrl("/user/me");
+
+/**
+ * Starts the SSO login flow for the provided email.
+ */
+export function startLogin(email: string, returnTo: string) {
+  const browser = globalThis as typeof globalThis & {
+    location: {
+      origin: string;
+      assign: (url: string) => void;
+    };
+  };
+
+  const loginUrl = new URL(buildApiUrl("/auth/login"), browser.location.origin);
+  loginUrl.searchParams.set("email", email);
+  loginUrl.searchParams.set("returnTo", returnTo);
+  browser.location.assign(loginUrl.toString());
+}
+
+/**
+ * Terminates the current API session.
+ */
+export async function logout() {
+  const response = await fetch(buildApiUrl("/auth/logout"), {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to logout: ${response.status}`);
+  }
+}
 
 /**
  * Returns the authenticated user profile.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { startLogin } from "../auth/authClient";
+import { startLogin } from "../hooks/auth";
 
 export function Login() {
   const [email, setEmail] = useState("");
