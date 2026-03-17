@@ -16,10 +16,6 @@ export function AppNavbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const containerRef = useRef<any>(null);
 
-  if (status !== "authenticated") {
-    return null;
-  }
-
   const isAdmin =
     user?.role === "tenant_admin" || user?.role === "super_admin";
 
@@ -61,6 +57,10 @@ export function AppNavbar() {
       browser.document?.removeEventListener?.("mousedown", onPointerDown);
     };
   }, []);
+
+  if (status !== "authenticated") {
+    return null;
+  }
 
   return (
     <div ref={containerRef} className="relative">
