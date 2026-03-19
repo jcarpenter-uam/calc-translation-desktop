@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-export type AppRoute = "home" | "calendar" | "admin" | "meeting";
+export type AppRoute = "home" | "calendar" | "admin" | "meeting" | "configure";
 
 export type MeetingRouteState = {
   meetingId: string;
@@ -31,6 +31,10 @@ type RouteProviderProps = {
 function resolveRouteFromHash(hashValue: string): AppRoute {
   if (hashValue.startsWith("#/meeting")) {
     return "meeting";
+  }
+
+  if (hashValue === "#/configure") {
+    return "configure";
   }
 
   if (hashValue === "#/admin") {
@@ -77,6 +81,10 @@ function routeToHash(route: AppRoute, meeting?: MeetingRouteState | null): strin
 
   if (route === "admin") {
     return "#/admin";
+  }
+
+  if (route === "configure") {
+    return "#/configure";
   }
 
   if (route === "calendar") {

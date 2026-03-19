@@ -5,6 +5,7 @@ import { AppLayout } from "./layout/AppLayout";
 import { Home } from "./pages/Home";
 import { AdminPage } from "./pages/Admin";
 import { CalendarPage } from "./pages/Calendar";
+import { ConfigureMeetingPage } from "./pages/ConfigureMeeting";
 import { MeetingLivePage } from "./pages/MeetingLive";
 import { RouteProvider, useAppRoute } from "./routing/RouteContext";
 import { ThemeProvider } from "./theme/ThemeContext";
@@ -47,6 +48,10 @@ function AppContent({ platform: _platform }: AppProps) {
 
   if (route === "calendar") {
     return <CalendarPage />;
+  }
+
+  if (route === "configure") {
+    return <ConfigureMeetingPage />;
   }
 
   if (route === "meeting") {
