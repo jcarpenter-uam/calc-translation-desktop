@@ -71,7 +71,7 @@ export function App({ platform }: AppProps) {
     >
       <ThemeProvider>
         <AuthProvider>
-          <RouteProvider>
+          <RouteProvider mode={platform === "web" ? "path" : "hash"}>
             <AppLayout>
               <AuthGate>
                 <AppContent platform={platform} />
