@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../hooks/api";
 import {
+  DEFAULT_LANGUAGE_CODE,
+  LANGUAGE_OPTIONS,
+  getLanguageLabel,
+} from "../languages/LanguageList";
+import {
   useDeleteTenantUser,
   useTenants,
   useTenantUsersForTenant,
@@ -91,7 +96,7 @@ export function AdminPanel() {
     setEditingUserId(entry.id);
     setEditName(entry.name || "");
     setEditEmail(entry.email || "");
-    setEditLanguageCode(entry.languageCode || "en");
+    setEditLanguageCode(entry.languageCode || DEFAULT_LANGUAGE_CODE);
     setEditRole((entry.role as AdminRole) || "user");
   };
 
@@ -293,19 +298,28 @@ export function AdminPanel() {
                     </td>
 
                     <td className="px-3 py-2 align-top">
-                      {isEditing ? (
-                        <input
+                       {isEditing ? (
+                        <select
                           value={editLanguageCode}
                           onChange={(event: any) =>
                             setEditLanguageCode(String(event.target.value))
                           }
                           className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                          placeholder="en"
-                        />
-                      ) : (
-                        <span>{entry.languageCode || "n/a"}</span>
-                      )}
-                    </td>
+                        >
+                          {LANGUAGE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                       ) : (
+                         <span>
+                           {entry.languageCode
+                             ? getLanguageLabel(entry.languageCode)
+                             : "n/a"}
+                         </span>
+                       )}
+                     </td>
 
                     <td className="px-3 py-2 align-top">
                       <div className="flex gap-2">

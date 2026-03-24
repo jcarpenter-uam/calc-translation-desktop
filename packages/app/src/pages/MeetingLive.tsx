@@ -3,6 +3,7 @@ import {
   useMeetingParticipants,
   type MeetingParticipant,
 } from "../hooks/meeting";
+import { getLanguageLabel } from "../languages/LanguageList";
 import { useAppRoute } from "../routing/RouteContext";
 
 type TranscriptFinalItem = {
@@ -663,7 +664,9 @@ export function MeetingLivePage() {
                     key={language}
                     className="rounded-md border border-line/70 bg-canvas px-2 py-1 text-xs text-ink-muted"
                   >
-                    <span className="mr-2 font-semibold text-ink">{language}</span>
+                    <span className="mr-2 font-semibold text-ink">
+                      {getLanguageLabel(language)}
+                    </span>
                     {text}
                   </div>
                 ))}

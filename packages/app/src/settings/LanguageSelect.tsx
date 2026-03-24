@@ -1,16 +1,19 @@
 import { SettingHint } from "./SettingHint";
-import { LanguageList } from "../languages/LanguageList";
+import {
+  DEFAULT_LANGUAGE_CODE,
+  LANGUAGE_OPTIONS,
+  isLanguageCode,
+} from "../languages/LanguageList";
 
 export const LANGUAGE_STORAGE_KEY = "calc-translation-language";
 
 export function readInitialLanguage() {
   const browser = globalThis as any;
   const storedLanguage = browser?.localStorage?.getItem?.(LANGUAGE_STORAGE_KEY);
-  const validLanguage = languageOptions.some(
-    (option) => option.value === storedLanguage,
-  );
 
-  return validLanguage ? storedLanguage : "en";
+  return storedLanguage && isLanguageCode(storedLanguage)
+    ? storedLanguage
+    : DEFAULT_LANGUAGE_CODE;
 }
 
 type LanguageSelectProps = {
@@ -36,7 +39,7 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
         onChange={(event: any) => onChange(String(event.target.value))}
         className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
       >
-        {languageOptions.map((option) => (
+        {LANGUAGE_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
