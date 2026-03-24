@@ -93,8 +93,6 @@ export function useSmartScroll(
 
   useLayoutEffect(() => {
     if (isAutoScrollEnabled) {
-      log.debug("Auto-scrolling to bottom.");
-
       const container = scrollContainerRef?.current;
 
       if (container) {

@@ -65,12 +65,21 @@ export default function BugReportModal({ isOpen, onClose }) {
   }, [status]);
 
   if (!isOpen) {
-    return <Notification message="Bug report submitted" visible={toastVisible} />;
+    return (
+      <Notification message="Bug report submitted" visible={toastVisible} />
+    );
   }
 
   const setField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
+
+  const isFormComplete =
+    form.title.trim() &&
+    form.description.trim() &&
+    form.stepsToReproduce.trim() &&
+    form.expectedBehavior.trim() &&
+    form.actualBehavior.trim();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -93,7 +102,8 @@ export default function BugReportModal({ isOpen, onClose }) {
       setForm(INITIAL_FORM);
       setStatus({
         type: "success",
-        message: "Bug report submitted. The desktop main log was attached automatically.",
+        message:
+          "Bug report submitted. The desktop main log was attached automatically.",
       });
       log.info("Bug Report: Submission succeeded");
       onClose();
@@ -126,7 +136,8 @@ export default function BugReportModal({ isOpen, onClose }) {
                 Report a bug
               </h3>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Submit a report and automatically attach the current desktop main log.
+                Submit a report and automatically attach the current desktop
+                main log.
               </p>
             </div>
             <button
@@ -139,7 +150,10 @@ export default function BugReportModal({ isOpen, onClose }) {
             </button>
           </header>
 
-          <form className="px-6 py-4 space-y-4 overflow-y-auto app-region-no-drag" onSubmit={handleSubmit}>
+          <form
+            className="px-6 py-4 space-y-4 overflow-y-auto app-region-no-drag scrollbar-none"
+            onSubmit={handleSubmit}
+          >
             {status.type === "error" ? (
               <div className="rounded-md px-3 py-2 text-sm bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300">
                 {status.message}
@@ -172,18 +186,21 @@ export default function BugReportModal({ isOpen, onClose }) {
               value={form.stepsToReproduce}
               onChange={(value) => setField("stepsToReproduce", value)}
               rows={4}
+              required
             />
             <TextAreaField
               label="Expected behavior"
               value={form.expectedBehavior}
               onChange={(value) => setField("expectedBehavior", value)}
               rows={3}
+              required
             />
             <TextAreaField
               label="Actual behavior"
               value={form.actualBehavior}
               onChange={(value) => setField("actualBehavior", value)}
               rows={3}
+              required
             />
 
             <div className="flex items-center justify-between gap-3 pt-2">
@@ -192,7 +209,7 @@ export default function BugReportModal({ isOpen, onClose }) {
               </p>
               <button
                 type="submit"
-                disabled={isSubmitting || !form.title.trim() || !form.description.trim()}
+                disabled={isSubmitting || !isFormComplete}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-zinc-400 cursor-pointer"
               >
                 {isSubmitting ? "Submitting..." : "Submit report"}
