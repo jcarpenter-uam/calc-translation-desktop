@@ -16,6 +16,10 @@
   --color-lime-hover: 101 163 13;
   --color-lime-contrast: 54 83 20;
   --color-shadow: 39 39 42;
+  --scrollbar-size: 10px;
+  --scrollbar-track: 244 244 245;
+  --scrollbar-thumb: 212 212 216;
+  --scrollbar-thumb-hover: 161 161 170;
 }
 
 :root[data-theme="dark"] {
@@ -32,6 +36,9 @@
   --color-lime-hover: 190 242 100;
   --color-lime-contrast: 54 83 20;
   --color-shadow: 24 24 27;
+  --scrollbar-track: 39 39 42;
+  --scrollbar-thumb: 82 82 91;
+  --scrollbar-thumb-hover: 113 113 122;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +56,9 @@
     --color-lime-hover: 190 242 100;
     --color-lime-contrast: 54 83 20;
     --color-shadow: 24 24 27;
+    --scrollbar-track: 39 39 42;
+    --scrollbar-thumb: 82 82 91;
+    --scrollbar-thumb-hover: 113 113 122;
   }
 }
 
@@ -57,4 +67,53 @@ body {
   font-family: "Inter", "Segoe UI", sans-serif;
   background: rgb(var(--color-canvas));
   color: rgb(var(--color-ink));
+}
+
+.app-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--scrollbar-thumb)) rgb(var(--scrollbar-track));
+}
+
+.app-scrollbar::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.app-scrollbar::-webkit-scrollbar-track {
+  background: rgb(var(--scrollbar-track));
+  border-radius: 999px;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--scrollbar-thumb));
+  border: 2px solid rgb(var(--scrollbar-track));
+  border-radius: 999px;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--scrollbar-thumb-hover));
+}
+
+.app-scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.75) transparent;
+}
+
+.app-scrollbar-subtle::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.app-scrollbar-subtle::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scrollbar-subtle::-webkit-scrollbar-thumb {
+  background: rgb(var(--scrollbar-thumb) / 0.75);
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+.app-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--scrollbar-thumb-hover));
 }
