@@ -1,14 +1,7 @@
 import { SettingHint } from "./SettingHint";
+import { LanguageList } from "../languages/LanguageList";
 
 export const LANGUAGE_STORAGE_KEY = "calc-translation-language";
-
-const languageOptions = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "ja", label: "Japanese" },
-];
 
 export function readInitialLanguage() {
   const browser = globalThis as any;
