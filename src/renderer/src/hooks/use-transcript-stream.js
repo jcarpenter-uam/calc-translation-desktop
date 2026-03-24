@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import log from "electron-log/renderer";
 
 /**
  * A custom hook to manage a WebSocket connection for live transcripts.
@@ -47,44 +48,62 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
 
       setTranscripts([]);
       setSessionStatus("connecting");
+      log.info("Transcript Stream: Opening viewer websocket", {
+        sessionId,
+        isOverlayOpen,
+      });
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onclose = (event) => {
         const code = event.code;
+        log.info("Transcript Stream: Websocket closed", {
+          sessionId,
+          code,
+          reason: event.reason || null,
+        });
 
         if (code === 1008 || code === 403 || code === 1006) {
-          console.warn("WebSocket authorization failed.");
+          log.warn("Transcript Stream: Authorization failed", { sessionId, code });
           setIsStopped(true);
           if (onUnauthorized) onUnauthorized();
           return;
         }
 
         if (code === 4004) {
-          console.warn("Session not found (4004). It has likely ended.");
+          log.warn("Transcript Stream: Session not found, marking downloadable", {
+            sessionId,
+            code,
+          });
           setIsDownloadable(true);
           return;
         }
 
         if (code === 4001 || code === 4008) {
-          console.error(
-            `WebSocket connection failed permanently: ${event.reason} (${code})`,
-          );
+          log.error("Transcript Stream: Permanent websocket failure", {
+            sessionId,
+            code,
+            reason: event.reason || null,
+          });
           return;
         }
 
         if (code === 1000) {
-          console.log("WebSocket closed normally.");
+          log.info("Transcript Stream: Websocket closed normally", { sessionId });
           return;
         }
 
-        console.log(
-          `WebSocket disconnected (Code: ${code}). Reconnecting in 3 seconds...`,
-        );
+        log.warn("Transcript Stream: Reconnecting websocket after disconnect", {
+          sessionId,
+          code,
+        });
         reconnectTimeoutId = setTimeout(connect, 3000);
       };
 
       ws.current.onerror = (error) => {
-        console.error(`WebSocket error on ${wsUrl}:`, error);
+        log.error("Transcript Stream: Websocket error", {
+          sessionId,
+          error,
+        });
         ws.current.close();
       };
 
@@ -93,6 +112,14 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
           const data = JSON.parse(event.data);
 
           if (data.type === "status") {
+            log.info("Transcript Stream: Received session status update", {
+              sessionId,
+              status: data.status,
+              sharedTwoWayMode:
+                typeof data.shared_two_way_mode === "boolean"
+                  ? data.shared_two_way_mode
+                  : null,
+            });
             setSessionStatus(data.status);
             if (typeof data.shared_two_way_mode === "boolean") {
               setIsSharedTwoWayMode(data.shared_two_way_mode);
@@ -101,20 +128,24 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
           }
 
           if (data.type === "session_start") {
+            log.info("Transcript Stream: Session start received", { sessionId });
             setSessionStatus("active");
             return;
           }
 
           if (data.type === "session_end") {
+            log.info("Transcript Stream: Session end received", { sessionId });
             setIsDownloadable(true);
             return;
           }
 
           if (data.type === "backfill_start") {
+            log.info("Transcript Stream: Backfill started", { sessionId });
             setIsBackfilling(true);
             return;
           }
           if (data.type === "backfill_end") {
+            log.info("Transcript Stream: Backfill ended", { sessionId });
             setIsBackfilling(false);
             return;
           }
@@ -163,7 +194,7 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
             return newTranscripts;
           });
         } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
+          log.error("Transcript Stream: Failed to parse websocket message", error);
         }
       };
     }
@@ -176,6 +207,7 @@ export function useTranscriptStream(wsUrl, sessionId, onUnauthorized) {
         ws.current.onclose = null;
         ws.current.close();
       }
+      log.info("Transcript Stream: Cleaned up viewer websocket", { sessionId });
     };
   }, [wsUrl, sessionId, onUnauthorized, isStopped, isOverlayOpen]);
 

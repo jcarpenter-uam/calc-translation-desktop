@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import log from "electron-log/renderer";
 import {
   ZoomForm,
   StandaloneForm,
@@ -45,6 +46,13 @@ export default function LandingPage() {
 
   const handleJoin = async (data, source = "manual") => {
     setError(null);
+    log.info("Landing: Starting join flow", {
+      source,
+      integration,
+      meetingId: data?.id || data?.meetingId || null,
+      mode: data?.mode || null,
+      hasJoinUrl: Boolean(data?.join_url || data?.joinUrl),
+    });
     try {
       let response;
 
@@ -79,12 +87,21 @@ export default function LandingPage() {
 
       const isHost = integration === "standalone" && data.mode === "host";
 
+      log.info("Landing: Join flow succeeded", {
+        source,
+        integration,
+        sessionId,
+        type,
+        isHost,
+        hasJoinUrl: Boolean(joinUrl),
+      });
+
       navigate(
         `/sessions/${type}/${encodeURIComponent(sessionId)}?token=${token}${isHost ? "&isHost=true" : ""}`,
         { state: { joinUrl } },
       );
     } catch (err) {
-      console.error("Join failed:", err);
+      log.error("Landing: Join flow failed", err.message || err);
       setError(err.message || t("login_error_generic"));
     }
   };

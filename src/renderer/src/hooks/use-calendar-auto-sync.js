@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import log from "electron-log/renderer";
 
 export function useCalendarAutoSync(syncCalendar) {
   useEffect(() => {
@@ -8,9 +9,11 @@ export function useCalendarAutoSync(syncCalendar) {
     const lastSync = localStorage.getItem(SYNC_KEY);
 
     if (!lastSync || now - parseInt(lastSync, 10) > TTL) {
+      log.info("Calendar: Auto sync triggered", {
+        hadPreviousSync: Boolean(lastSync),
+      });
       syncCalendar();
       localStorage.setItem(SYNC_KEY, now.toString());
-      console.log("Calendar auto synced");
     }
   }, [syncCalendar]);
 }

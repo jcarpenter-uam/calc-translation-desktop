@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import log from "electron-log/renderer";
 import { useLanguage } from "../../context/language.jsx";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +16,11 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
     if (isLoading || !isDownloadable || !integration || !sessionId) return;
 
     setIsLoading(true);
+    log.info("Transcript Download: Starting VTT download", {
+      integration,
+      sessionId,
+      language: targetLanguage,
+    });
 
     try {
       const response = await window.electron.downloadVtt({
@@ -53,8 +59,14 @@ function DownloadVttButton({ isDownloadable, integration, sessionId, token }) {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
+      log.info("Transcript Download: Completed VTT download", {
+        integration,
+        sessionId,
+        language: targetLanguage,
+        fileName: serverFilename || `meeting_transcript_${targetLanguage}.vtt`,
+      });
     } catch (err) {
-      console.error("Download failed:", err);
+      log.error("Transcript Download: Download failed", err.message || err);
       alert(`Download Error: ${err.message}`);
     } finally {
       setIsLoading(false);

@@ -7,8 +7,11 @@ export function useAdminData() {
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [bugReports, setBugReports] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(null);
+  const [bugReportsLoading, setBugReportsLoading] = useState(false);
+  const [bugReportsError, setBugReportsError] = useState(null);
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -38,6 +41,39 @@ export function useAdminData() {
     } finally {
       setReviewsLoading(false);
     }
+  }, []);
+
+  const fetchBugReports = useCallback(async (status = "open") => {
+    setBugReportsLoading(true);
+    setBugReportsError(null);
+    try {
+      const response = await window.electron.getBugReports(status);
+      if (response.status !== "ok") {
+        throw new Error(response.message || "Failed to fetch bug reports");
+      }
+      setBugReports(response.data || []);
+    } catch (err) {
+      console.error("Bug report fetch failed", err);
+      setBugReportsError(err.message);
+    } finally {
+      setBugReportsLoading(false);
+    }
+  }, []);
+
+  const fetchBugReportLog = useCallback(async (reportId) => {
+    const response = await window.electron.getBugReportLog(reportId);
+    if (response.status !== "ok") {
+      throw new Error(response.message || "Failed to fetch bug report log");
+    }
+    return response.data || "";
+  }, []);
+
+  const setBugReportResolved = useCallback(async (reportId, isResolved) => {
+    const response = await window.electron.setBugReportResolved(reportId, isResolved);
+    if (response.status !== "ok") {
+      throw new Error(response.message || "Failed to update bug report status");
+    }
+    return response.data;
   }, []);
 
   useEffect(() => {
@@ -79,6 +115,10 @@ export function useAdminData() {
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
+
+  useEffect(() => {
+    fetchBugReports();
+  }, [fetchBugReports]);
 
   const handleSetUserAdminStatus = useCallback(async (userId, isAdmin) => {
     try {
@@ -169,6 +209,7 @@ export function useAdminData() {
     tenants,
     logs,
     reviews,
+    bugReports,
     isLoading,
     error,
     logsLoading: false,
@@ -177,6 +218,11 @@ export function useAdminData() {
     reviewsLoading,
     reviewsError,
     fetchReviews,
+    bugReportsLoading,
+    bugReportsError,
+    fetchBugReports,
+    fetchBugReportLog,
+    setBugReportResolved,
     handleSetUserAdminStatus,
     handleDeleteUser,
     handleCreateTenant,

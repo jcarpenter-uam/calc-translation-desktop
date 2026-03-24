@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import log from "electron-log/renderer";
 import { useAuth } from "../../context/auth";
 import SettingsModal from "../settings/modal";
+import BugReportModal from "../settings/bug-report-modal.jsx";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -27,6 +29,7 @@ export default function UserAvatar() {
   const { user, isLoading, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -53,7 +56,13 @@ export default function UserAvatar() {
       <div className="relative" ref={dropdownRef}>
         <button
           id="user-avatar-btn-desktop"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            log.info("User Menu: Toggling user menu", {
+              isOpen: !isOpen,
+              userId: user.id || null,
+            });
+            setIsOpen(!isOpen);
+          }}
           title={t("user_menu_tooltip", { name })}
           className="
             flex 
@@ -127,6 +136,9 @@ export default function UserAvatar() {
                 <button
                   id="user-settings-btn-desktop"
                   onClick={() => {
+                    log.info("User Menu: Opening settings modal", {
+                      userId: user.id || null,
+                    });
                     setIsOpen(false);
                     setIsSettingsOpen(true);
                   }}
@@ -145,6 +157,33 @@ export default function UserAvatar() {
                   "
                 >
                   {t("menu_settings")}
+                </button>
+              </li>
+
+              <li>
+                <button
+                  onClick={() => {
+                    log.info("User Menu: Opening bug report modal", {
+                      userId: user.id || null,
+                    });
+                    setIsOpen(false);
+                    setIsBugReportOpen(true);
+                  }}
+                  className="
+                    block
+                    w-full
+                    text-left
+                    px-4 py-2
+                    text-sm
+                    text-zinc-700
+                    dark:text-zinc-200
+                    hover:bg-zinc-100
+                    dark:hover:bg-zinc-700
+                    transition-colors
+                    cursor-pointer
+                  "
+                >
+                  Report a bug
                 </button>
               </li>
 
@@ -174,6 +213,9 @@ export default function UserAvatar() {
               <li>
                 <button
                   onClick={() => {
+                    log.info("User Menu: Logging out from menu", {
+                      userId: user.id || null,
+                    });
                     setIsOpen(false);
                     logout();
                   }}
@@ -202,6 +244,10 @@ export default function UserAvatar() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <BugReportModal
+        isOpen={isBugReportOpen}
+        onClose={() => setIsBugReportOpen(false)}
       />
     </>
   );

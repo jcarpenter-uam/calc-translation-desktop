@@ -3,6 +3,7 @@ import UserManagement from "../components/admin/user-management.jsx";
 import TenantManagement from "../components/admin/tenant-management.jsx";
 import LogViewing from "../components/admin/log-viewing.jsx";
 import ReviewsManagement from "../components/admin/reviews.jsx";
+import BugReportsManagement from "../components/admin/bug-reports.jsx";
 import { useAdminData } from "../hooks/use-admin-data.js";
 
 export default function AdminPage() {
@@ -19,6 +20,12 @@ export default function AdminPage() {
     reviewsLoading,
     reviewsError,
     fetchReviews,
+    bugReports,
+    bugReportsLoading,
+    bugReportsError,
+    fetchBugReports,
+    fetchBugReportLog,
+    setBugReportResolved,
     handleSetUserAdminStatus,
     handleDeleteUser,
     handleCreateTenant,
@@ -65,6 +72,15 @@ export default function AdminPage() {
           loading={reviewsLoading}
           error={reviewsError}
           onRefresh={fetchReviews}
+        />
+        <hr className="border-zinc-200 dark:border-zinc-700" />
+        <BugReportsManagement
+          reports={bugReports}
+          loading={bugReportsLoading}
+          error={bugReportsError}
+          onRefresh={fetchBugReports}
+          onViewLog={fetchBugReportLog}
+          onSetResolved={setBugReportResolved}
         />
         <hr className="border-zinc-200 dark:border-zinc-700" />
         <LogViewing

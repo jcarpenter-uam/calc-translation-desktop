@@ -7,6 +7,7 @@ import {
   desktopCapturer,
   BrowserWindow,
 } from "electron";
+import { readFile } from "node:fs/promises";
 import {
   getMainWindow,
   createOverlayWindow,
@@ -19,11 +20,130 @@ import { createAuthWindow } from "./auth";
 import { API_BASE_URL } from "../../shared/network";
 
 const ipcHandlerLog = log.scope("ipchandler");
+const MAX_BUG_REPORT_LOG_BYTES = 512 * 1024;
+
+function summarizeJoinRequest(integration, payload = {}) {
+  if (integration === "calendar") {
+    return {
+      meetingId: payload.meetingId || null,
+      hasJoinUrl: Boolean(payload.joinUrl),
+      startTime: payload.startTime || null,
+    };
+  }
+
+  if (integration === "zoom") {
+    return {
+      meetingId: payload.meetingid || null,
+      hasJoinUrl: Boolean(payload.join_url),
+      hasPassword: Boolean(payload.meetingpass),
+    };
+  }
+
+  if (integration === "standalone") {
+    return {
+      host: Boolean(payload.host),
+      hasJoinUrl: Boolean(payload.join_url),
+      translationType: payload.translation_type || null,
+      languageA: payload.language_a || null,
+      languageB: payload.language_b || null,
+      languageHints: Array.isArray(payload.language_hints)
+        ? payload.language_hints
+        : null,
+    };
+  }
+
+  return payload;
+}
+
+function summarizeJoinResponse(integration, data = {}) {
+  return {
+    integration,
+    sessionId: data.sessionId || null,
+    type: data.type || null,
+    meetingId: data.meetingId || data.meetingid || null,
+    hasJoinUrl: Boolean(data.joinUrl || data.join_url),
+  };
+}
 
 function parseCookie(cookieStr) {
   const parts = cookieStr.split(";");
   const [name, value] = parts[0].split("=");
   return { name: name.trim(), value: value.trim() };
+}
+
+async function getCookieHeader() {
+  const cookies = await session.defaultSession.cookies.get({
+    url: API_BASE_URL,
+  });
+  return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+}
+
+async function getMainLogAttachment() {
+  const fileTransport = log.transports.file;
+  const file = typeof fileTransport.getFile === "function" ? fileTransport.getFile() : null;
+  const logPath = file?.path;
+
+  if (!logPath) {
+    throw new Error("Desktop log file path is unavailable");
+  }
+
+  const contents = await readFile(logPath);
+  const sliceStart = Math.max(0, contents.length - MAX_BUG_REPORT_LOG_BYTES);
+  const trimmed = contents.subarray(sliceStart);
+
+  return {
+    fileName: "desktop-main.log",
+    mimeType: "text/plain",
+    bytes: trimmed,
+  };
+}
+
+async function makeMultipartApiRequest(endpoint, formData) {
+  const cookieHeader = await getCookieHeader();
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    body: formData,
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const responseText = await response.text();
+  const responseData = contentType.includes("application/json")
+    ? JSON.parse(responseText || "null")
+    : responseText;
+
+  if (!response.ok) {
+    const errorMessage =
+      responseData?.detail ||
+      responseData?.message ||
+      responseData ||
+      `Request failed with status ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  return { data: responseData };
+}
+
+async function makeTextApiRequest(endpoint, method = "GET") {
+  const cookieHeader = await getCookieHeader();
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  });
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    let errorMessage = responseText;
+    try {
+      const parsed = JSON.parse(responseText || "null");
+      errorMessage = parsed?.detail || parsed?.message || responseText;
+    } catch {
+      // Keep text response as-is.
+    }
+    throw new Error(errorMessage || `Request failed with status ${response.status}`);
+  }
+
+  return { data: responseText };
 }
 
 function makeApiRequest(endpoint, method, body = null) {
@@ -231,12 +351,19 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("auth:join-calendar", async (_, payload) => {
-    ipcHandlerLog.info("Attempting to join Calendar session via IPC...");
+    ipcHandlerLog.info(
+      "Attempting to join Calendar session via IPC...",
+      summarizeJoinRequest("calendar", payload),
+    );
     try {
       const { data } = await makeApiRequest(
         "/api/auth/calendar-join",
         "POST",
         payload,
+      );
+      ipcHandlerLog.info(
+        "Calendar join succeeded.",
+        summarizeJoinResponse("calendar", data),
       );
       return { status: "ok", data };
     } catch (error) {
@@ -316,6 +443,32 @@ export function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("support:submit-bug-report", async (_, payload) => {
+    ipcHandlerLog.info("Submitting desktop bug report via IPC...");
+    try {
+      const logAttachment = await getMainLogAttachment();
+      const formData = new FormData();
+      formData.append("title", payload?.title || "");
+      formData.append("description", payload?.description || "");
+      formData.append("steps_to_reproduce", payload?.stepsToReproduce || "");
+      formData.append("expected_behavior", payload?.expectedBehavior || "");
+      formData.append("actual_behavior", payload?.actualBehavior || "");
+      formData.append("app_version", app.getVersion());
+      formData.append("platform", process.platform);
+      formData.append(
+        "main_log",
+        new Blob([logAttachment.bytes], { type: logAttachment.mimeType }),
+        logAttachment.fileName,
+      );
+
+      const { data } = await makeMultipartApiRequest("/api/bug-reports/", formData);
+      return { status: "ok", data };
+    } catch (error) {
+      ipcHandlerLog.error("Bug report submission failed:", error.message || error);
+      return { status: "error", message: error.message || "Failed to submit bug report" };
+    }
+  });
+
   ipcMain.handle("users:update-language", async (event, languageCode) => {
     ipcHandlerLog.info(`Updating user language preference to: ${languageCode}`);
     try {
@@ -378,9 +531,16 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("auth:join-zoom", async (event, payload) => {
-    ipcHandlerLog.info("Attempting to join Zoom session via IPC...");
+    ipcHandlerLog.info(
+      "Attempting to join Zoom session via IPC...",
+      summarizeJoinRequest("zoom", payload),
+    );
     try {
       const { data } = await makeApiRequest("/api/auth/zoom", "POST", payload);
+      ipcHandlerLog.info(
+        "Zoom join succeeded.",
+        summarizeJoinResponse("zoom", data),
+      );
       return { status: "ok", data };
     } catch (error) {
       ipcHandlerLog.error("Zoom join failed:", error.message);
@@ -389,12 +549,19 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("auth:join-standalone", async (event, payload) => {
-    ipcHandlerLog.info("Attempting to join Standalone session via IPC...");
+    ipcHandlerLog.info(
+      "Attempting to join Standalone session via IPC...",
+      summarizeJoinRequest("standalone", payload),
+    );
     try {
       const { data } = await makeApiRequest(
         "/api/auth/standalone",
         "POST",
         payload,
+      );
+      ipcHandlerLog.info(
+        "Standalone join succeeded.",
+        summarizeJoinResponse("standalone", data),
       );
       return { status: "ok", data };
     } catch (error) {
@@ -504,6 +671,37 @@ export function registerIpcHandlers() {
   ipcMain.handle("admin:get-reviews", async () => {
     try {
       const { data } = await makeApiRequest("/api/reviews/", "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:get-bug-reports", async (_, status = "open") => {
+    try {
+      const { data } = await makeApiRequest(`/api/bug-reports/?status=${encodeURIComponent(status)}`, "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:get-bug-report-log", async (_, reportId) => {
+    try {
+      const { data } = await makeTextApiRequest(`/api/bug-reports/${reportId}/log`, "GET");
+      return { status: "ok", data };
+    } catch (error) {
+      return { status: "error", message: error.message };
+    }
+  });
+
+  ipcMain.handle("admin:set-bug-report-resolved", async (_, reportId, isResolved) => {
+    try {
+      const { data } = await makeApiRequest(
+        `/api/bug-reports/${reportId}/resolve`,
+        "PATCH",
+        { is_resolved: Boolean(isResolved) },
+      );
       return { status: "ok", data };
     } catch (error) {
       return { status: "error", message: error.message };

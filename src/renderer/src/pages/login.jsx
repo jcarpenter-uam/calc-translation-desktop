@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { EnvelopeSimple } from "@phosphor-icons/react";
 import { FaMicrosoft, FaGoogle } from "react-icons/fa";
+import log from "electron-log/renderer";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/auth";
 import { useLanguage } from "../context/language.jsx";
@@ -20,6 +21,9 @@ export default function Login() {
 
   useEffect(() => {
     if (user) {
+      log.info("Login: User already authenticated, redirecting home", {
+        userId: user.id || null,
+      });
       navigate("/");
     }
   }, [user, navigate]);
@@ -27,6 +31,7 @@ export default function Login() {
   useEffect(() => {
     const reason = searchParams.get("reason");
     if (reason === "zoom_link_required") {
+      log.info("Login: Zoom link flow requested via query parameter");
       sessionStorage.setItem("zoom_link_pending", "true");
       setInfoMessage(t("zoom_link_info"));
     }
@@ -36,6 +41,11 @@ export default function Login() {
     if (event) event.preventDefault();
     setIsLoading(true);
     setError(null);
+    log.info("Login: Submitting login request", {
+      hasEmail: Boolean(email),
+      uiLanguage,
+      provider: forcedProvider || null,
+    });
 
     try {
       const response = await window.electron.requestLogin(
@@ -54,15 +64,22 @@ export default function Login() {
       const data = response.data;
 
       if (data.action === "select_provider") {
+        log.info("Login: Multiple providers returned for email", {
+          providers: data.providers || [],
+        });
         setAvailableProviders(data.providers);
         setIsLoading(false);
       } else if (data.login_url) {
+        log.info("Login: Launching auth flow window", {
+          provider: forcedProvider || null,
+        });
         await window.electron.startAuthFlow(data.login_url);
         await checkAuth();
       } else {
         throw new Error(t("invalid_server_response"));
       }
     } catch (err) {
+      log.error("Login: Login flow failed", err.message || err);
       setError(err.message);
       setIsLoading(false);
       setAvailableProviders([]);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import log from "electron-log/renderer";
 
 export function useCalendar(startDate = null, endDate = null) {
   const [events, setEvents] = useState([]);
@@ -11,6 +12,10 @@ export function useCalendar(startDate = null, endDate = null) {
     try {
       const startIso = startDate ? startDate.toISOString() : null;
       const endIso = endDate ? endDate.toISOString() : null;
+      log.info("Calendar: Fetching events", {
+        startIso,
+        endIso,
+      });
 
       const response = await window.electron.getCalendarEvents(
         startIso,
@@ -19,12 +24,15 @@ export function useCalendar(startDate = null, endDate = null) {
 
       if (response.status === "ok" || response.data) {
         const eventData = Array.isArray(response.data) ? response.data : [];
+        log.info("Calendar: Event fetch succeeded", {
+          count: eventData.length,
+        });
         setEvents(eventData);
       } else {
-        console.warn("Unexpected calendar response format:", response);
+        log.warn("Calendar: Unexpected response format", response);
       }
     } catch (err) {
-      console.error("fetchCalendar error:", err);
+      log.error("Calendar: Fetch failed", err.message || err);
       setError("Failed to load calendar.");
     } finally {
       setLoading(false);
@@ -35,6 +43,7 @@ export function useCalendar(startDate = null, endDate = null) {
     setLoading(true);
     setError(null);
     try {
+      log.info("Calendar: Starting sync");
       const response = await window.electron.syncCalendar();
 
       const isSuccess =
@@ -47,10 +56,10 @@ export function useCalendar(startDate = null, endDate = null) {
         throw new Error(response.message || "Failed to sync calendar.");
       }
 
-      console.log("Sync successful, refreshing events...");
+      log.info("Calendar: Sync succeeded, refreshing events");
       await fetchCalendar();
     } catch (err) {
-      console.error("syncCalendar error:", err);
+      log.error("Calendar: Sync failed", err.message || err);
       setError(err.message);
     } finally {
       setLoading(false);

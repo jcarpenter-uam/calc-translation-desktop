@@ -26,8 +26,14 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.invoke("users:update-language", languageCode),
   updateUserOnboardingTourCompleted: (completed) =>
     ipcRenderer.invoke("users:update-onboarding-tour", completed),
+  submitBugReport: (payload) => ipcRenderer.invoke("support:submit-bug-report", payload),
   getLogs: () => ipcRenderer.invoke("admin:get-logs"),
   getReviews: () => ipcRenderer.invoke("admin:get-reviews"),
+  getBugReports: (status) => ipcRenderer.invoke("admin:get-bug-reports", status),
+  getBugReportLog: (reportId) =>
+    ipcRenderer.invoke("admin:get-bug-report-log", reportId),
+  setBugReportResolved: (reportId, isResolved) =>
+    ipcRenderer.invoke("admin:set-bug-report-resolved", reportId, isResolved),
   openOverlay: (routePath) => ipcRenderer.invoke("overlay:open", routePath),
   closeOverlay: () => ipcRenderer.invoke("overlay:close"),
   setIgnoreMouseEvents: (ignore, options) =>

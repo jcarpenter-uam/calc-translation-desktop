@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import log from "electron-log/renderer";
 import DownloadVttButton from "../components/session/vtt-download.jsx";
 import Transcript from "../components/session/transcript.jsx";
 import Unauthorized from "../components/auth/unauthorized.jsx";
@@ -40,9 +41,31 @@ export default function SessionPage() {
   );
 
   const handleAuthFailure = useCallback(() => {
+    log.warn("Session: Authorization failed", {
+      integration,
+      sessionId,
+      isHost,
+    });
     setIsAuthorized(false);
     setShowUnauthorized(true);
-  }, []);
+  }, [integration, sessionId, isHost]);
+
+  useEffect(() => {
+    log.info("Session: Opening session page", {
+      integration,
+      sessionId,
+      isHost,
+      hasJoinUrl: Boolean(joinUrl),
+    });
+
+    return () => {
+      log.info("Session: Leaving session page", {
+        integration,
+        sessionId,
+        isHost,
+      });
+    };
+  }, [integration, sessionId, isHost, joinUrl]);
 
   useEffect(() => {
     if (!isAuthorized) {
@@ -74,6 +97,10 @@ export default function SessionPage() {
 
     const removeListener = window.electron.onRestoreSessionData((data) => {
       if (data.sessionId === sessionId) {
+        log.info("Session: Restoring cached transcript data", {
+          sessionId,
+          transcriptCount: data.transcripts?.length || 0,
+        });
         setRestoredSession(data);
       }
     });

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import log from "electron-log/renderer";
 
 export function usePendingZoomLink(t) {
   useEffect(() => {
@@ -7,7 +8,7 @@ export function usePendingZoomLink(t) {
 
       if (needsLink === "true") {
         try {
-          console.log("Found pending Zoom link, attempting to link account...");
+          log.info("Zoom Link: Found pending Zoom link, attempting account link");
           alert(t("finishing_zoom_setup"));
 
           const response = await window.electron.linkPendingZoom();
@@ -16,10 +17,10 @@ export function usePendingZoomLink(t) {
             throw new Error(response.message || "Failed to link Zoom account.");
           }
 
-          console.log("Zoom account linked successfully!");
+          log.info("Zoom Link: Account linked successfully");
           alert(t("zoom_linked_success"));
         } catch (error) {
-          console.error("Zoom link error:", error);
+          log.error("Zoom Link: Account link failed", error.message || error);
           alert(t("zoom_link_failed", { error: error.message }));
         } finally {
           sessionStorage.removeItem("zoom_link_pending");

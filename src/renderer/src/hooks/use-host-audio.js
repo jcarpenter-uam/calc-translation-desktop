@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import log from "electron-log/renderer";
 import { useNetwork } from "../context/network.jsx";
 
 function floatTo16BitPCM(input) {
@@ -54,9 +55,12 @@ export function useHostAudio(sessionId, integration, token) {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const inputs = devices.filter((d) => d.kind === "audioinput");
+        log.info("Host Audio: Enumerated input devices", {
+          count: inputs.length,
+        });
         setInputDevices(inputs);
       } catch (err) {
-        console.error("Error enumerating devices:", err);
+        log.error("Host Audio: Failed to enumerate input devices", err);
       }
     };
 
@@ -71,7 +75,10 @@ export function useHostAudio(sessionId, integration, token) {
     if (!sessionId || !integration || !token) return;
 
     const wsUrl = `${wsBaseUrl}/ws/transcribe/${integration}/${sessionId}?token=${token}`;
-    console.log("Host connecting to:", wsUrl);
+    log.info("Host Audio: Opening websocket", {
+      integration,
+      sessionId,
+    });
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -86,16 +93,23 @@ export function useHostAudio(sessionId, integration, token) {
     }, 250);
 
     ws.onopen = () => {
-      console.log("Host Audio WS connected");
+      log.info("Host Audio: Websocket connected", {
+        integration,
+        sessionId,
+      });
       setStatus("connected");
     };
 
     ws.onerror = (err) => {
-      console.error("Host Audio WS error", err);
+      log.error("Host Audio: Websocket error", err);
       setStatus("error");
     };
 
     ws.onclose = () => {
+      log.info("Host Audio: Websocket closed", {
+        integration,
+        sessionId,
+      });
       setStatus("disconnected");
       stopAudio();
     };
@@ -206,6 +220,11 @@ export function useHostAudio(sessionId, integration, token) {
           streamId: "browser-guest",
           workerPid: "browser",
         };
+        log.info("Host Audio: Sending session lifecycle event", {
+          type,
+          sessionId,
+          integration,
+        });
         wsRef.current.send(JSON.stringify({ type, payload: meta }));
         hasConnectedOnceRef.current = true;
       }
@@ -305,14 +324,24 @@ export function useHostAudio(sessionId, integration, token) {
       isAudioInitializedRef.current = true;
       setIsMuted(false);
       isMutedRef.current = false;
+      log.info("Host Audio: Started audio capture", {
+        sessionId,
+        integration,
+        selection,
+      });
     } catch (err) {
-      console.error("Failed to start audio", err);
+      log.error("Host Audio: Failed to start audio", err);
       alert("Could not access audio device: " + err.message);
       stopAudio();
     }
   };
 
   const stopAudio = () => {
+    log.info("Host Audio: Stopping audio capture", {
+      sessionId,
+      integration,
+      activeMode,
+    });
     cleanupMedia();
     setIsAudioInitialized(false);
     isAudioInitializedRef.current = false;
@@ -323,9 +352,18 @@ export function useHostAudio(sessionId, integration, token) {
     const nextState = !isMuted;
     setIsMuted(nextState);
     isMutedRef.current = nextState;
+    log.info("Host Audio: Toggled mute", {
+      sessionId,
+      integration,
+      isMuted: nextState,
+    });
   };
 
   const disconnectSession = () => {
+    log.info("Host Audio: Disconnecting hosted session", {
+      sessionId,
+      integration,
+    });
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "session_end" }));
     }

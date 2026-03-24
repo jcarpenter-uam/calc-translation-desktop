@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { FaTimes } from "react-icons/fa";
+import log from "electron-log/renderer";
 import { useTranslation } from "react-i18next";
 import { useTranscriptStream } from "../hooks/use-transcript-stream.js";
 import { useSmartScroll } from "../hooks/use-smart-scroll.js";
@@ -31,9 +32,27 @@ export default function OverlaySessionPage() {
   const { t } = useTranslation();
 
   const handleAuthFailure = useCallback(() => {
+    log.warn("Overlay Session: Authorization failed", {
+      integration,
+      sessionId,
+    });
     setIsAuthorized(false);
     setShowUnauthorized(true);
-  }, []);
+  }, [integration, sessionId]);
+
+  useEffect(() => {
+    log.info("Overlay Session: Opening overlay", {
+      integration,
+      sessionId,
+    });
+
+    return () => {
+      log.info("Overlay Session: Leaving overlay", {
+        integration,
+        sessionId,
+      });
+    };
+  }, [integration, sessionId]);
 
   useEffect(() => {
     if (!isAuthorized) {
@@ -56,8 +75,18 @@ export default function OverlaySessionPage() {
   } = useTranscriptStream(wsUrl, sessionId, handleAuthFailure);
 
   const handleClose = useCallback(() => {
+    log.info("Overlay Session: Closing overlay", {
+      integration,
+      sessionId,
+      isDownloadable,
+      transcriptCount: transcripts.length,
+    });
     if (isDownloadable && transcripts.length > 0) {
       if (window.electron.syncSessionData) {
+        log.info("Overlay Session: Syncing transcript data back to main window", {
+          sessionId,
+          transcriptCount: transcripts.length,
+        });
         window.electron.syncSessionData({
           sessionId,
           transcripts,
@@ -66,7 +95,7 @@ export default function OverlaySessionPage() {
     }
 
     window.electron.closeOverlay();
-  }, [isDownloadable, transcripts, sessionId]);
+  }, [integration, isDownloadable, transcripts, sessionId]);
 
   const lastTopTextRef = useRef(null);
   const scrollContainerRef = useRef(null);
