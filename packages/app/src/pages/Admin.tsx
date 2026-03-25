@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BugReportsPanel } from "../admin/BugReportsPanel";
+import { ServerLogsModal } from "../admin/ServerLogsModal";
 import { TenantSettingsPanel } from "../admin/TenantSettingsPanel";
 import { UserSettingsPanel } from "../admin/UserSettingsPanel";
 import { useAuth } from "../auth/AuthContext";
@@ -13,6 +14,7 @@ export function AdminPage() {
   const [selectedScope, setSelectedScope] = useState(
     isSuperAdmin ? "all" : tenantId || "",
   );
+  const [isServerLogsOpen, setIsServerLogsOpen] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin) {
@@ -57,30 +59,43 @@ export function AdminPage() {
             </div>
 
             {isSuperAdmin ? (
-              <label className="min-w-[17rem] space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                  Focus Tenant
-                </span>
-                <select
-                  value={selectedScope}
-                  onChange={(event: any) =>
-                    setSelectedScope(String(event.target.value))
-                  }
-                  className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+              <div className="flex min-w-[17rem] flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsServerLogsOpen(true)}
+                  className="rounded-xl border border-line bg-canvas px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
                 >
-                  <option value="all">All tenants</option>
-                  {(tenantData?.tenants || []).map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name || tenant.id}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  View Server Logs
+                </button>
+              </div>
             ) : null}
           </div>
 
           <div className="space-y-6">
             {isSuperAdmin ? <BugReportsPanel /> : null}
+            {isSuperAdmin ? (
+              <div className="flex min-w-[17rem] flex-col gap-3">
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                    Focus Tenant
+                  </span>
+                  <select
+                    value={selectedScope}
+                    onChange={(event: any) =>
+                      setSelectedScope(String(event.target.value))
+                    }
+                    className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                  >
+                    <option value="all">All tenants</option>
+                    {(tenantData?.tenants || []).map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name || tenant.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
             <TenantSettingsPanel
               selectedTenantId={effectiveTenantId || null}
               isAllTenantsView={isAllTenantsView}
@@ -94,6 +109,10 @@ export function AdminPage() {
           </div>
         </div>
       </section>
+      <ServerLogsModal
+        isOpen={isSuperAdmin && isServerLogsOpen}
+        onClose={() => setIsServerLogsOpen(false)}
+      />
     </main>
   );
 }
