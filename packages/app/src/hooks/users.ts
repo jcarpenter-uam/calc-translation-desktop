@@ -47,6 +47,17 @@ function buildTenantUsersPath(
   }`;
 }
 
+function buildAllTenantUsersPath(options?: { q?: string | null }) {
+  const query = new URLSearchParams();
+  const searchValue = options?.q?.trim();
+  if (searchValue) {
+    query.set("q", searchValue);
+  }
+
+  const suffix = query.toString();
+  return `/tenants/users${suffix ? `?${suffix}` : ""}`;
+}
+
 export const tenantUsersKey = (
   tenantId: string | null,
   options?: { q?: string | null },
@@ -57,6 +68,9 @@ export const tenantUsersKey = (
 
   return buildApiUrl(buildTenantUsersPath(tenantId, options));
 };
+
+export const allTenantUsersKey = (options?: { q?: string | null }) =>
+  buildApiUrl(buildAllTenantUsersPath(options));
 
 /**
  * Lists available tenants for admin actions.
@@ -77,6 +91,22 @@ export function useTenants(enabled: boolean) {
  */
 export function useTenantUsers(enabled: boolean) {
   return useTenantUsersForTenant(null, enabled);
+}
+
+/**
+ * Lists users across all tenants for super-admin overview mode.
+ */
+export function useAllTenantUsers(enabled: boolean, options?: { q?: string | null }) {
+  const key = enabled ? allTenantUsersKey(options) : null;
+
+  return useSWR<TenantUsersResponse, ApiError>(
+    key,
+    () => apiRequest<TenantUsersResponse>(buildAllTenantUsersPath(options)),
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: (error: ApiError) => error.status >= 500,
+    },
+  );
 }
 
 /**
@@ -137,6 +167,26 @@ export function useUpdateTenantUser() {
       { revalidate: false },
     );
 
+    await mutate<TenantUsersResponse>(
+      (key: unknown) =>
+        typeof key === "string" && key.startsWith(buildApiUrl("/tenants/users")),
+      (currentValue?: TenantUsersResponse) => {
+        if (!currentValue) {
+          return currentValue;
+        }
+
+        return {
+          users: currentValue.users.map((existingUser: AuthUser) =>
+            existingUser.id === id && existingUser.tenantId === tenantId
+              ? { ...existingUser, ...response.user, tenantId, tenantName: existingUser.tenantName }
+              : existingUser,
+          ),
+          pageInfo: currentValue.pageInfo,
+        };
+      },
+      { revalidate: false },
+    );
+
     return response;
   };
 }
@@ -169,6 +219,25 @@ export function useDeleteTenantUser() {
           users: currentValue.users.filter(
             (existingUser: AuthUser) => existingUser.id !== id,
           ),
+        };
+      },
+      { revalidate: false },
+    );
+
+    await mutate<TenantUsersResponse>(
+      (key: unknown) =>
+        typeof key === "string" && key.startsWith(buildApiUrl("/tenants/users")),
+      (currentValue?: TenantUsersResponse) => {
+        if (!currentValue) {
+          return currentValue;
+        }
+
+        return {
+          users: currentValue.users.filter(
+            (existingUser: AuthUser) =>
+              !(existingUser.id === id && existingUser.tenantId === tenantId),
+          ),
+          pageInfo: currentValue.pageInfo,
         };
       },
       { revalidate: false },

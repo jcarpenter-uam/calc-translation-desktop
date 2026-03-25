@@ -7,6 +7,8 @@ export type AuthUser = {
   email: string | null;
   role: string;
   languageCode: string | null;
+  tenantId?: string | null;
+  tenantName?: string | null;
 };
 
 export type TenantInfo = {
