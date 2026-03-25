@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import log from "electron-log/renderer";
 import {
   BiMicrophone,
   BiMicrophoneOff,
@@ -220,6 +221,19 @@ export default function HostAudioSender({
   };
 
   const handleDeviceSelect = (deviceId) => {
+    const selectedDevice = inputDevices.find((device) => device.deviceId === deviceId);
+
+    log.info("Host Audio UI: User selected audio source", {
+      selection: deviceId ?? "default-microphone",
+      selectedDeviceLabel: selectedDevice?.label || null,
+      selectedDeviceId: selectedDevice?.deviceId || null,
+      activeMode,
+      availableInputDevices: inputDevices.map((device) => ({
+        deviceId: device.deviceId,
+        label: device.label,
+      })),
+    });
+
     setShowDeviceMenu(false);
     startAudio(deviceId);
   };

@@ -2,6 +2,126 @@ import { useState, useRef, useEffect } from "react";
 import log from "electron-log/renderer";
 import { useNetwork } from "../context/network.jsx";
 
+function serializeError(error) {
+  if (!error) {
+    return null;
+  }
+
+  const serialized = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  };
+
+  if (typeof error.code !== "undefined") {
+    serialized.code = error.code;
+  }
+
+  if (typeof error.constraint !== "undefined") {
+    serialized.constraint = error.constraint;
+  }
+
+  if (typeof error.cause !== "undefined") {
+    serialized.cause =
+      error.cause instanceof Error ? serializeError(error.cause) : error.cause;
+  }
+
+  Object.entries(error).forEach(([key, value]) => {
+    if (typeof serialized[key] === "undefined") {
+      serialized[key] = value;
+    }
+  });
+
+  return serialized;
+}
+
+function truncateDeviceId(deviceId) {
+  if (!deviceId) {
+    return "";
+  }
+
+  if (deviceId.length <= 12) {
+    return deviceId;
+  }
+
+  return `${deviceId.slice(0, 6)}...${deviceId.slice(-4)}`;
+}
+
+function summarizeDevice(device) {
+  if (!device) {
+    return null;
+  }
+
+  return {
+    deviceId: truncateDeviceId(device.deviceId),
+    groupId: truncateDeviceId(device.groupId),
+    kind: device.kind,
+    label: device.label,
+  };
+}
+
+function summarizeTrack(track) {
+  if (!track) {
+    return null;
+  }
+
+  let settings = null;
+  if (typeof track.getSettings === "function") {
+    try {
+      settings = track.getSettings();
+    } catch {
+      settings = null;
+    }
+  }
+
+  let constraints = null;
+  if (typeof track.getConstraints === "function") {
+    try {
+      constraints = track.getConstraints();
+    } catch {
+      constraints = null;
+    }
+  }
+
+  return {
+    kind: track.kind,
+    label: track.label,
+    enabled: track.enabled,
+    muted: track.muted,
+    readyState: track.readyState,
+    settings,
+    constraints,
+  };
+}
+
+function summarizeStream(stream) {
+  if (!stream) {
+    return null;
+  }
+
+  return {
+    id: stream.id,
+    active: stream.active,
+    audioTracks: stream.getAudioTracks().map(summarizeTrack),
+    videoTracks: stream.getVideoTracks().map(summarizeTrack),
+  };
+}
+
+function getSupportedConstraints() {
+  if (!navigator.mediaDevices?.getSupportedConstraints) {
+    return null;
+  }
+
+  try {
+    return navigator.mediaDevices.getSupportedConstraints();
+  } catch (error) {
+    return {
+      failedToRead: true,
+      error: serializeError(error),
+    };
+  }
+}
+
 function floatTo16BitPCM(input) {
   const output = new Int16Array(input.length);
   for (let i = 0; i < input.length; i++) {
@@ -50,6 +170,24 @@ export function useHostAudio(sessionId, integration, token) {
   const isAudioInitializedRef = useRef(false);
   const hasConnectedOnceRef = useRef(false);
 
+  const getDebugContext = (selection) => ({
+    sessionId,
+    integration,
+    selection,
+    activeMode,
+    status,
+    isAudioInitialized: isAudioInitializedRef.current,
+    isMuted: isMutedRef.current,
+    hasConnectedOnce: hasConnectedOnceRef.current,
+    wsReadyState: wsRef.current?.readyState ?? null,
+    audioContextState: audioContextRef.current?.state ?? null,
+    processorConnected: Boolean(processorRef.current),
+    micStreamActive: micStreamRef.current?.active ?? false,
+    sysStreamActive: sysStreamRef.current?.active ?? false,
+    inputDevices: inputDevices.map(summarizeDevice),
+    supportedConstraints: getSupportedConstraints(),
+  });
+
   useEffect(() => {
     const getDevices = async () => {
       try {
@@ -57,10 +195,16 @@ export function useHostAudio(sessionId, integration, token) {
         const inputs = devices.filter((d) => d.kind === "audioinput");
         log.info("Host Audio: Enumerated input devices", {
           count: inputs.length,
+          devices: inputs.map(summarizeDevice),
         });
         setInputDevices(inputs);
       } catch (err) {
-        log.error("Host Audio: Failed to enumerate input devices", err);
+        log.error("Host Audio: Failed to enumerate input devices", {
+          error: serializeError(err),
+          sessionId,
+          integration,
+          supportedConstraints: getSupportedConstraints(),
+        });
       }
     };
 
@@ -78,6 +222,7 @@ export function useHostAudio(sessionId, integration, token) {
     log.info("Host Audio: Opening websocket", {
       integration,
       sessionId,
+      wsUrl,
     });
 
     const ws = new WebSocket(wsUrl);
@@ -101,7 +246,12 @@ export function useHostAudio(sessionId, integration, token) {
     };
 
     ws.onerror = (err) => {
-      log.error("Host Audio: Websocket error", err);
+      log.error("Host Audio: Websocket error", {
+        sessionId,
+        integration,
+        readyState: wsRef.current?.readyState ?? null,
+        error: serializeError(err),
+      });
       setStatus("error");
     };
 
@@ -173,6 +323,16 @@ export function useHostAudio(sessionId, integration, token) {
   };
 
   const cleanupMedia = () => {
+    log.info("Host Audio: Cleaning up media resources", {
+      sessionId,
+      integration,
+      activeMode,
+      audioContextState: audioContextRef.current?.state ?? null,
+      micStream: summarizeStream(micStreamRef.current),
+      systemStream: summarizeStream(sysStreamRef.current),
+      hasProcessor: Boolean(processorRef.current),
+    });
+
     if (animationFrameRef.current)
       cancelAnimationFrame(animationFrameRef.current);
 
@@ -209,6 +369,7 @@ export function useHostAudio(sessionId, integration, token) {
 
   const startAudio = async (selection) => {
     try {
+      log.info("Host Audio: Starting audio capture", getDebugContext(selection));
       cleanupMedia();
 
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -232,6 +393,11 @@ export function useHostAudio(sessionId, integration, token) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioContext({ sampleRate: 16000 });
       audioContextRef.current = ctx;
+      log.info("Host Audio: Created audio context", {
+        ...getDebugContext(selection),
+        audioContextState: ctx.state,
+        sampleRate: ctx.sampleRate,
+      });
 
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 64;
@@ -256,12 +422,30 @@ export function useHostAudio(sessionId, integration, token) {
       };
 
       const setupSystem = async () => {
+        log.info("Host Audio: Requesting desktop sources", getDebugContext(selection));
         const sources = await window.electron.getDesktopSources();
         const screenSource = sources[0];
 
+        log.info("Host Audio: Retrieved desktop sources", {
+          ...getDebugContext(selection),
+          sourceCount: sources.length,
+          sources: sources.map((source) => ({
+            id: source.id,
+            name: source.name,
+            display_id: source.display_id,
+          })),
+          selectedSource: screenSource
+            ? {
+                id: screenSource.id,
+                name: screenSource.name,
+                display_id: screenSource.display_id,
+              }
+            : null,
+        });
+
         if (!screenSource) throw new Error("No screen source found");
 
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
           audio: {
             mandatory: {
               chromeMediaSource: "desktop",
@@ -274,10 +458,33 @@ export function useHostAudio(sessionId, integration, token) {
               chromeMediaSourceId: screenSource.id,
             },
           },
+        };
+
+        log.info("Host Audio: Requesting system media stream", {
+          ...getDebugContext(selection),
+          constraints,
+          selectedSource: {
+            id: screenSource.id,
+            name: screenSource.name,
+            display_id: screenSource.display_id,
+          },
+        });
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          ...constraints,
+        });
+
+        log.info("Host Audio: Received system media stream", {
+          ...getDebugContext(selection),
+          stream: summarizeStream(stream),
         });
 
         const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack) {
+          log.info("Host Audio: Removing desktop video track", {
+            ...getDebugContext(selection),
+            videoTrack: summarizeTrack(videoTrack),
+          });
           videoTrack.stop();
           stream.removeTrack(videoTrack);
         }
@@ -288,10 +495,14 @@ export function useHostAudio(sessionId, integration, token) {
 
         source.connect(analyser);
         source.connect(processor);
+        log.info("Host Audio: Wired system audio graph", {
+          ...getDebugContext(selection),
+          stream: summarizeStream(stream),
+        });
       };
 
       const setupMic = async (deviceId) => {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
           audio: {
             deviceId: deviceId ? { exact: deviceId } : undefined,
             channelCount: 1,
@@ -299,6 +510,25 @@ export function useHostAudio(sessionId, integration, token) {
             echoCancellation: true,
             noiseSuppression: true,
           },
+        };
+
+        log.info("Host Audio: Requesting microphone stream", {
+          ...getDebugContext(selection),
+          requestedDeviceId: truncateDeviceId(deviceId),
+          selectedDevice: summarizeDevice(
+            inputDevices.find((device) => device.deviceId === deviceId),
+          ),
+          constraints,
+        });
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          ...constraints,
+        });
+
+        log.info("Host Audio: Received microphone stream", {
+          ...getDebugContext(selection),
+          requestedDeviceId: truncateDeviceId(deviceId),
+          stream: summarizeStream(stream),
         });
 
         micStreamRef.current = stream;
@@ -307,6 +537,11 @@ export function useHostAudio(sessionId, integration, token) {
 
         source.connect(analyser);
         source.connect(processor);
+        log.info("Host Audio: Wired microphone audio graph", {
+          ...getDebugContext(selection),
+          requestedDeviceId: truncateDeviceId(deviceId),
+          stream: summarizeStream(stream),
+        });
       };
 
       if (selection === "system") {
@@ -325,12 +560,17 @@ export function useHostAudio(sessionId, integration, token) {
       setIsMuted(false);
       isMutedRef.current = false;
       log.info("Host Audio: Started audio capture", {
-        sessionId,
-        integration,
-        selection,
+        ...getDebugContext(selection),
+        micStream: summarizeStream(micStreamRef.current),
+        systemStream: summarizeStream(sysStreamRef.current),
       });
     } catch (err) {
-      log.error("Host Audio: Failed to start audio", err);
+      log.error("Host Audio: Failed to start audio", {
+        ...getDebugContext(selection),
+        error: serializeError(err),
+        micStream: summarizeStream(micStreamRef.current),
+        systemStream: summarizeStream(sysStreamRef.current),
+      });
       alert("Could not access audio device: " + err.message);
       stopAudio();
     }

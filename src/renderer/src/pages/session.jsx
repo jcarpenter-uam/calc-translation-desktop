@@ -58,7 +58,42 @@ export default function SessionPage() {
       hasJoinUrl: Boolean(joinUrl),
     });
 
+    let isMounted = true;
+
+    const logEnvironment = async () => {
+      try {
+        const appVersion = await window.electron?.getAppVersion?.();
+        if (!isMounted) {
+          return;
+        }
+
+        log.info("Session: Environment snapshot", {
+          integration,
+          sessionId,
+          isHost,
+          appVersion,
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          languages: navigator.languages,
+          locationPathname: window.location.pathname,
+          locationHash: window.location.hash,
+          queryString: location.search,
+          hasMediaDevices: Boolean(navigator.mediaDevices),
+        });
+      } catch (error) {
+        log.warn("Session: Failed to collect environment snapshot", {
+          integration,
+          sessionId,
+          isHost,
+          error: error?.message || error,
+        });
+      }
+    };
+
+    logEnvironment();
+
     return () => {
+      isMounted = false;
       log.info("Session: Leaving session page", {
         integration,
         sessionId,
