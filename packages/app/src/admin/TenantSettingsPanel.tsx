@@ -21,6 +21,7 @@ type ProviderDraft = {
   clientSecret: string;
   tenantHint: string;
   hasSecret: boolean;
+  domains: string[];
 };
 
 type TenantSettingsPanelProps = {
@@ -43,10 +44,16 @@ type TenantEditorCardProps = {
 
 const PROVIDERS: ProviderType[] = ["google", "entra"];
 
-function createEmptyDomain(
-  providerType: ProviderType = "google",
-): TenantDomain {
-  return { domain: "", providerType };
+function expandDomains(providerDrafts: Record<ProviderType, ProviderDraft>): TenantDomain[] {
+  return PROVIDERS.flatMap((providerType) =>
+    providerDrafts[providerType].domains
+      .map((domain) => domain.trim().toLowerCase())
+      .filter((domain) => domain)
+      .map((domain) => ({
+        domain,
+        providerType,
+      })),
+  );
 }
 
 function createEmptyProviderDrafts(): Record<ProviderType, ProviderDraft> {
@@ -57,6 +64,7 @@ function createEmptyProviderDrafts(): Record<ProviderType, ProviderDraft> {
       clientSecret: "",
       tenantHint: "",
       hasSecret: false,
+      domains: [""],
     },
     entra: {
       enabled: false,
@@ -64,6 +72,7 @@ function createEmptyProviderDrafts(): Record<ProviderType, ProviderDraft> {
       clientSecret: "",
       tenantHint: "",
       hasSecret: false,
+      domains: [""],
     },
   };
 }
@@ -78,7 +87,20 @@ function buildProviderDrafts(settings: TenantSettings) {
       clientSecret: "",
       tenantHint: config.tenantHint || "",
       hasSecret: config.hasSecret,
+      domains: [],
     };
+  }
+  for (const domainEntry of settings.domains) {
+    const providerType = domainEntry.providerType as ProviderType;
+    if (!nextDrafts[providerType]) {
+      continue;
+    }
+    nextDrafts[providerType].domains.push(domainEntry.domain);
+  }
+  for (const providerType of PROVIDERS) {
+    if (nextDrafts[providerType].domains.length === 0) {
+      nextDrafts[providerType].domains = [""];
+    }
   }
   return nextDrafts;
 }
@@ -94,9 +116,6 @@ function TenantEditorCard({
   const [organizationName, setOrganizationName] = useState(
     settings.tenant.name || "",
   );
-  const [domains, setDomains] = useState<TenantDomain[]>(
-    settings.domains.length > 0 ? settings.domains : [createEmptyDomain()],
-  );
   const [providerDrafts, setProviderDrafts] = useState<
     Record<ProviderType, ProviderDraft>
   >(buildProviderDrafts(settings));
@@ -111,9 +130,6 @@ function TenantEditorCard({
 
   useEffect(() => {
     setOrganizationName(settings.tenant.name || "");
-    setDomains(
-      settings.domains.length > 0 ? settings.domains : [createEmptyDomain()],
-    );
     setProviderDrafts(buildProviderDrafts(settings));
   }, [settings]);
 
@@ -132,12 +148,7 @@ function TenantEditorCard({
 
   const buildPayload = (): UpdateTenantSettingsPayload => ({
     organizationName: organizationName.trim() || null,
-    domains: domains
-      .map((entry) => ({
-        domain: entry.domain.trim().toLowerCase(),
-        providerType: entry.providerType,
-      }))
-      .filter((entry) => entry.domain),
+    domains: expandDomains(providerDrafts),
     authConfigs: PROVIDERS.filter(
       (providerType) => providerDrafts[providerType].enabled,
     ).map((providerType) => ({
@@ -174,9 +185,7 @@ function TenantEditorCard({
   const enabledProviderCount = PROVIDERS.filter(
     (providerType) => providerDrafts[providerType].enabled,
   ).length;
-  const configuredDomainCount = domains.filter((entry) =>
-    entry.domain.trim(),
-  ).length;
+  const configuredDomainCount = expandDomains(providerDrafts).length;
 
   return (
     <div className="space-y-4 rounded-2xl border border-line/70 bg-panel/40 p-4">
@@ -247,93 +256,6 @@ function TenantEditorCard({
 
       {isExpanded ? (
         <>
-          <div className="space-y-3 rounded-xl border border-line/70 bg-canvas/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-ink">Domains</h4>
-                <p className="text-sm text-ink-muted">
-                  Route email domains to the correct SSO provider.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setDomains((currentValue) => [
-                    ...currentValue,
-                    createEmptyDomain(),
-                  ])
-                }
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
-              >
-                Add Domain
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {domains.map((entry, index) => (
-                <div
-                  key={`${settings.tenant.id}-${index}-${entry.providerType}`}
-                  className="grid gap-3 md:grid-cols-[minmax(0,1fr)_11rem_auto]"
-                >
-                  <input
-                    value={entry.domain}
-                    onChange={(event: any) =>
-                      setDomains((currentValue) =>
-                        currentValue.map((domainEntry, domainIndex) =>
-                          domainIndex === index
-                            ? {
-                                ...domainEntry,
-                                domain: String(event.target.value),
-                              }
-                            : domainEntry,
-                        ),
-                      )
-                    }
-                    placeholder="example.com"
-                    className="rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                  />
-                  <select
-                    value={entry.providerType}
-                    onChange={(event: any) =>
-                      setDomains((currentValue) =>
-                        currentValue.map((domainEntry, domainIndex) =>
-                          domainIndex === index
-                            ? {
-                                ...domainEntry,
-                                providerType: String(
-                                  event.target.value,
-                                ) as ProviderType,
-                              }
-                            : domainEntry,
-                        ),
-                      )
-                    }
-                    className="rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                  >
-                    <option value="google">Google</option>
-                    <option value="entra">Entra</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDomains((currentValue) => {
-                        const nextValue = currentValue.filter(
-                          (_, domainIndex) => domainIndex !== index,
-                        );
-                        return nextValue.length > 0
-                          ? nextValue
-                          : [createEmptyDomain()];
-                      })
-                    }
-                    className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="grid gap-4 lg:grid-cols-2">
             {PROVIDERS.map((providerType) => {
               const draft = providerDrafts[providerType];
@@ -368,6 +290,58 @@ function TenantEditorCard({
                       Enabled
                     </label>
                   </div>
+
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                      Domains
+                    </span>
+                    <div className="space-y-2 rounded-lg border border-line bg-panel p-3">
+                      <p className="text-xs text-ink-muted">
+                        Use the same domain in multiple provider sections to show a provider chooser at sign-in.
+                      </p>
+                      {draft.domains.map((domain, domainIndex) => (
+                        <div key={`${settings.tenant.id}-${providerType}-${domainIndex}`} className="flex gap-2">
+                          <input
+                            value={domain}
+                            onChange={(event: any) =>
+                              setProviderDraft(providerType, {
+                                domains: draft.domains.map((entry, entryIndex) =>
+                                  entryIndex === domainIndex ? String(event.target.value) : entry,
+                                ),
+                              })
+                            }
+                            disabled={!draft.enabled}
+                            placeholder="example.com"
+                            className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProviderDraft(providerType, {
+                                domains:
+                                  draft.domains.filter((_, entryIndex) => entryIndex !== domainIndex)
+                                    .length > 0
+                                    ? draft.domains.filter((_, entryIndex) => entryIndex !== domainIndex)
+                                    : [""],
+                              })
+                            }
+                            disabled={!draft.enabled}
+                            className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setProviderDraft(providerType, { domains: [...draft.domains, ""] })}
+                        disabled={!draft.enabled}
+                        className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Add Domain
+                      </button>
+                    </div>
+                  </label>
 
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
@@ -547,7 +521,6 @@ export function TenantSettingsPanel({
   const [isCreating, setIsCreating] = useState(false);
   const [newTenantId, setNewTenantId] = useState("");
   const [organizationName, setOrganizationName] = useState("");
-  const [domains, setDomains] = useState<TenantDomain[]>([createEmptyDomain()]);
   const [providerDrafts, setProviderDrafts] = useState<
     Record<ProviderType, ProviderDraft>
   >(createEmptyProviderDrafts);
@@ -576,12 +549,7 @@ export function TenantSettingsPanel({
 
   const buildCreatePayload = (): UpdateTenantSettingsPayload => ({
     organizationName: organizationName.trim() || null,
-    domains: domains
-      .map((entry) => ({
-        domain: entry.domain.trim().toLowerCase(),
-        providerType: entry.providerType,
-      }))
-      .filter((entry) => entry.domain),
+    domains: expandDomains(providerDrafts),
     authConfigs: PROVIDERS.filter(
       (providerType) => providerDrafts[providerType].enabled,
     ).map((providerType) => ({
@@ -710,91 +678,6 @@ export function TenantSettingsPanel({
             </label>
           </div>
 
-          <div className="space-y-3 rounded-xl border border-line/70 bg-canvas/60 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-ink">Domains</h4>
-                <p className="text-sm text-ink-muted">
-                  Add at least one routing domain.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  setDomains((currentValue) => [
-                    ...currentValue,
-                    createEmptyDomain(),
-                  ])
-                }
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
-              >
-                Add Domain
-              </button>
-            </div>
-
-            {domains.map((entry, index) => (
-              <div
-                key={`create-${index}`}
-                className="grid gap-3 md:grid-cols-[minmax(0,1fr)_11rem_auto]"
-              >
-                <input
-                  value={entry.domain}
-                  onChange={(event: any) =>
-                    setDomains((currentValue) =>
-                      currentValue.map((domainEntry, domainIndex) =>
-                        domainIndex === index
-                          ? {
-                              ...domainEntry,
-                              domain: String(event.target.value),
-                            }
-                          : domainEntry,
-                      ),
-                    )
-                  }
-                  placeholder="example.com"
-                  className="rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                />
-                <select
-                  value={entry.providerType}
-                  onChange={(event: any) =>
-                    setDomains((currentValue) =>
-                      currentValue.map((domainEntry, domainIndex) =>
-                        domainIndex === index
-                          ? {
-                              ...domainEntry,
-                              providerType: String(
-                                event.target.value,
-                              ) as ProviderType,
-                            }
-                          : domainEntry,
-                      ),
-                    )
-                  }
-                  className="rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                >
-                  <option value="google">Google</option>
-                  <option value="entra">Entra</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDomains((currentValue) => {
-                      const nextValue = currentValue.filter(
-                        (_, domainIndex) => domainIndex !== index,
-                      );
-                      return nextValue.length > 0
-                        ? nextValue
-                        : [createEmptyDomain()];
-                    })
-                  }
-                  className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-
           <div className="grid gap-4 lg:grid-cols-2">
             {PROVIDERS.map((providerType) => {
               const draft = providerDrafts[providerType];
@@ -832,6 +715,72 @@ export function TenantSettingsPanel({
                       Enabled
                     </label>
                   </div>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                      Domains
+                    </span>
+                    <div className="space-y-2 rounded-lg border border-line bg-panel p-3">
+                      <p className="text-xs text-ink-muted">
+                        Use the same domain in multiple provider sections to show a provider chooser at sign-in.
+                      </p>
+                      {draft.domains.map((domain, domainIndex) => (
+                        <div key={`create-${providerType}-${domainIndex}`} className="flex gap-2">
+                          <input
+                            value={domain}
+                            onChange={(event: any) =>
+                              setProviderDrafts((currentValue) => ({
+                                ...currentValue,
+                                [providerType]: {
+                                  ...currentValue[providerType],
+                                  domains: currentValue[providerType].domains.map((entry, entryIndex) =>
+                                    entryIndex === domainIndex ? String(event.target.value) : entry,
+                                  ),
+                                },
+                              }))
+                            }
+                            disabled={!draft.enabled}
+                            placeholder="example.com"
+                            className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProviderDrafts((currentValue) => ({
+                                ...currentValue,
+                                [providerType]: {
+                                  ...currentValue[providerType],
+                                  domains:
+                                    currentValue[providerType].domains.filter((_, entryIndex) => entryIndex !== domainIndex).length > 0
+                                      ? currentValue[providerType].domains.filter((_, entryIndex) => entryIndex !== domainIndex)
+                                      : [""],
+                                },
+                              }))
+                            }
+                            disabled={!draft.enabled}
+                            className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProviderDrafts((currentValue) => ({
+                            ...currentValue,
+                            [providerType]: {
+                              ...currentValue[providerType],
+                              domains: [...currentValue[providerType].domains, ""],
+                            },
+                          }))
+                        }
+                        disabled={!draft.enabled}
+                        className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Add Domain
+                      </button>
+                    </div>
+                  </label>
                   <input
                     value={draft.clientId}
                     onChange={(event: any) =>
@@ -951,7 +900,6 @@ export function TenantSettingsPanel({
               });
               setNewTenantId("");
               setOrganizationName("");
-              setDomains([createEmptyDomain()]);
               setProviderDrafts(createEmptyProviderDrafts());
               setIsCreating(false);
               setMessage("Tenant created.");
