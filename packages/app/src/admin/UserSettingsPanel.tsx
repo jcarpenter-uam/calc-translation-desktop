@@ -233,127 +233,139 @@ export function UserSettingsPanel({
       ) : null}
 
       <div className="overflow-hidden rounded-xl border border-line bg-panel/40">
-        <div
-          className={`hidden gap-3 border-b border-line/70 bg-panel px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted md:grid ${isAllTenantsView ? "grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]" : "grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]"}`}
-        >
-          <span>User</span>
-          {isAllTenantsView ? <span>Tenant</span> : null}
-          <span>Role</span>
-          <span>Language</span>
-          <span>Actions</span>
-        </div>
-
         <div className="max-h-80 overflow-auto">
           {isUsersLoading ? (
             <p className="p-4 text-sm text-ink-muted">Loading users...</p>
           ) : filteredUsers.length === 0 ? (
             <p className="p-4 text-sm text-ink-muted">No users found.</p>
           ) : (
-            <div>
-              {filteredUsers.map((entry) => {
-                const isEditing = editingUserId === entry.id;
+            <>
+              <div className="divide-y divide-line/70 md:hidden">
+                {filteredUsers.map((entry) => {
+                  const isEditing = editingUserId === entry.id;
 
-                return (
-                  <div
-                    key={`${entry.tenantId || "tenant"}-${entry.id}`}
-                    className={`grid grid-cols-1 gap-3 border-t border-line/70 px-4 py-4 md:items-start ${isAllTenantsView ? "md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]" : "md:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]"}`}
-                  >
-                    <div>
-                      <p className="font-semibold text-ink">
-                        {entry.name || "Unknown"}
-                      </p>
-                      <p className="text-sm text-ink-muted">
-                        {entry.email || "No email"}
-                      </p>
-                    </div>
-
-                    {isAllTenantsView ? (
+                  return (
+                    <div key={`${entry.tenantId || "tenant"}-${entry.id}`} className="space-y-3 px-4 py-4">
                       <div>
-                        <p className="text-sm font-semibold text-ink">
-                          {entry.tenantName ||
-                            entry.tenantId ||
-                            "Unknown tenant"}
-                        </p>
-                        <p className="text-xs text-ink-muted">
-                          {entry.tenantId || "n/a"}
-                        </p>
+                        <p className="font-semibold text-ink">{entry.name || "Unknown"}</p>
+                        <p className="text-sm text-ink-muted">{entry.email || "No email"}</p>
                       </div>
-                    ) : null}
 
-                    <div>
-                      {isEditing ? (
-                        <select
-                          value={editRole}
-                          onChange={(event: any) =>
-                            setEditRole(String(event.target.value) as AdminRole)
-                          }
-                          className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                        >
-                          {roleOptions.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="inline-flex rounded-full border border-line/70 bg-canvas px-2.5 py-1 text-xs font-semibold text-ink">
-                          {entry.role}
-                        </span>
-                      )}
-                    </div>
+                      {isAllTenantsView ? (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Tenant</p>
+                          <p className="mt-1 text-sm font-semibold text-ink">{entry.tenantName || entry.tenantId || "Unknown tenant"}</p>
+                          <p className="text-xs text-ink-muted">{entry.tenantId || "n/a"}</p>
+                        </div>
+                      ) : null}
 
-                    <div>
-                      <span className="text-sm text-ink">
-                        {entry.languageCode
-                          ? getLanguageLabel(entry.languageCode)
-                          : "n/a"}
-                      </span>
-                    </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Role</p>
+                          <div className="mt-1">
+                            {isEditing ? (
+                              <select
+                                value={editRole}
+                                onChange={(event: any) => setEditRole(String(event.target.value) as AdminRole)}
+                                className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                              >
+                                {roleOptions.map((role) => (
+                                  <option key={role} value={role}>{role}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="inline-flex rounded-full border border-line/70 bg-canvas px-2.5 py-1 text-xs font-semibold text-ink">{entry.role}</span>
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="flex gap-2 md:justify-end">
-                      {isEditing ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={requestSaveConfirmation}
-                            disabled={isSaving}
-                            className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEdit}
-                            className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => startEdit(entry as ManagedUser)}
-                            className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime"
-                          >
-                            Edit Role
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              requestDeleteConfirmation(entry as ManagedUser)
-                            }
-                            className="rounded-md border border-red-400/40 px-2 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      )}
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">Language</p>
+                          <p className="mt-1 text-sm text-ink">{entry.languageCode ? getLanguageLabel(entry.languageCode) : "n/a"}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {isEditing ? (
+                          <>
+                            <button type="button" onClick={requestSaveConfirmation} disabled={isSaving} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+                            <button type="button" onClick={cancelEdit} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime">Cancel</button>
+                          </>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => startEdit(entry as ManagedUser)} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime">Edit Role</button>
+                            <button type="button" onClick={() => requestDeleteConfirmation(entry as ManagedUser)} className="rounded-md border border-red-400/40 px-2 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200">Delete</button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              <table className="hidden min-w-full table-fixed md:table">
+                <thead className="border-b border-line/70 bg-panel text-left text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                  <tr>
+                    <th className="w-[34%] px-4 py-3">User</th>
+                    {isAllTenantsView ? <th className="w-[22%] px-4 py-3">Tenant</th> : null}
+                    <th className="w-[16%] px-4 py-3">Role</th>
+                    <th className="w-[12%] px-4 py-3">Language</th>
+                    <th className="w-[16%] px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line/70">
+                  {filteredUsers.map((entry) => {
+                    const isEditing = editingUserId === entry.id;
+
+                    return (
+                      <tr key={`${entry.tenantId || "tenant"}-${entry.id}`} className="align-top">
+                        <td className="px-4 py-4">
+                          <p className="font-semibold text-ink">{entry.name || "Unknown"}</p>
+                          <p className="text-sm text-ink-muted">{entry.email || "No email"}</p>
+                        </td>
+                        {isAllTenantsView ? (
+                          <td className="px-4 py-4">
+                            <p className="text-sm font-semibold text-ink">{entry.tenantName || entry.tenantId || "Unknown tenant"}</p>
+                            <p className="text-xs text-ink-muted">{entry.tenantId || "n/a"}</p>
+                          </td>
+                        ) : null}
+                        <td className="px-4 py-4">
+                          {isEditing ? (
+                            <select
+                              value={editRole}
+                              onChange={(event: any) => setEditRole(String(event.target.value) as AdminRole)}
+                              className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                            >
+                              {roleOptions.map((role) => (
+                                <option key={role} value={role}>{role}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="inline-flex rounded-full border border-line/70 bg-canvas px-2.5 py-1 text-xs font-semibold text-ink">{entry.role}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-ink">{entry.languageCode ? getLanguageLabel(entry.languageCode) : "n/a"}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex justify-end gap-2">
+                            {isEditing ? (
+                              <>
+                                <button type="button" onClick={requestSaveConfirmation} disabled={isSaving} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50">Save</button>
+                                <button type="button" onClick={cancelEdit} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime">Cancel</button>
+                              </>
+                            ) : (
+                              <>
+                                <button type="button" onClick={() => startEdit(entry as ManagedUser)} className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime">Edit Role</button>
+                                <button type="button" onClick={() => requestDeleteConfirmation(entry as ManagedUser)} className="rounded-md border border-red-400/40 px-2 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200">Delete</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>
