@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { AppInfoProvider } from "./app/AppInfoContext";
 import { AuthGate } from "./auth/AuthGate";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { initializeClientLogger, writeClientLog } from "./bugReports/clientLogger";
 import { AppLayout } from "./layout/AppLayout";
 import { Home } from "./pages/Home";
 import { AdminPage } from "./pages/Admin";
@@ -62,6 +64,12 @@ function AppContent({ platform: _platform }: AppProps) {
 }
 
 export function App({ platform }: AppProps) {
+  initializeClientLogger();
+
+  useEffect(() => {
+    writeClientLog("info", "App boot", platform);
+  }, [platform]);
+
   return (
     <SWRConfig
       value={{
@@ -69,17 +77,19 @@ export function App({ platform }: AppProps) {
         shouldRetryOnError: false,
       }}
     >
-      <ThemeProvider>
-        <AuthProvider>
-          <RouteProvider mode={platform === "web" ? "path" : "hash"}>
-            <AppLayout>
-              <AuthGate>
-                <AppContent platform={platform} />
-              </AuthGate>
-            </AppLayout>
-          </RouteProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AppInfoProvider clientType={platform}>
+        <ThemeProvider>
+          <AuthProvider>
+            <RouteProvider mode={platform === "web" ? "path" : "hash"}>
+              <AppLayout>
+                <AuthGate>
+                  <AppContent platform={platform} />
+                </AuthGate>
+              </AppLayout>
+            </RouteProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </AppInfoProvider>
     </SWRConfig>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaCog } from "react-icons/fa";
 import { useAuth } from "../auth/AuthContext";
+import { ReportBugModal } from "../bugReports/ReportBugModal";
 import {
   LANGUAGE_STORAGE_KEY,
   readInitialLanguage,
@@ -11,6 +12,7 @@ export function UserMenu() {
   const { status, user, logoutAndReset, updateLanguagePreference } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isReportBugOpen, setIsReportBugOpen] = useState(false);
   const [language, setLanguage] = useState<string>(readInitialLanguage);
   const menuRef = useRef<any>(null);
 
@@ -33,6 +35,7 @@ export function UserMenu() {
       if (event.key === "Escape") {
         setIsOpen(false);
         setIsSettingsOpen(false);
+        setIsReportBugOpen(false);
       }
     };
 
@@ -72,6 +75,7 @@ export function UserMenu() {
     if (event.key === "Escape") {
       setIsOpen(false);
       setIsSettingsOpen(false);
+      setIsReportBugOpen(false);
     }
   };
 
@@ -111,6 +115,17 @@ export function UserMenu() {
             >
               Settings
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsReportBugOpen(true);
+                setIsOpen(false);
+              }}
+              className="mb-3 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+              role="menuitem"
+            >
+              Report Bug
+            </button>
 
             {isAuthenticated ? (
               <div className="mb-3 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-muted">
@@ -141,6 +156,10 @@ export function UserMenu() {
         onLanguageChange={(value) => {
           void onLanguageChange(value);
         }}
+      />
+      <ReportBugModal
+        isOpen={isReportBugOpen}
+        onClose={() => setIsReportBugOpen(false)}
       />
     </>
   );

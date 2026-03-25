@@ -1,3 +1,5 @@
+import { writeClientLog } from "../bugReports/clientLogger";
+
 type ApiErrorShape = {
   error?: string;
   message?: string;
@@ -38,14 +40,22 @@ export async function apiRequest<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(buildApiUrl(path), {
-    credentials: "include",
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
+  const method = init?.method || "GET";
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl(path), {
+      credentials: "include",
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+    });
+  } catch (error) {
+    writeClientLog("error", "API network failure", method, path, error);
+    throw error;
+  }
 
   const rawBody = await response.text();
   const parsedBody = rawBody.length > 0 ? safeJsonParse(rawBody) : null;
@@ -56,6 +66,7 @@ export async function apiRequest<T>(
       errorPayload?.error ||
       errorPayload?.message ||
       `Request failed: ${response.status}`;
+    writeClientLog("warn", "API request failed", method, path, response.status, message);
     throw new ApiError(response.status, message, errorPayload);
   }
 

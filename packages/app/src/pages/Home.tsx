@@ -5,18 +5,6 @@ import { HostMeeting } from "../meetings/HostMeeting";
 export function Home() {
   const { user } = useAuth();
 
-  const handleJoin = ({
-    joinUrl,
-    meetingId,
-    password,
-  }: {
-    joinUrl: string;
-    meetingId: string;
-    password: string;
-  }) => {
-    console.log({ joinUrl, meetingId, meetingPass: password });
-  };
-
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
       <section className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-line/80 bg-panel/90 shadow-panel backdrop-blur-sm">
@@ -37,7 +25,7 @@ export function Home() {
 
           <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
             <section className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6">
-              <JoinMeeting onSubmit={handleJoin} />
+              <JoinMeeting onSubmit={() => undefined} />
             </section>
 
             <section className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6">

@@ -1,6 +1,6 @@
 {
   "name": "calc-translation-desktop",
-  "version": "0.1.0",
+  "version": "3.0.0",
   "private": true,
   "description": "Electron shell for desktop renderer",
   "main": "src/main/index.cjs",

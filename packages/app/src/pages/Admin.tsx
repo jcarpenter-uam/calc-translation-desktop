@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { BugReportsPanel } from "../admin/BugReportsPanel";
 import { TenantSettingsPanel } from "../admin/TenantSettingsPanel";
 import { UserSettingsPanel } from "../admin/UserSettingsPanel";
 import { useAuth } from "../auth/AuthContext";
@@ -36,14 +37,6 @@ export function AdminPage() {
     : isSuperAdmin
       ? selectedScope || tenantId
       : tenantId;
-  const selectedTenant = useMemo(
-    () =>
-      (tenantData?.tenants || []).find(
-        (tenant) => tenant.id === effectiveTenantId,
-      ) || null,
-    [effectiveTenantId, tenantData?.tenants],
-  );
-
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
       <section className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[2rem] border border-line/80 bg-panel/90 shadow-panel backdrop-blur-sm">
@@ -87,6 +80,7 @@ export function AdminPage() {
           </div>
 
           <div className="space-y-6">
+            {isSuperAdmin ? <BugReportsPanel /> : null}
             <TenantSettingsPanel
               selectedTenantId={effectiveTenantId || null}
               isAllTenantsView={isAllTenantsView}

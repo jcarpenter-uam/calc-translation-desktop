@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { writeClientLog } from "../bugReports/clientLogger";
 
 export type AppRoute = "home" | "calendar" | "admin" | "meeting" | "configure";
 
@@ -141,6 +142,10 @@ export function RouteProvider({ children, mode }: RouteProviderProps) {
   const [meeting, setMeeting] = useState<MeetingRouteState | null>(
     initialLocation.meeting,
   );
+
+  useEffect(() => {
+    writeClientLog("info", "Route changed", route);
+  }, [route]);
 
   useEffect(() => {
     const browser = globalThis as typeof globalThis & {
