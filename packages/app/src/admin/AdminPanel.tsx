@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { ConfirmDialog } from "../general/ConfirmDialog";
 import { ApiError } from "../hooks/api";
-import {
-  DEFAULT_LANGUAGE_CODE,
-  LANGUAGE_OPTIONS,
-  getLanguageLabel,
-} from "../languages/LanguageList";
+import { getLanguageLabel } from "../languages/LanguageList";
 import {
   useDeleteTenantUser,
   useTenants,
@@ -24,6 +21,21 @@ type ManagedUser = {
 
 type AdminRole = "user" | "tenant_admin" | "super_admin";
 
+type ConfirmState =
+  | {
+      type: "save";
+      userId: string;
+      userName: string;
+      currentRole: string;
+      nextRole: AdminRole;
+    }
+  | {
+      type: "delete";
+      userId: string;
+      userName: string;
+    }
+  | null;
+
 /**
  * Admin settings panel for tenant-scoped user management.
  */
@@ -41,11 +53,10 @@ export function AdminPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editLanguageCode, setEditLanguageCode] = useState("en");
   const [editRole, setEditRole] = useState<AdminRole>("user");
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
   useEffect(() => {
     if (!isSuperAdmin) {
@@ -94,9 +105,6 @@ export function AdminPanel() {
     setMessage(null);
     setError(null);
     setEditingUserId(entry.id);
-    setEditName(entry.name || "");
-    setEditEmail(entry.email || "");
-    setEditLanguageCode(entry.languageCode || DEFAULT_LANGUAGE_CODE);
     setEditRole((entry.role as AdminRole) || "user");
   };
 
@@ -105,8 +113,11 @@ export function AdminPanel() {
     setError(null);
   };
 
-  const handleSave = async () => {
-    if (!editingUserId || !effectiveTenantId) {
+  const saveUserRole = async (
+    targetUserId: string,
+    role: AdminRole,
+  ) => {
+    if (!effectiveTenantId) {
       return;
     }
 
@@ -116,14 +127,12 @@ export function AdminPanel() {
 
     try {
       const payload: UpdateUserPayload = {
-        name: editName.trim() || null,
-        email: editEmail.trim() || null,
-        languageCode: editLanguageCode.trim() || null,
-        role: editRole,
+        role,
       };
 
-      await updateTenantUser(editingUserId, payload, effectiveTenantId);
+      await updateTenantUser(targetUserId, payload, effectiveTenantId);
       setEditingUserId(null);
+      setConfirmState(null);
       setMessage("User updated.");
     } catch (err) {
       const nextError =
@@ -134,22 +143,12 @@ export function AdminPanel() {
     }
   };
 
-  const handleDelete = async (targetUserId: string) => {
+  const deleteUser = async (targetUserId: string) => {
     if (!effectiveTenantId) {
       return;
     }
 
-    const browser = globalThis as typeof globalThis & {
-      confirm?: (message: string) => boolean;
-    };
-
-    const confirmed = browser.confirm
-      ? browser.confirm("Delete this user account?")
-      : true;
-    if (!confirmed) {
-      return;
-    }
-
+    setIsDeleting(true);
     setMessage(null);
     setError(null);
 
@@ -158,12 +157,55 @@ export function AdminPanel() {
       if (editingUserId === targetUserId) {
         setEditingUserId(null);
       }
+      setConfirmState(null);
       setMessage("User deleted.");
     } catch (err) {
       const nextError =
         err instanceof ApiError ? err.message : "Failed to delete user.";
       setError(nextError);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const requestSaveConfirmation = () => {
+    if (!editingUserId) {
+      return;
+    }
+
+    const entry = filteredUsers.find((candidate) => candidate.id === editingUserId);
+    if (!entry) {
+      return;
+    }
+
+    setConfirmState({
+      type: "save",
+      userId: entry.id,
+      userName: entry.name || entry.email || entry.id,
+      currentRole: entry.role,
+      nextRole: editRole,
+    });
+  };
+
+  const requestDeleteConfirmation = (entry: ManagedUser) => {
+    setConfirmState({
+      type: "delete",
+      userId: entry.id,
+      userName: entry.name || entry.email || entry.id,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmState) {
+      return;
+    }
+
+    if (confirmState.type === "save") {
+      await saveUserRole(confirmState.userId, confirmState.nextRole);
+      return;
+    }
+
+    await deleteUser(confirmState.userId);
   };
 
   const roleOptions: AdminRole[] = isSuperAdmin
@@ -246,35 +288,10 @@ export function AdminPanel() {
                 return (
                   <tr key={entry.id} className="border-t border-line/70">
                     <td className="px-3 py-2 align-top">
-                      {isEditing ? (
-                        <div className="space-y-2">
-                          <input
-                            value={editName}
-                            onChange={(event: any) =>
-                              setEditName(String(event.target.value))
-                            }
-                            className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                            placeholder="Name"
-                          />
-                          <input
-                            value={editEmail}
-                            onChange={(event: any) =>
-                              setEditEmail(String(event.target.value))
-                            }
-                            className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                            placeholder="Email"
-                          />
-                        </div>
-                      ) : (
-                        <>
-                          <p className="font-semibold">
-                            {entry.name || "Unknown"}
-                          </p>
-                          <p className="text-ink-muted">
-                            {entry.email || "No email"}
-                          </p>
-                        </>
-                      )}
+                      <>
+                        <p className="font-semibold">{entry.name || "Unknown"}</p>
+                        <p className="text-ink-muted">{entry.email || "No email"}</p>
+                      </>
                     </td>
 
                     <td className="px-3 py-2 align-top">
@@ -298,28 +315,12 @@ export function AdminPanel() {
                     </td>
 
                     <td className="px-3 py-2 align-top">
-                       {isEditing ? (
-                        <select
-                          value={editLanguageCode}
-                          onChange={(event: any) =>
-                            setEditLanguageCode(String(event.target.value))
-                          }
-                          className="w-full rounded-lg border border-line bg-panel px-2 py-1.5 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                        >
-                          {LANGUAGE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                       ) : (
-                         <span>
-                           {entry.languageCode
-                             ? getLanguageLabel(entry.languageCode)
-                             : "n/a"}
-                         </span>
-                       )}
-                     </td>
+                      <span>
+                        {entry.languageCode
+                          ? getLanguageLabel(entry.languageCode)
+                          : "n/a"}
+                      </span>
+                    </td>
 
                     <td className="px-3 py-2 align-top">
                       <div className="flex gap-2">
@@ -327,9 +328,7 @@ export function AdminPanel() {
                           <>
                             <button
                               type="button"
-                              onClick={() => {
-                                void handleSave();
-                              }}
+                              onClick={requestSaveConfirmation}
                               disabled={isSaving}
                               className="rounded-md border border-line px-2 py-1 text-xs font-semibold transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -352,14 +351,14 @@ export function AdminPanel() {
                             >
                               Edit
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                void handleDelete(entry.id);
-                              }}
-                              className="rounded-md border border-red-400/40 px-2 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
-                            >
-                              Delete
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  requestDeleteConfirmation(entry as ManagedUser);
+                                }}
+                                className="rounded-md border border-red-400/40 px-2 py-1 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
+                              >
+                                Delete
                             </button>
                           </>
                         )}
@@ -372,6 +371,34 @@ export function AdminPanel() {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(confirmState)}
+        title={
+          confirmState?.type === "delete"
+            ? "Delete user account?"
+            : "Save role change?"
+        }
+        description={
+          confirmState?.type === "delete"
+            ? `This will deactivate ${confirmState.userName}. They will no longer be able to sign in.`
+            : confirmState
+              ? `Change ${confirmState.userName} from ${confirmState.currentRole} to ${confirmState.nextRole}?`
+              : ""
+        }
+        confirmLabel={confirmState?.type === "delete" ? "Delete User" : "Save Changes"}
+        cancelLabel="Cancel"
+        tone={confirmState?.type === "delete" ? "danger" : "default"}
+        isBusy={isSaving || isDeleting}
+        onConfirm={() => {
+          void handleConfirmAction();
+        }}
+        onClose={() => {
+          if (!isSaving && !isDeleting) {
+            setConfirmState(null);
+          }
+        }}
+      />
     </div>
   );
 }

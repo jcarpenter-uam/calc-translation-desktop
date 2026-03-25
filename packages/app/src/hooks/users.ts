@@ -17,9 +17,6 @@ type TenantsResponse = {
 };
 
 export type UpdateUserPayload = {
-  name?: string | null;
-  email?: string | null;
-  languageCode?: string | null;
   role?: "user" | "tenant_admin" | "super_admin";
 };
 
