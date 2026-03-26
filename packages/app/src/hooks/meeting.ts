@@ -19,6 +19,12 @@ type QuickCreateMeetingResponse = {
   invitedCount: number;
 };
 
+type CreateMeetingResponse = {
+  message: string;
+  meetingId: string;
+  readableId: string;
+};
+
 type JoinMeetingResponse = {
   message: string;
   meetingId: string;
@@ -79,6 +85,24 @@ export function useMeetingInvitees(query: string, enabled: boolean) {
 export function useQuickCreateMeeting() {
   return async (payload: { title: string; attendeeIds: string[] }) => {
     return await apiRequest<QuickCreateMeetingResponse>("/meeting/quick-create", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  };
+}
+
+/**
+ * Creates a configured meeting with advanced options.
+ */
+export function useCreateMeeting() {
+  return async (payload: {
+    topic?: string;
+    languages?: string[];
+    method?: "one_way" | "two_way";
+    integration?: string;
+    scheduled_time?: string;
+  }) => {
+    return await apiRequest<CreateMeetingResponse>("/meeting/create", {
       method: "POST",
       body: JSON.stringify(payload),
     });
