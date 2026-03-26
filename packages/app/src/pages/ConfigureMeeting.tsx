@@ -37,6 +37,7 @@ export function ConfigureMeetingPage() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [languageQuery, setLanguageQuery] = useState("");
   const [integration, setIntegration] = useState("native");
+  const [externalJoinUrl, setExternalJoinUrl] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -62,20 +63,39 @@ export function ConfigureMeetingPage() {
     });
   }, [languageQuery]);
 
+  const hasValidZoomJoinUrl = useMemo(() => {
+    if (integration !== "zoom") {
+      return true;
+    }
+
+    const trimmedJoinUrl = externalJoinUrl.trim();
+    if (!trimmedJoinUrl) {
+      return false;
+    }
+
+    try {
+      new URL(trimmedJoinUrl);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [externalJoinUrl, integration]);
+
   const canSubmit = useMemo(() => {
     if (isSubmitting) {
       return false;
     }
 
     if (method === "two_way") {
-      return selectedLanguages.length === 2;
+      return selectedLanguages.length === 2 && hasValidZoomJoinUrl;
     }
 
     return (
       selectedLanguages.length > 0 &&
-      selectedLanguages.length <= MAX_ONE_WAY_LANGUAGES
+      selectedLanguages.length <= MAX_ONE_WAY_LANGUAGES &&
+      hasValidZoomJoinUrl
     );
-  }, [isSubmitting, method, selectedLanguages.length]);
+  }, [hasValidZoomJoinUrl, isSubmitting, method, selectedLanguages.length]);
 
   const toggleLanguage = (languageCode: string) => {
     if (
@@ -144,7 +164,10 @@ export function ConfigureMeetingPage() {
       return;
     }
 
-    if (method === "one_way" && selectedLanguages.length > MAX_ONE_WAY_LANGUAGES) {
+    if (
+      method === "one_way" &&
+      selectedLanguages.length > MAX_ONE_WAY_LANGUAGES
+    ) {
       setSubmitError(
         `One-way meetings can include at most ${MAX_ONE_WAY_LANGUAGES} spoken languages.`,
       );
@@ -158,6 +181,21 @@ export function ConfigureMeetingPage() {
       return;
     }
 
+    if (integration === "zoom") {
+      try {
+        if (!externalJoinUrl.trim()) {
+          throw new Error("missing");
+        }
+
+        new URL(externalJoinUrl);
+      } catch {
+        setSubmitError(
+          "Zoom meetings require a valid meeting URL before you can start.",
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -167,6 +205,7 @@ export function ConfigureMeetingPage() {
         method,
         languages: selectedLanguages,
         integration,
+        join_url: integration === "zoom" ? externalJoinUrl.trim() : undefined,
         scheduled_time: scheduledTime
           ? new Date(scheduledTime).toISOString()
           : undefined,
@@ -298,6 +337,28 @@ export function ConfigureMeetingPage() {
                       })}
                     </div>
                   </div>
+
+                  {integration === "zoom" ? (
+                    <label className="block space-y-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                        Zoom meeting URL
+                      </span>
+                      <input
+                        type="url"
+                        value={externalJoinUrl}
+                        onChange={(event: any) => {
+                          setExternalJoinUrl(String(event.currentTarget.value));
+                          setSubmitError(null);
+                        }}
+                        placeholder="https://us02web.zoom.us/j/..."
+                        className="w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                      />
+                      <p className="text-xs text-ink-muted">
+                        Required for Zoom meetings. The room cannot start until
+                        a valid Zoom link is provided.
+                      </p>
+                    </label>
+                  ) : null}
                 </div>
               </section>
 
@@ -427,7 +488,7 @@ export function ConfigureMeetingPage() {
                               ? "border-lime bg-lime/10 text-ink"
                               : isDisabled
                                 ? "cursor-not-allowed border-line/60 bg-canvas/60 text-ink-muted/70"
-                              : "border-line bg-canvas text-ink-muted hover:border-lime hover:text-ink"
+                                : "border-line bg-canvas text-ink-muted hover:border-lime hover:text-ink"
                           }`}
                         >
                           <span className="flex items-center gap-3">
@@ -438,7 +499,9 @@ export function ConfigureMeetingPage() {
                               className="h-5 w-5 rounded-full object-cover"
                             />
                             <span>
-                              <span className="font-semibold">{option.label}</span>
+                              <span className="font-semibold">
+                                {option.label}
+                              </span>
                               <span className="ml-2 text-xs uppercase">
                                 {option.value}
                               </span>

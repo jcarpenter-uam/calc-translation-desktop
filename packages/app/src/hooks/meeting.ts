@@ -23,6 +23,7 @@ type CreateMeetingResponse = {
   message: string;
   meetingId: string;
   readableId: string;
+  joinUrl: string;
 };
 
 type JoinMeetingResponse = {
@@ -100,6 +101,7 @@ export function useCreateMeeting() {
     languages?: string[];
     method?: "one_way" | "two_way";
     integration?: string;
+    join_url?: string;
     scheduled_time?: string;
   }) => {
     return await apiRequest<CreateMeetingResponse>("/meeting/create", {
