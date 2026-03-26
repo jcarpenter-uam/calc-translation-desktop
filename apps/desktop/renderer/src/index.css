@@ -117,3 +117,29 @@ body {
 .app-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--scrollbar-thumb-hover));
 }
+
+.app-scrollbar-language {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.45) transparent;
+}
+
+.app-scrollbar-language::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.app-scrollbar-language::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scrollbar-language::-webkit-scrollbar-thumb {
+  background: rgb(var(--scrollbar-thumb) / 0.45);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.app-scrollbar-language::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--scrollbar-thumb-hover) / 0.65);
+  background-clip: padding-box;
+}

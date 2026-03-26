@@ -1,8 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../hooks/api";
 import { useCreateMeeting, useJoinMeeting } from "../hooks/meeting";
-import { LanguageList } from "../languages/LanguageList";
+import { getLanguageFlagSrc, LanguageList } from "../languages/LanguageList";
 import { useAppRoute } from "../routing/RouteContext";
 
 type MeetingMethod = "one_way" | "two_way";
@@ -12,6 +11,8 @@ type IntegrationOption = {
   label: string;
   description: string;
 };
+
+const MAX_ONE_WAY_LANGUAGES = 5;
 
 const INTEGRATION_OPTIONS: IntegrationOption[] = [
   {
@@ -27,16 +28,14 @@ const INTEGRATION_OPTIONS: IntegrationOption[] = [
 ];
 
 export function ConfigureMeetingPage() {
-  const { user } = useAuth();
   const { navigateTo, navigateToMeeting } = useAppRoute();
   const createMeeting = useCreateMeeting();
   const joinMeeting = useJoinMeeting();
 
   const [topic, setTopic] = useState("");
   const [method, setMethod] = useState<MeetingMethod>("one_way");
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
-    user?.languageCode ? [user.languageCode] : ["en"],
-  );
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [languageQuery, setLanguageQuery] = useState("");
   const [integration, setIntegration] = useState("native");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +47,21 @@ export function ConfigureMeetingPage() {
     );
   }, [selectedLanguages]);
 
+  const filteredLanguageOptions = useMemo(() => {
+    const query = languageQuery.trim().toLowerCase();
+
+    if (!query) {
+      return LanguageList;
+    }
+
+    return LanguageList.filter((option) => {
+      return (
+        option.label.toLowerCase().includes(query) ||
+        option.value.toLowerCase().includes(query)
+      );
+    });
+  }, [languageQuery]);
+
   const canSubmit = useMemo(() => {
     if (isSubmitting) {
       return false;
@@ -57,22 +71,43 @@ export function ConfigureMeetingPage() {
       return selectedLanguages.length === 2;
     }
 
-    return true;
+    return (
+      selectedLanguages.length > 0 &&
+      selectedLanguages.length <= MAX_ONE_WAY_LANGUAGES
+    );
   }, [isSubmitting, method, selectedLanguages.length]);
 
   const toggleLanguage = (languageCode: string) => {
+    if (
+      method === "two_way" &&
+      !selectedLanguages.includes(languageCode) &&
+      selectedLanguages.length >= 2
+    ) {
+      setSubmitError(
+        "Two-way meetings need exactly two languages. Deselect one to choose another.",
+      );
+      return;
+    }
+
+    if (
+      method === "one_way" &&
+      !selectedLanguages.includes(languageCode) &&
+      selectedLanguages.length >= MAX_ONE_WAY_LANGUAGES
+    ) {
+      setSubmitError(
+        `One-way meetings can include at most ${MAX_ONE_WAY_LANGUAGES} spoken languages.`,
+      );
+      return;
+    }
+
+    setSubmitError(null);
+
     setSelectedLanguages((current) => {
       const alreadySelected = current.includes(languageCode);
 
       if (method === "two_way") {
         if (alreadySelected) {
           return current.filter((value) => value !== languageCode);
-        }
-
-        if (current.length >= 2) {
-          return [current[1] || current[0], languageCode].filter(
-            Boolean,
-          ) as string[];
         }
 
         return [...current, languageCode];
@@ -95,11 +130,7 @@ export function ConfigureMeetingPage() {
         return current.slice(0, 2);
       }
 
-      if (current.length > 0) {
-        return current;
-      }
-
-      return user?.languageCode ? [user.languageCode] : ["en"];
+      return current;
     });
   };
 
@@ -109,6 +140,20 @@ export function ConfigureMeetingPage() {
     if (method === "two_way" && selectedLanguages.length !== 2) {
       setSubmitError(
         "Two-way meetings need exactly two languages before you can start.",
+      );
+      return;
+    }
+
+    if (method === "one_way" && selectedLanguages.length > MAX_ONE_WAY_LANGUAGES) {
+      setSubmitError(
+        `One-way meetings can include at most ${MAX_ONE_WAY_LANGUAGES} spoken languages.`,
+      );
+      return;
+    }
+
+    if (method === "one_way" && selectedLanguages.length === 0) {
+      setSubmitError(
+        "One-way meetings need at least one spoken language before you can start.",
       );
       return;
     }
@@ -330,38 +375,84 @@ export function ConfigureMeetingPage() {
                           key={option.value}
                           type="button"
                           onClick={() => toggleLanguage(option.value)}
-                          className="rounded-full border border-lime/50 bg-lime/10 px-3 py-1 text-xs font-semibold text-ink transition hover:border-lime hover:bg-lime/15"
+                          className="flex items-center gap-2 rounded-full border border-lime/50 bg-lime/10 px-3 py-1 text-xs font-semibold text-ink transition hover:border-lime hover:bg-lime/15"
                         >
+                          <img
+                            src={getLanguageFlagSrc(option.value)}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-4 w-4 rounded-full object-cover"
+                          />
                           {option.label} x
                         </button>
                       ))}
                     </div>
                   ) : null}
 
-                  <div className="grid max-h-[20rem] gap-2 overflow-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
-                    {LanguageList.map((option) => {
+                  <label className="mb-4 block space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                      Search languages
+                    </span>
+                    <input
+                      type="search"
+                      value={languageQuery}
+                      onChange={(event: any) =>
+                        setLanguageQuery(String(event.currentTarget.value))
+                      }
+                      placeholder="Search by language or code"
+                      className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                    />
+                  </label>
+
+                  <div className="app-scrollbar-language grid max-h-[20rem] gap-2 overflow-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredLanguageOptions.map((option) => {
                       const isSelected = selectedLanguages.includes(
                         option.value,
                       );
+                      const isDisabled =
+                        !isSelected &&
+                        ((method === "one_way" &&
+                          selectedLanguages.length >= MAX_ONE_WAY_LANGUAGES) ||
+                          (method === "two_way" &&
+                            selectedLanguages.length >= 2));
 
                       return (
                         <button
                           key={option.value}
                           type="button"
+                          disabled={isDisabled}
                           onClick={() => toggleLanguage(option.value)}
                           className={`rounded-xl border px-3 py-2 text-left text-sm transition focus:outline-none focus:ring-4 focus:ring-lime/20 ${
                             isSelected
                               ? "border-lime bg-lime/10 text-ink"
+                              : isDisabled
+                                ? "cursor-not-allowed border-line/60 bg-canvas/60 text-ink-muted/70"
                               : "border-line bg-canvas text-ink-muted hover:border-lime hover:text-ink"
                           }`}
                         >
-                          <span className="font-semibold">{option.label}</span>
-                          <span className="ml-2 text-xs uppercase">
-                            {option.value}
+                          <span className="flex items-center gap-3">
+                            <img
+                              src={getLanguageFlagSrc(option.value)}
+                              alt=""
+                              aria-hidden="true"
+                              className="h-5 w-5 rounded-full object-cover"
+                            />
+                            <span>
+                              <span className="font-semibold">{option.label}</span>
+                              <span className="ml-2 text-xs uppercase">
+                                {option.value}
+                              </span>
+                            </span>
                           </span>
                         </button>
                       );
                     })}
+
+                    {filteredLanguageOptions.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-line bg-canvas px-4 py-6 text-sm text-ink-muted sm:col-span-2 xl:col-span-3">
+                        No languages match "{languageQuery.trim()}".
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </section>
