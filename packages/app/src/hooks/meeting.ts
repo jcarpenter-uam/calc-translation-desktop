@@ -35,6 +35,19 @@ type JoinMeetingResponse = {
   isHost: boolean;
 };
 
+type MeetingDetailsResponse = {
+  meeting: {
+    id: string;
+    readable_id: string;
+    topic: string | null;
+    integration: string | null;
+    method: "one_way" | "two_way" | null;
+    scheduled_time: string | null;
+    started_at: string | null;
+    join_url: string | null;
+  };
+};
+
 export type MeetingParticipant = {
   id: string;
   name: string | null;
@@ -123,6 +136,22 @@ export function useJoinMeeting() {
       },
     );
   };
+}
+
+/**
+ * Loads meeting details for the active live room.
+ */
+export function useMeetingDetails(meetingId: string | null, enabled: boolean) {
+  const path = meetingId ? `/meeting/${encodeURIComponent(meetingId)}` : "";
+
+  return useSWR<MeetingDetailsResponse, ApiError>(
+    enabled && meetingId ? buildApiUrl(path) : null,
+    () => apiRequest<MeetingDetailsResponse>(path),
+    {
+      revalidateOnFocus: true,
+      shouldRetryOnError: (error: ApiError) => error.status >= 500,
+    },
+  );
 }
 
 /**

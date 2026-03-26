@@ -217,6 +217,7 @@ export function ConfigureMeetingPage() {
         meetingId: joinedMeeting.meetingId,
         readableId: joinedMeeting.readableId,
         ticket: joinedMeeting.token,
+        isHost: joinedMeeting.isHost,
       });
     } catch (error) {
       if (error instanceof ApiError) {

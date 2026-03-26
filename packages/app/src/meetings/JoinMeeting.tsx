@@ -7,10 +7,16 @@ type JoinMeetingFormData = {
 };
 
 type JoinMeetingProps = {
-  onSubmit: (data: JoinMeetingFormData) => void;
+  onSubmit: (data: JoinMeetingFormData) => Promise<void> | void;
+  isSubmitting?: boolean;
+  error?: string | null;
 };
 
-export function JoinMeeting({ onSubmit }: JoinMeetingProps) {
+export function JoinMeeting({
+  onSubmit,
+  isSubmitting = false,
+  error = null,
+}: JoinMeetingProps) {
   const [showManualFields, setShowManualFields] = useState(false);
   const [meetingId, setMeetingId] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +24,7 @@ export function JoinMeeting({ onSubmit }: JoinMeetingProps) {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSubmit({ meetingId, password, joinUrl });
+    void onSubmit({ meetingId, password, joinUrl });
   };
 
   const handleJoinUrlChange = (e: any) => {
@@ -109,11 +115,18 @@ export function JoinMeeting({ onSubmit }: JoinMeetingProps) {
         </div>
       ) : null}
 
+      {error ? (
+        <p className="rounded-xl border border-red-300/60 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+
       <button
         type="submit"
-        className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25"
+        disabled={isSubmitting}
+        className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Join Meeting
+        {isSubmitting ? "Joining..." : "Join Meeting"}
       </button>
     </form>
   );

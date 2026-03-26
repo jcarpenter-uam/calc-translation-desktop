@@ -14,6 +14,7 @@ export type MeetingRouteState = {
   meetingId: string;
   readableId: string;
   ticket: string;
+  isHost?: boolean;
 };
 
 type RoutingMode = "hash" | "path";
@@ -64,12 +65,13 @@ function readMeeting(routeValue: string, searchValue: string): MeetingRouteState
   const meetingId = params.get("meetingId");
   const readableId = params.get("readableId");
   const ticket = params.get("ticket");
+  const isHost = params.get("isHost") === "1";
 
   if (!meetingId || !readableId || !ticket) {
     return null;
   }
 
-  return { meetingId, readableId, ticket };
+  return { meetingId, readableId, ticket, isHost };
 }
 
 function routeToPath(route: AppRoute, meeting?: MeetingRouteState | null): string {
@@ -82,6 +84,9 @@ function routeToPath(route: AppRoute, meeting?: MeetingRouteState | null): strin
     params.set("meetingId", meeting.meetingId);
     params.set("readableId", meeting.readableId);
     params.set("ticket", meeting.ticket);
+    if (meeting.isHost) {
+      params.set("isHost", "1");
+    }
     return `/meeting?${params.toString()}`;
   }
 
