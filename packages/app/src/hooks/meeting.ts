@@ -35,6 +35,11 @@ type JoinMeetingResponse = {
   isHost: boolean;
 };
 
+type EndMeetingResponse = {
+  message: string;
+  meetingId: string;
+};
+
 type MeetingDetailsResponse = {
   meeting: {
     id: string;
@@ -42,8 +47,10 @@ type MeetingDetailsResponse = {
     topic: string | null;
     integration: string | null;
     method: "one_way" | "two_way" | null;
+    languages: string[] | null;
     scheduled_time: string | null;
     started_at: string | null;
+    ended_at: string | null;
     join_url: string | null;
   };
 };
@@ -169,4 +176,18 @@ export function useMeetingParticipants(meetingId: string | null, enabled: boolea
       shouldRetryOnError: (error: ApiError) => error.status >= 500,
     },
   );
+}
+
+/**
+ * Ends an active meeting as the host.
+ */
+export function useEndMeeting() {
+  return async (meetingId: string) => {
+    return await apiRequest<EndMeetingResponse>(
+      `/meeting/end/${encodeURIComponent(meetingId)}`,
+      {
+        method: "POST",
+      },
+    );
+  };
 }

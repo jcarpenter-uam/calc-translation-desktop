@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  useEndMeeting,
   useMeetingDetails,
+  useJoinMeeting,
   useMeetingParticipants,
   type MeetingParticipant,
 } from "../hooks/meeting";
+import { useAuth } from "../auth/AuthContext";
+import { getApiBaseUrl } from "../hooks/api";
 import { getLanguageLabel } from "../languages/LanguageList";
 import { useAppRoute } from "../routing/RouteContext";
 
@@ -11,6 +15,7 @@ type TranscriptFinalItem = {
   id: string;
   text: string;
   language: string;
+  isFinal: boolean;
 };
 
 type AudioInputDevice = {
@@ -23,6 +28,7 @@ type AudioInputDevice = {
  */
 export function MeetingLivePage() {
   const { meeting, navigateTo } = useAppRoute();
+  const { user } = useAuth();
   const isHostView = Boolean(meeting?.isHost);
 
   const [isAudioStreaming, setIsAudioStreaming] = useState(false);
@@ -43,17 +49,19 @@ export function MeetingLivePage() {
   >([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [copyJoinStatus, setCopyJoinStatus] = useState<string | null>(null);
+  const [areHostControlsVisible, setAreHostControlsVisible] = useState(true);
+  const [isPreflightMonitoring, setIsPreflightMonitoring] = useState(false);
+  const [isEndingMeeting, setIsEndingMeeting] = useState(false);
+  const [hasEndedMeetingLocally, setHasEndedMeetingLocally] = useState(false);
   const copyJoinResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
 
   const [meetingStatusEvents, setMeetingStatusEvents] = useState<string[]>([]);
-  const [finalTranscript, setFinalTranscript] = useState<TranscriptFinalItem[]>(
-    [],
-  );
-  const [interimByLanguage, setInterimByLanguage] = useState<
-    Record<string, string>
-  >({});
+  const [transcriptItems, setTranscriptItems] = useState<TranscriptFinalItem[]>([]);
   const [isFollowEnabled, setIsFollowEnabled] = useState(true);
   const [participantsById, setParticipantsById] = useState<
     Record<string, MeetingParticipant>
@@ -66,6 +74,9 @@ export function MeetingLivePage() {
   const audioSourceRef = useRef<any>(null);
   const processorRef = useRef<any>(null);
   const outputGainRef = useRef<any>(null);
+  const preflightStreamRef = useRef<any>(null);
+  const preflightAudioContextRef = useRef<any>(null);
+  const preflightSourceRef = useRef<any>(null);
   const transcriptContainerRef = useRef<any>(null);
 
   const meetingCode = meeting?.readableId || "-";
@@ -73,11 +84,15 @@ export function MeetingLivePage() {
     meeting?.meetingId || null,
     Boolean(meeting),
   );
+  const endMeeting = useEndMeeting();
+  const joinMeeting = useJoinMeeting();
   const { data: participantsData, isLoading: isParticipantsLoading } =
     useMeetingParticipants(meeting?.meetingId || null, Boolean(meeting));
   const meetingTopic =
     meetingDetailsData?.meeting.topic || `Room ${meetingCode}`;
   const joinUrl = meetingDetailsData?.meeting.join_url || null;
+  const hasMeetingEnded =
+    hasEndedMeetingLocally || Boolean(meetingDetailsData?.meeting.ended_at);
 
   useEffect(() => {
     if (!participantsData?.participants) {
@@ -91,6 +106,10 @@ export function MeetingLivePage() {
 
     setParticipantsById(next);
   }, [participantsData?.participants]);
+
+  useEffect(() => {
+    setHasEndedMeetingLocally(false);
+  }, [meeting?.meetingId]);
 
   const addStatusEvent = (message: string) => {
     setMeetingStatusEvents((current) => [message, ...current.slice(0, 19)]);
@@ -149,6 +168,28 @@ export function MeetingLivePage() {
     disconnectRoomSocket();
   };
 
+  const stopPreflightMonitor = async () => {
+    const source = preflightSourceRef.current;
+    preflightSourceRef.current = null;
+    if (source) {
+      source.disconnect();
+    }
+
+    const stream = preflightStreamRef.current;
+    preflightStreamRef.current = null;
+    if (stream) {
+      stream.getTracks().forEach((track: any) => track.stop());
+    }
+
+    const context = preflightAudioContextRef.current;
+    preflightAudioContextRef.current = null;
+    if (context) {
+      await context.close();
+    }
+
+    setIsPreflightMonitoring(false);
+  };
+
   useEffect(() => {
     if (!isFollowEnabled) {
       return;
@@ -160,9 +201,15 @@ export function MeetingLivePage() {
     }
 
     container.scrollTop = container.scrollHeight;
-  }, [finalTranscript, isFollowEnabled]);
+  }, [transcriptItems, isFollowEnabled]);
 
   const browser = globalThis as typeof globalThis & {
+    addEventListener?: (
+      type: string,
+      listener: () => void,
+      options?: { passive?: boolean },
+    ) => void;
+    removeEventListener?: (type: string, listener: () => void) => void;
     navigator?: {
       clipboard?: {
         writeText?: (value: string) => Promise<void>;
@@ -173,6 +220,7 @@ export function MeetingLivePage() {
       };
     };
     location?: {
+      origin?: string;
       protocol?: string;
       host?: string;
     };
@@ -182,7 +230,7 @@ export function MeetingLivePage() {
 
   const runMicPreflight = async (requestPermission: boolean) => {
     setPreflightStatus("checking");
-    setPreflightMessage("Checking microphone access...");
+    setPreflightMessage("Checking microphone access and device readiness...");
 
     try {
       const mediaDevices = browser.navigator?.mediaDevices;
@@ -192,7 +240,14 @@ export function MeetingLivePage() {
 
       if (requestPermission) {
         const probeStream = await mediaDevices.getUserMedia({
-          audio: true,
+          audio: selectedDeviceId
+            ? {
+                deviceId: { ideal: selectedDeviceId },
+                channelCount: 1,
+                echoCancellation: true,
+                noiseSuppression: true,
+              }
+            : true,
         });
         probeStream.getTracks().forEach((track: any) => track.stop());
       }
@@ -229,7 +284,7 @@ export function MeetingLivePage() {
 
       setPreflightStatus("ready");
       setPreflightMessage(
-        `Microphone ready (${audioInputs.length} input device${audioInputs.length > 1 ? "s" : ""}).`,
+        `Microphone ready (${audioInputs.length} input device${audioInputs.length > 1 ? "s" : ""}). Verify it sounds clean before going live - weak or noisy audio causes weak transcription.`,
       );
       return true;
     } catch (err) {
@@ -243,6 +298,80 @@ export function MeetingLivePage() {
     }
   };
 
+  const handleMicCheck = async () => {
+    if (isPreflightMonitoring) {
+      await stopPreflightMonitor();
+      setPreflightMessage(
+        "Microphone monitor stopped. If the mic sounded weak or noisy, fix it before going live because poor audio creates poor transcription.",
+      );
+      return;
+    }
+
+    setPreflightStatus("checking");
+    setPreflightMessage(
+      "Checking microphone access and opening live monitor. Headphones are recommended to avoid echo.",
+    );
+
+    try {
+      const passed = await runMicPreflight(true);
+      if (!passed) {
+        return;
+      }
+
+      const mediaDevices = browser.navigator?.mediaDevices;
+      if (!mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Microphone monitoring is not supported in this browser",
+        );
+      }
+
+      const stream = await mediaDevices.getUserMedia({
+        audio: selectedDeviceId
+          ? {
+              deviceId: { ideal: selectedDeviceId },
+              channelCount: 1,
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          : {
+              channelCount: 1,
+              echoCancellation: true,
+              noiseSuppression: true,
+            },
+      });
+
+      const AudioContextCtor =
+        browser.AudioContext || browser.webkitAudioContext;
+      if (!AudioContextCtor) {
+        stream.getTracks().forEach((track: any) => track.stop());
+        throw new Error("AudioContext is not supported in this browser");
+      }
+
+      const audioContext = new AudioContextCtor();
+      const source = audioContext.createMediaStreamSource(stream);
+
+      preflightStreamRef.current = stream;
+      preflightAudioContextRef.current = audioContext;
+      preflightSourceRef.current = source;
+
+      source.connect(audioContext.destination);
+
+      setIsPreflightMonitoring(true);
+      setPreflightStatus("ready");
+      setPreflightMessage(
+        "Listening to your microphone now. Use headphones if possible, and do not go live until the audio sounds clear because poor audio creates poor transcription.",
+      );
+    } catch (err) {
+      await stopPreflightMonitor();
+      setPreflightStatus("error");
+      setPreflightMessage(
+        err instanceof Error
+          ? err.message
+          : "Unable to start microphone monitoring.",
+      );
+    }
+  };
+
   useEffect(() => {
     if (!isHostView) {
       setPreflightStatus("idle");
@@ -253,10 +382,97 @@ export function MeetingLivePage() {
     void runMicPreflight(false);
   }, [isHostView]);
 
+  const showHostControls = () => {
+    setAreHostControlsVisible(true);
+
+    if (controlsHideTimeoutRef.current) {
+      clearTimeout(controlsHideTimeoutRef.current);
+    }
+
+    controlsHideTimeoutRef.current = setTimeout(() => {
+      setAreHostControlsVisible(false);
+      controlsHideTimeoutRef.current = null;
+    }, 2600);
+  };
+
+  useEffect(() => {
+    if (!isHostView) {
+      setAreHostControlsVisible(true);
+      if (controlsHideTimeoutRef.current) {
+        clearTimeout(controlsHideTimeoutRef.current);
+        controlsHideTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    const revealControls = () => {
+      showHostControls();
+    };
+
+    showHostControls();
+
+    browser.addEventListener?.("mousemove", revealControls);
+    browser.addEventListener?.("touchstart", revealControls, {
+      passive: true,
+    });
+    browser.addEventListener?.("keydown", revealControls);
+
+    return () => {
+      browser.removeEventListener?.("mousemove", revealControls);
+      browser.removeEventListener?.("touchstart", revealControls);
+      browser.removeEventListener?.("keydown", revealControls);
+      if (controlsHideTimeoutRef.current) {
+        clearTimeout(controlsHideTimeoutRef.current);
+        controlsHideTimeoutRef.current = null;
+      }
+    };
+  }, [isHostView]);
+
+  useEffect(() => {
+    return () => {
+      void stopPreflightMonitor();
+    };
+  }, []);
+
+  const appendTranscriptItem = (
+    language: string,
+    text: string,
+    isFinal: boolean,
+  ) => {
+    setTranscriptItems((current) => {
+      const next = [...current];
+      const existingIndex = next.findIndex(
+        (item) => item.language === language && !item.isFinal,
+      );
+
+      if (existingIndex >= 0) {
+        const existingItem = next[existingIndex]!;
+        next[existingIndex] = {
+          id: existingItem.id,
+          language: existingItem.language,
+          text,
+          isFinal,
+        };
+      } else {
+        next.push({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          text,
+          language,
+          isFinal,
+        });
+      }
+
+      return next.slice(-300);
+    });
+  };
+
   const resolveWsUrl = (ticket: string) => {
-    const protocol = browser.location?.protocol === "https:" ? "wss" : "ws";
-    const host = browser.location?.host || "localhost:8000";
-    return `${protocol}://${host}/ws?ticket=${encodeURIComponent(ticket)}`;
+    const pageOrigin =
+      browser.location?.origin ||
+      `${browser.location?.protocol === "https:" ? "https" : "http"}://${browser.location?.host || "localhost:8000"}`;
+    const apiUrl = new URL(getApiBaseUrl(), pageOrigin);
+    const wsProtocol = apiUrl.protocol === "https:" ? "wss:" : "ws:";
+    return `${wsProtocol}//${apiUrl.host}/ws?ticket=${encodeURIComponent(ticket)}`;
   };
 
   const convertFloatToPcm16 = (float32: Float32Array) => {
@@ -286,7 +502,8 @@ export function MeetingLivePage() {
     setSocketStatus("connecting");
 
     const connectionPromise = (async () => {
-      const ws = new WebSocket(resolveWsUrl(meeting.ticket));
+      const freshJoin = await joinMeeting(meeting.readableId);
+      const ws = new WebSocket(resolveWsUrl(freshJoin.token));
       wsRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -302,29 +519,7 @@ export function MeetingLivePage() {
               return;
             }
 
-            if (isFinal) {
-              const nextItem: TranscriptFinalItem = {
-                id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                text,
-                language,
-              };
-
-              setFinalTranscript((current) => [
-                ...current.slice(-299),
-                nextItem,
-              ]);
-              setInterimByLanguage((current) => {
-                const next = { ...current };
-                delete next[language];
-                return next;
-              });
-              return;
-            }
-
-            setInterimByLanguage((current) => ({
-              ...current,
-              [language]: text,
-            }));
+            appendTranscriptItem(language, text, isFinal);
             return;
           }
 
@@ -498,9 +693,14 @@ export function MeetingLivePage() {
   };
 
   const handleStartAudio = async () => {
-    if (!meeting || isAudioStreaming) {
+    if (!meeting || isAudioStreaming || hasMeetingEnded) {
+      if (hasMeetingEnded) {
+        setAudioStatus("This meeting has ended. Leave the room to return home.");
+      }
       return;
     }
+
+    await stopPreflightMonitor();
 
     if (preflightStatus !== "ready") {
       const passed = await runMicPreflight(true);
@@ -632,6 +832,38 @@ export function MeetingLivePage() {
     }
   };
 
+  const handleLeaveMeeting = async () => {
+    if (isHostView && !hasMeetingEnded) {
+      setAudioStatus("Hosts must end the meeting before leaving the room.");
+      return;
+    }
+
+    await teardownAudioStreaming();
+    navigateTo("home");
+  };
+
+  const handleEndMeeting = async () => {
+    if (!meeting || isEndingMeeting || hasMeetingEnded) {
+      return;
+    }
+
+    setIsEndingMeeting(true);
+
+    try {
+      await endMeeting(meeting.meetingId);
+      await teardownAudioStreaming();
+      setHasEndedMeetingLocally(true);
+      setAudioStatus("Meeting ended. You can now leave the room.");
+      addStatusEvent("Meeting ended.");
+    } catch (err) {
+      setAudioStatus(
+        err instanceof Error ? err.message : "Failed to end meeting.",
+      );
+    } finally {
+      setIsEndingMeeting(false);
+    }
+  };
+
   useEffect(() => {
     if (!meeting) {
       return;
@@ -665,13 +897,12 @@ export function MeetingLivePage() {
   }, [meeting?.meetingId, meeting?.ticket]);
 
   const transcriptSummary = useMemo(() => {
-    const interimCount = Object.keys(interimByLanguage).length;
-    return `${finalTranscript.length} final lines, ${interimCount} live`;
-  }, [finalTranscript.length, interimByLanguage]);
-
-  const interimEntries = useMemo(() => {
-    return Object.entries(interimByLanguage);
-  }, [interimByLanguage]);
+    const liveCount = transcriptItems.reduce((total, item) => {
+      return item.isFinal ? total : total + 1;
+    }, 0);
+    const finalCount = transcriptItems.length - liveCount;
+    return `${finalCount} final lines, ${liveCount} live`;
+  }, [transcriptItems]);
 
   const participants = useMemo(() => {
     return Object.values(participantsById).sort((left, right) => {
@@ -699,6 +930,42 @@ export function MeetingLivePage() {
     return participants.find((participant) => participant.isHost) || null;
   }, [participants]);
 
+  const selectedDeviceLabel = useMemo(() => {
+    return (
+      audioInputDevices.find((device) => device.id === selectedDeviceId)
+        ?.label || "No microphone selected"
+    );
+  }, [audioInputDevices, selectedDeviceId]);
+
+  const transcriptLanguageLabel = useMemo(() => {
+    const meetingLanguages = meetingDetailsData?.meeting.languages || [];
+    const uniqueMeetingLanguages = Array.from(new Set(meetingLanguages));
+
+    if (meetingDetailsData?.meeting.method === "two_way") {
+      if (uniqueMeetingLanguages.length === 2) {
+        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(" <-> ");
+      }
+
+      if (uniqueMeetingLanguages.length > 0) {
+        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+      }
+    }
+
+    if (user?.languageCode) {
+      return getLanguageLabel(user.languageCode);
+    }
+
+    if (uniqueMeetingLanguages.length === 1) {
+      return getLanguageLabel(uniqueMeetingLanguages[0]);
+    }
+
+    if (uniqueMeetingLanguages.length > 1) {
+      return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+    }
+
+    return "Live";
+  }, [meetingDetailsData?.meeting.languages, meetingDetailsData?.meeting.method, user?.languageCode]);
+
   if (!meeting) {
     return (
       <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
@@ -719,141 +986,89 @@ export function MeetingLivePage() {
   }
 
   return (
-    <main className="min-h-[calc(100dvh-3rem)] px-4 py-6 text-ink sm:px-6 sm:py-8">
+    <main
+      className={`min-h-[calc(100dvh-3rem)] px-4 py-6 text-ink sm:px-6 sm:py-8 ${isHostView ? "pb-56 sm:pb-60" : ""}`}
+    >
       <section
         className={`mx-auto w-full ${isHostView ? "max-w-6xl" : "max-w-5xl"}`}
       >
-        <div className="mb-4 rounded-[28px] border border-line/80 bg-panel/90 p-5 shadow-panel backdrop-blur-sm sm:p-6">
+        <div className="relative z-20 mb-4 rounded-[28px] border border-line/80 bg-panel/90 p-5 shadow-panel backdrop-blur-sm sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
                 {isHostView ? "Host Console" : "Live Transcript"}
               </p>
-              <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
-                {meetingTopic}
-              </h1>
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
+                  {meetingTopic}
+                </h1>
+                <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                  <div className="group relative z-30">
+                    <span className="inline-flex rounded-full border border-line/70 bg-canvas/80 px-3 py-1.5">
+                      {connectedCount} Participants
+                    </span>
+                    <div className="pointer-events-none absolute left-0 top-full z-[70] mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line/80 bg-panel/95 p-3 opacity-0 shadow-panel backdrop-blur-xl transition duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                          Participants
+                        </p>
+                      </div>
 
-          {isHostView ? (
-            <div className="mt-5 rounded-[24px] border border-line/70 bg-canvas/80 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                    Controls
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-ink-muted">
-                    Start or pause audio, switch microphones, and copy the join
-                    link for anyone you want to bring into the room.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-line/70 bg-panel px-3 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                    Mic source
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void runMicPreflight(true);
-                      }}
-                      disabled={preflightStatus === "checking"}
-                      className="rounded-full border border-line bg-canvas px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {preflightStatus === "checking"
-                        ? "Checking..."
-                        : "Run Preflight"}
-                    </button>
-                    <select
-                      value={selectedDeviceId}
-                      onChange={(event: any) =>
-                        setSelectedDeviceId(String(event.target.value))
-                      }
-                      disabled={audioInputDevices.length === 0}
-                      className="min-w-[12rem] rounded-full border border-line bg-canvas px-3 py-2 text-xs text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
-                    >
-                      {audioInputDevices.map((device) => (
-                        <option key={device.id} value={device.id}>
-                          {device.label}
-                        </option>
-                      ))}
-                    </select>
+                      {isParticipantsLoading ? (
+                        <p className="mt-3 text-xs normal-case tracking-normal text-ink-muted">
+                          Loading participants...
+                        </p>
+                      ) : participants.length === 0 ? (
+                        <p className="mt-3 text-xs normal-case tracking-normal text-ink-muted">
+                          No participants found.
+                        </p>
+                      ) : (
+                        <div className="mt-3 max-h-64 space-y-2 overflow-auto pr-1">
+                          {participants.map((participant) => (
+                            <div
+                              key={participant.id}
+                              className={`rounded-2xl border px-3 py-2 text-xs normal-case tracking-normal ${participant.isConnected ? "border-line/70 bg-canvas/80" : "border-line/60 bg-panel/70"}`}
+                            >
+                              <p className="truncate font-semibold text-ink">
+                                {participant.name ||
+                                  participant.email ||
+                                  participant.id}
+                                {participant.isHost ? " (Host)" : ""}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleStartAudio();
-                    }}
-                    disabled={
-                      isAudioStreaming ||
-                      socketStatus === "connecting" ||
-                      preflightStatus !== "ready"
-                    }
-                    className="rounded-full border border-line bg-panel px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {socketStatus === "connecting"
-                      ? "Connecting..."
-                      : "Start Audio"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleStopAudio();
-                    }}
-                    disabled={!isAudioStreaming}
-                    className="rounded-full border border-line bg-panel px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Stop Audio
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleCopyJoinUrl();
-                    }}
-                    disabled={!joinUrl}
-                    className="rounded-full border border-line bg-panel px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {copyJoinStatus === "Join URL copied."
-                      ? "Copied"
-                      : "Copy Join URL"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void teardownAudioStreaming().then(() =>
-                        navigateTo("home"),
-                      );
-                    }}
-                    className="rounded-full border border-line bg-panel px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
-                  >
-                    Leave Room
-                  </button>
                 </div>
               </div>
             </div>
-          ) : null}
+
+            {!isHostView ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleLeaveMeeting();
+                }}
+                className="rounded-full border border-line bg-canvas/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-lime hover:text-lime"
+              >
+                Leave
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <section
-          className={`grid gap-4 ${isHostView ? "lg:grid-cols-[1.12fr_0.88fr]" : ""}`}
-        >
+        <section>
           <div className="min-w-0 rounded-[28px] border border-line/80 bg-panel/90 p-5 shadow-panel backdrop-blur-sm sm:p-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                  Transcript
+                  {transcriptLanguageLabel} Transcript
                 </p>
-                <h2 className="mt-1 text-lg font-semibold sm:text-xl">
-                  {isHostView ? "Session Feed" : "What Everyone Sees"}
-                </h2>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-ink-muted">
-                <span>{transcriptSummary}</span>
                 <button
                   type="button"
                   onClick={() => setIsFollowEnabled((value) => !value)}
@@ -864,32 +1079,13 @@ export function MeetingLivePage() {
               </div>
             </div>
 
-            {interimEntries.length > 0 ? (
-              <div className="mb-4 rounded-2xl border border-line/70 bg-canvas/80 p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                  Live Interim
-                </p>
-                <div className="space-y-2">
-                  {interimEntries.map(([language, text]) => (
-                    <div
-                      key={language}
-                      className="rounded-xl border border-line/70 bg-panel px-3 py-2 text-sm text-ink-muted"
-                    >
-                      <span className="mr-2 font-semibold text-ink">
-                        {getLanguageLabel(language)}
-                      </span>
-                      {text}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
             <div
               ref={transcriptContainerRef}
-              className={`${isHostView ? "h-[420px]" : "h-[min(62vh,640px)]"} overflow-auto rounded-[24px] border border-line/70 bg-canvas/90 p-3 sm:p-4`}
+              className={
+                "h-[min(62vh,640px)] overflow-auto rounded-[24px] border border-line/70 bg-canvas/90 p-3 sm:p-4"
+              }
             >
-              {finalTranscript.length === 0 ? (
+              {transcriptItems.length === 0 ? (
                 <div className="flex h-full min-h-[220px] items-center justify-center rounded-[20px] border border-dashed border-line/80 bg-panel/60 px-6 text-center">
                   <p className="max-w-md text-sm leading-6 text-ink-muted">
                     {isHostView
@@ -899,13 +1095,13 @@ export function MeetingLivePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {finalTranscript.map((item) => (
+                  {transcriptItems.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-lime/35 bg-[linear-gradient(135deg,rgba(160,197,72,0.16),rgba(255,255,255,0.72))] px-3 py-2.5 text-sm text-ink shadow-sm"
+                      className={`rounded-2xl px-3 py-2.5 text-sm shadow-sm ${item.isFinal ? "border border-lime/35 bg-[linear-gradient(135deg,rgba(160,197,72,0.16),rgba(255,255,255,0.72))] text-ink" : "border border-line/70 bg-panel/80 text-ink-muted"}`}
                     >
                       <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                        {getLanguageLabel(item.language)} final
+                        {getLanguageLabel(item.language)} {item.isFinal ? "final" : "live"}
                       </p>
                       <p className="mt-1 leading-6">{item.text}</p>
                     </div>
@@ -913,80 +1109,154 @@ export function MeetingLivePage() {
                 </div>
               )}
             </div>
-
-            {!isHostView ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-line/70 bg-canvas/80 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                    Room status
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-ink">
-                    {roomSubscribed ? "Connected" : "Joining room..."}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-line/70 bg-canvas/80 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                    Host
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-ink">
-                    {hostParticipant?.name ||
-                      hostParticipant?.email ||
-                      "Waiting"}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-line/70 bg-canvas/80 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                    Participants
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-ink">
-                    {connectedCount} connected
-                  </p>
-                </div>
-              </div>
-            ) : null}
           </div>
-
-          {isHostView ? (
-            <aside className="space-y-4">
-              <div className="rounded-[28px] border border-line/80 bg-panel/90 p-5 shadow-panel backdrop-blur-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                  Participants
-                </p>
-
-                {isParticipantsLoading ? (
-                  <p className="mt-3 text-xs text-ink-muted">
-                    Loading participants...
-                  </p>
-                ) : participants.length === 0 ? (
-                  <p className="mt-3 text-xs text-ink-muted">
-                    No participants found.
-                  </p>
-                ) : (
-                  <ul className="mt-3 space-y-2">
-                    {participants.map((participant) => (
-                      <li
-                        key={participant.id}
-                        className="rounded-2xl border border-line/70 bg-canvas/80 px-3 py-2.5 text-xs"
-                      >
-                        <p className="font-semibold text-ink">
-                          {participant.name ||
-                            participant.email ||
-                            participant.id}
-                          {participant.isHost ? " (Host)" : ""}
-                        </p>
-                        <p className="mt-1 text-ink-muted">
-                          {participant.isConnected ? "Connected" : "Offline"} -{" "}
-                          {participant.role}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </aside>
-          ) : null}
         </section>
       </section>
+
+      {isHostView ? (
+        <>
+          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 px-3 sm:bottom-6 sm:px-6">
+            <div className="mx-auto w-full max-w-5xl">
+              <div
+                className={`flex flex-col items-center gap-2 transition-all duration-300 ${areHostControlsVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => showHostControls()}
+                  className={`pointer-events-auto rounded-full border border-line/70 bg-panel/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted shadow-panel backdrop-blur-xl transition ${areHostControlsVisible ? "opacity-0" : "opacity-100 hover:border-lime hover:text-lime"}`}
+                >
+                  Show controls
+                </button>
+
+                <div
+                  className={`rounded-[28px] border border-line/80 bg-panel/85 p-3 shadow-panel backdrop-blur-xl sm:p-4 ${areHostControlsVisible ? "pointer-events-auto" : "pointer-events-none"}`}
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                          Meeting controls
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleMicCheck();
+                          }}
+                          disabled={preflightStatus === "checking"}
+                          className={`rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isPreflightMonitoring ? "border-lime/40 bg-lime/15 text-ink" : "border-line bg-canvas/80 text-ink hover:border-lime hover:text-lime"}`}
+                        >
+                          {preflightStatus === "checking"
+                            ? "Checking..."
+                            : isPreflightMonitoring
+                              ? "Stop Mic Check"
+                              : "Check Mic"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleCopyJoinUrl();
+                          }}
+                          disabled={!joinUrl}
+                          className="rounded-full border border-line bg-canvas/80 px-4 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {copyJoinStatus === "Join URL copied."
+                            ? "Copied"
+                            : "Invite"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleEndMeeting();
+                          }}
+                          disabled={isEndingMeeting || hasMeetingEnded}
+                          className="rounded-full border border-rose-300/70 bg-rose-50/70 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-400 hover:bg-rose-100/80 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {hasMeetingEnded
+                            ? "Ended"
+                            : isEndingMeeting
+                              ? "Ending..."
+                              : "End"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="flex flex-1 flex-wrap items-center gap-2">
+                        <select
+                          value={selectedDeviceId}
+                          onChange={(event: any) =>
+                            setSelectedDeviceId(String(event.target.value))
+                          }
+                          onFocus={() => showHostControls()}
+                          disabled={audioInputDevices.length === 0}
+                          className="min-w-[12rem] flex-1 rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 md:max-w-sm"
+                        >
+                          {audioInputDevices.map((device) => (
+                            <option key={device.id} value={device.id}>
+                              {device.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2 self-end md:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleStopAudio();
+                          }}
+                          disabled={!isAudioStreaming}
+                          className="rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Mute
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleLeaveMeeting();
+                          }}
+                          disabled={isHostView && !hasMeetingEnded}
+                          className="rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Leave
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleStartAudio();
+                          }}
+                          disabled={
+                            hasMeetingEnded ||
+                            isAudioStreaming ||
+                            socketStatus === "connecting" ||
+                            preflightStatus !== "ready"
+                          }
+                          className={`rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isAudioStreaming ? "border border-lime/40 bg-lime/20 text-ink" : "border border-line bg-ink text-canvas hover:border-lime hover:bg-lime hover:text-ink"}`}
+                        >
+                          {socketStatus === "connecting"
+                            ? "Connecting..."
+                            : hasMeetingEnded
+                              ? "Meeting Ended"
+                            : isAudioStreaming
+                              ? "Mic Live"
+                              : "Join Audio"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="text-center text-xs text-ink-muted">
+                      Check your mic before going live. Bad audio quality leads to bad transcription quality.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : null}
     </main>
   );
 }
