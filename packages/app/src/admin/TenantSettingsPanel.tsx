@@ -12,6 +12,7 @@ import {
   type TenantSettings,
   type UpdateTenantSettingsPayload,
 } from "../hooks/tenants";
+import { useNotifications } from "../notifications/NotificationContext";
 
 type ProviderType = "google" | "entra";
 
@@ -113,13 +114,13 @@ function TenantEditorCard({
   collapsible = false,
   defaultCollapsed = false,
 }: TenantEditorCardProps) {
+  const { notify } = useNotifications();
   const [organizationName, setOrganizationName] = useState(
     settings.tenant.name || "",
   );
   const [providerDrafts, setProviderDrafts] = useState<
     Record<ProviderType, ProviderDraft>
   >(buildProviderDrafts(settings));
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -212,12 +213,6 @@ function TenantEditorCard({
           ) : null}
         </div>
       </div>
-
-      {message ? (
-        <p className="rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-sm text-ink">
-          {message}
-        </p>
-      ) : null}
 
       {error ? (
         <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-ink">
@@ -447,18 +442,24 @@ function TenantEditorCard({
               if (confirmMode === "delete" && onDelete) {
                 void (async () => {
                   setIsDeleting(true);
-                  setMessage(null);
                   setError(null);
                   try {
                     await onDelete(settings.tenant.id);
-                    setMessage("Tenant deleted.");
+                    notify({
+                      title: "Tenant Deleted",
+                      message: "The tenant was removed successfully.",
+                      variant: "success",
+                    });
                     setConfirmMode(null);
                   } catch (err) {
-                    setError(
-                      err instanceof ApiError
-                        ? err.message
-                        : "Failed to delete tenant.",
-                    );
+                    notify({
+                      title: "Delete Failed",
+                      message:
+                        err instanceof ApiError
+                          ? err.message
+                          : "Failed to delete tenant.",
+                      variant: "error",
+                    });
                   } finally {
                     setIsDeleting(false);
                   }
@@ -468,7 +469,6 @@ function TenantEditorCard({
 
               void (async () => {
                 setIsSaving(true);
-                setMessage(null);
                 setError(null);
                 try {
                   await onSave(settings.tenant.id, buildPayload());
@@ -484,14 +484,21 @@ function TenantEditorCard({
                       hasSecret: true,
                     },
                   }));
-                  setMessage("Tenant settings updated.");
+                  notify({
+                    title: "Tenant Updated",
+                    message: "Tenant settings were saved.",
+                    variant: "success",
+                  });
                   setConfirmMode(null);
                 } catch (err) {
-                  setError(
-                    err instanceof ApiError
-                      ? err.message
-                      : "Failed to save tenant settings.",
-                  );
+                  notify({
+                    title: "Save Failed",
+                    message:
+                      err instanceof ApiError
+                        ? err.message
+                        : "Failed to save tenant settings.",
+                    variant: "error",
+                  });
                 } finally {
                   setIsSaving(false);
                 }
@@ -515,6 +522,7 @@ export function TenantSettingsPanel({
   tenantOptions,
 }: TenantSettingsPanelProps) {
   const { user, tenantId } = useAuth();
+  const { notify } = useNotifications();
   const isSuperAdmin = user?.role === "super_admin";
   const isTenantAdmin = user?.role === "tenant_admin";
   const isAdmin = isSuperAdmin || isTenantAdmin;
@@ -524,7 +532,6 @@ export function TenantSettingsPanel({
   const [providerDrafts, setProviderDrafts] = useState<
     Record<ProviderType, ProviderDraft>
   >(createEmptyProviderDrafts);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
@@ -617,7 +624,6 @@ export function TenantSettingsPanel({
             type="button"
             onClick={() => {
               setIsCreating((currentValue) => !currentValue);
-              setMessage(null);
               setError(null);
             }}
             className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
@@ -626,12 +632,6 @@ export function TenantSettingsPanel({
           </button>
         ) : null}
       </div>
-
-      {message ? (
-        <p className="rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-sm text-ink">
-          {message}
-        </p>
-      ) : null}
 
       {error ? (
         <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-ink">
@@ -891,7 +891,6 @@ export function TenantSettingsPanel({
         onConfirm={() => {
           void (async () => {
             setIsSaving(true);
-            setMessage(null);
             setError(null);
             try {
               await createTenant({
@@ -902,14 +901,21 @@ export function TenantSettingsPanel({
               setOrganizationName("");
               setProviderDrafts(createEmptyProviderDrafts());
               setIsCreating(false);
-              setMessage("Tenant created.");
+              notify({
+                title: "Tenant Created",
+                message: "The new tenant is ready to use.",
+                variant: "success",
+              });
               setConfirmCreateOpen(false);
             } catch (err) {
-              setError(
-                err instanceof ApiError
-                  ? err.message
-                  : "Failed to create tenant.",
-              );
+              notify({
+                title: "Create Failed",
+                message:
+                  err instanceof ApiError
+                    ? err.message
+                    : "Failed to create tenant.",
+                variant: "error",
+              });
             } finally {
               setIsSaving(false);
             }

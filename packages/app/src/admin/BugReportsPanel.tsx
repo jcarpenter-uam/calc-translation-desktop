@@ -6,6 +6,7 @@ import {
   type BugReport,
 } from "../hooks/bugReports";
 import { ApiError } from "../hooks/api";
+import { useNotifications } from "../notifications/NotificationContext";
 
 type BugReportFilter = "all" | "open" | "resolved";
 
@@ -14,7 +15,6 @@ type BugReportDetailsModalProps = {
   onClose: () => void;
   onStatusChange: (id: string, status: "open" | "resolved") => Promise<void>;
   isUpdating: boolean;
-  error: string | null;
 };
 
 function BugReportDetailsModal({
@@ -22,7 +22,6 @@ function BugReportDetailsModal({
   onClose,
   onStatusChange,
   isUpdating,
-  error,
 }: BugReportDetailsModalProps) {
   useEffect(() => {
     if (!report) {
@@ -129,13 +128,6 @@ function BugReportDetailsModal({
             </button>
           </div>
         </div>
-
-        {error ? (
-          <div className="mt-4 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            {error}
-          </div>
-        ) : null}
-
         <div className="mt-6 grid min-h-0 flex-1 gap-6 overflow-y-auto lg:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-4">
             <div className="rounded-2xl border border-line bg-canvas p-4">
@@ -218,26 +210,36 @@ function BugReportDetailsModal({
  * Super-admin review panel for submitted client bug reports.
  */
 export function BugReportsPanel() {
+  const { notify } = useNotifications();
   const [filter, setFilter] = useState<BugReportFilter>("open");
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
-  const [statusError, setStatusError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const reportsQuery = useBugReports(true, filter);
   const updateBugReportStatus = useUpdateBugReportStatus();
 
   const handleStatusChange = async (id: string, status: "open" | "resolved") => {
-    setStatusError(null);
     setIsUpdatingStatus(true);
 
     try {
       const response = await updateBugReportStatus(id, status);
       setSelectedReport(response.report);
+      notify({
+        title: "Bug Report Updated",
+        message:
+          status === "resolved"
+            ? "The bug report was marked resolved."
+            : "The bug report was reopened.",
+        variant: "success",
+      });
     } catch (error) {
-      setStatusError(
-        error instanceof ApiError
-          ? error.message
-          : "Failed to update bug report status.",
-      );
+      notify({
+        title: "Update Failed",
+        message:
+          error instanceof ApiError
+            ? error.message
+            : "Failed to update bug report status.",
+        variant: "error",
+      });
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -338,11 +340,9 @@ export function BugReportsPanel() {
         report={selectedReport}
         onClose={() => {
           setSelectedReport(null);
-          setStatusError(null);
         }}
         onStatusChange={handleStatusChange}
         isUpdating={isUpdatingStatus}
-        error={statusError}
       />
     </>
   );

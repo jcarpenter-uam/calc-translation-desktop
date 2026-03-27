@@ -11,12 +11,14 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { getApiBaseUrl } from "../hooks/api";
 import { getLanguageLabel } from "../languages/LanguageList";
+import { useNotifications } from "../notifications/NotificationContext";
 import { useAppRoute } from "../routing/RouteContext";
 
 type TranscriptFinalItem = {
   id: string;
   text: string;
   language: string;
+  speaker: string | null;
   isFinal: boolean;
 };
 
@@ -31,19 +33,20 @@ type AudioInputDevice = {
 export function MeetingLivePage() {
   const { meeting, navigateTo } = useAppRoute();
   const { user } = useAuth();
+  const { notify } = useNotifications();
   const isHostView = Boolean(meeting?.isHost);
 
   const [isAudioStreaming, setIsAudioStreaming] = useState(false);
   const [socketStatus, setSocketStatus] = useState<
     "idle" | "connecting" | "connected" | "error"
   >("idle");
-  const [audioStatus, setAudioStatus] = useState<string | null>(null);
-  const [roomSubscribed, setRoomSubscribed] = useState(false);
+  const [, setAudioStatus] = useState<string | null>(null);
+  const [, setRoomSubscribed] = useState(false);
 
   const [preflightStatus, setPreflightStatus] = useState<
     "idle" | "checking" | "ready" | "error"
   >("idle");
-  const [preflightMessage, setPreflightMessage] = useState<string | null>(
+  const [, setPreflightMessage] = useState<string | null>(
     "Run mic preflight before starting audio.",
   );
   const [audioInputDevices, setAudioInputDevices] = useState<
@@ -54,8 +57,14 @@ export function MeetingLivePage() {
   const [areHostControlsVisible, setAreHostControlsVisible] = useState(true);
   const [isPreflightMonitoring, setIsPreflightMonitoring] = useState(false);
   const [isEndingMeeting, setIsEndingMeeting] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
-  const [downloadingLanguage, setDownloadingLanguage] = useState<string | null>(null);
+  const [downloadingLanguage, setDownloadingLanguage] = useState<string | null>(
+    null,
+  );
+  const [areDownloadsVisible, setAreDownloadsVisible] = useState(false);
+  const [availableTranscriptLanguages, setAvailableTranscriptLanguages] =
+    useState<string[]>([]);
+  const [selectedTranscriptLanguage, setSelectedTranscriptLanguage] =
+    useState("");
   const [hasEndedMeetingLocally, setHasEndedMeetingLocally] = useState(false);
   const copyJoinResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -64,8 +73,10 @@ export function MeetingLivePage() {
     null,
   );
 
-  const [meetingStatusEvents, setMeetingStatusEvents] = useState<string[]>([]);
-  const [transcriptItems, setTranscriptItems] = useState<TranscriptFinalItem[]>([]);
+  const [, setMeetingStatusEvents] = useState<string[]>([]);
+  const [transcriptItems, setTranscriptItems] = useState<TranscriptFinalItem[]>(
+    [],
+  );
   const [isFollowEnabled, setIsFollowEnabled] = useState(true);
   const [participantsById, setParticipantsById] = useState<
     Record<string, MeetingParticipant>
@@ -114,7 +125,66 @@ export function MeetingLivePage() {
 
   useEffect(() => {
     setHasEndedMeetingLocally(false);
+    setAreDownloadsVisible(false);
+    setAvailableTranscriptLanguages([]);
+    setSelectedTranscriptLanguage("");
   }, [meeting?.meetingId]);
+
+  useEffect(() => {
+    if (!hasMeetingEnded) {
+      return;
+    }
+
+    setAreDownloadsVisible(true);
+  }, [hasMeetingEnded]);
+
+  useEffect(() => {
+    if (!hasMeetingEnded || availableTranscriptLanguages.length > 0) {
+      return;
+    }
+
+    const fallbackLanguages = (
+      meetingDetailsData?.meeting.transcript_languages || []
+    ).filter(
+      (language): language is string =>
+        typeof language === "string" && Boolean(language),
+    );
+
+    if (fallbackLanguages.length > 0) {
+      setAvailableTranscriptLanguages(Array.from(new Set(fallbackLanguages)));
+    }
+  }, [
+    availableTranscriptLanguages.length,
+    hasMeetingEnded,
+    meetingDetailsData?.meeting.transcript_languages,
+  ]);
+
+  useEffect(() => {
+    if (availableTranscriptLanguages.length === 0) {
+      if (selectedTranscriptLanguage) {
+        setSelectedTranscriptLanguage("");
+      }
+      return;
+    }
+
+    if (
+      user?.languageCode &&
+      availableTranscriptLanguages.includes(user.languageCode)
+    ) {
+      if (selectedTranscriptLanguage !== user.languageCode) {
+        setSelectedTranscriptLanguage(user.languageCode);
+      }
+      return;
+    }
+
+    if (!availableTranscriptLanguages.includes(selectedTranscriptLanguage)) {
+      setSelectedTranscriptLanguage(availableTranscriptLanguages[0] || "");
+    }
+  }, [
+    availableTranscriptLanguages,
+    selectedTranscriptLanguage,
+    user?.languageCode,
+  ]);
 
   const addStatusEvent = (message: string) => {
     setMeetingStatusEvents((current) => [message, ...current.slice(0, 19)]);
@@ -448,6 +518,7 @@ export function MeetingLivePage() {
   const appendTranscriptItem = (
     language: string,
     text: string,
+    speaker: string | null,
     isFinal: boolean,
   ) => {
     setTranscriptItems((current) => {
@@ -462,6 +533,7 @@ export function MeetingLivePage() {
           id: existingItem.id,
           language: existingItem.language,
           text,
+          speaker,
           isFinal,
         };
       } else {
@@ -469,6 +541,7 @@ export function MeetingLivePage() {
           id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
           text,
           language,
+          speaker,
           isFinal,
         });
       }
@@ -531,7 +604,13 @@ export function MeetingLivePage() {
               typeof parsed.transcriptionText === "string"
                 ? parsed.transcriptionText.trim()
                 : "";
-            const text = String(translationText || parsed.text || transcriptionText || "").trim();
+            const text = String(
+              translationText || parsed.text || transcriptionText || "",
+            ).trim();
+            const speaker =
+              typeof parsed.speaker === "string"
+                ? parsed.speaker.trim() || null
+                : null;
             const isFinal = Boolean(parsed.isFinal);
             const viewerLanguage = user?.languageCode || null;
 
@@ -539,7 +618,7 @@ export function MeetingLivePage() {
               return;
             }
 
-            appendTranscriptItem(language, text, isFinal);
+            appendTranscriptItem(language, text, speaker, isFinal);
             return;
           }
 
@@ -638,6 +717,42 @@ export function MeetingLivePage() {
           }
 
           if (parsed?.type === "status") {
+            const statusEvent = String(parsed.event || "");
+            if (statusEvent === "meeting_ended") {
+              const transcriptLanguages: string[] = Array.isArray(
+                parsed.transcriptLanguages,
+              )
+                ? Array.from(
+                    new Set(
+                      parsed.transcriptLanguages
+                        .map((language: unknown) =>
+                          String(language || "").trim(),
+                        )
+                        .filter(Boolean),
+                    ),
+                  )
+                : [];
+
+              setHasEndedMeetingLocally(true);
+              setAreDownloadsVisible(true);
+              setAvailableTranscriptLanguages(transcriptLanguages);
+              notify(
+                transcriptLanguages.length > 0
+                  ? {
+                      title: "Transcript Ready",
+                      message:
+                        "Transcript downloads are ready. Choose a language and save the VTT file.",
+                      variant: "success",
+                    }
+                  : {
+                      title: "Meeting Ended",
+                      message:
+                        "Meeting ended. Transcript files are still being prepared.",
+                      variant: "info",
+                    },
+              );
+            }
+
             const message = parsed.message || parsed.event || "status_update";
             addStatusEvent(String(message));
             return;
@@ -715,7 +830,9 @@ export function MeetingLivePage() {
   const handleStartAudio = async () => {
     if (!meeting || isAudioStreaming || hasMeetingEnded) {
       if (hasMeetingEnded) {
-        setAudioStatus("This meeting has ended. Leave the room to return home.");
+        setAudioStatus(
+          "This meeting has ended. Leave the room to return home.",
+        );
       }
       return;
     }
@@ -835,12 +952,22 @@ export function MeetingLivePage() {
 
     if (!joinUrl || !browser.navigator?.clipboard?.writeText) {
       setCopyJoinStatus("Copy is unavailable in this browser.");
+      notify({
+        title: "Invite Link",
+        message: "Copy is unavailable in this browser.",
+        variant: "warning",
+      });
       return;
     }
 
     try {
       await browser.navigator.clipboard.writeText(joinUrl);
       setCopyJoinStatus("Join URL copied.");
+      notify({
+        title: "Invite Link",
+        message: "Join URL copied.",
+        variant: "success",
+      });
       copyJoinResetTimeoutRef.current = setTimeout(() => {
         setCopyJoinStatus((current) =>
           current === "Join URL copied." ? null : current,
@@ -849,6 +976,11 @@ export function MeetingLivePage() {
       }, 2000);
     } catch {
       setCopyJoinStatus("Failed to copy join URL.");
+      notify({
+        title: "Invite Link",
+        message: "Failed to copy join URL.",
+        variant: "error",
+      });
     }
   };
 
@@ -890,8 +1022,6 @@ export function MeetingLivePage() {
     }
 
     setDownloadingLanguage(language);
-    setDownloadStatus(null);
-
     try {
       const { blob, response } = await downloadMeetingTranscript(
         meeting.meetingId,
@@ -914,14 +1044,28 @@ export function MeetingLivePage() {
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
-      setDownloadStatus(`Downloaded ${getLanguageLabel(language)} transcript.`);
+      notify({
+        title: "Transcript Downloaded",
+        message: `Saved the ${getLanguageLabel(language)} transcript as a VTT file.`,
+        variant: "success",
+      });
     } catch (error) {
       if (error instanceof ApiError) {
-        setDownloadStatus(error.message);
+        notify({
+          title: "Download Failed",
+          message: error.message,
+          variant: "error",
+        });
       } else {
-        setDownloadStatus(
-          error instanceof Error ? error.message : "Failed to download transcript.",
-        );
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to download transcript.";
+        notify({
+          title: "Download Failed",
+          message,
+          variant: "error",
+        });
       }
     } finally {
       setDownloadingLanguage(null);
@@ -960,14 +1104,6 @@ export function MeetingLivePage() {
     };
   }, [meeting?.meetingId, meeting?.ticket]);
 
-  const transcriptSummary = useMemo(() => {
-    const liveCount = transcriptItems.reduce((total, item) => {
-      return item.isFinal ? total : total + 1;
-    }, 0);
-    const finalCount = transcriptItems.length - liveCount;
-    return `${finalCount} final lines, ${liveCount} live`;
-  }, [transcriptItems]);
-
   const participants = useMemo(() => {
     return Object.values(participantsById).sort((left, right) => {
       if (left.isHost && !right.isHost) {
@@ -990,28 +1126,21 @@ export function MeetingLivePage() {
     }, 0);
   }, [participants]);
 
-  const hostParticipant = useMemo(() => {
-    return participants.find((participant) => participant.isHost) || null;
-  }, [participants]);
-
-  const selectedDeviceLabel = useMemo(() => {
-    return (
-      audioInputDevices.find((device) => device.id === selectedDeviceId)
-        ?.label || "No microphone selected"
-    );
-  }, [audioInputDevices, selectedDeviceId]);
-
   const transcriptLanguageLabel = useMemo(() => {
     const meetingLanguages = meetingDetailsData?.meeting.languages || [];
     const uniqueMeetingLanguages = Array.from(new Set(meetingLanguages));
 
     if (meetingDetailsData?.meeting.method === "two_way") {
       if (uniqueMeetingLanguages.length === 2) {
-        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(" <-> ");
+        return uniqueMeetingLanguages
+          .map((language) => getLanguageLabel(language))
+          .join(" <-> ");
       }
 
       if (uniqueMeetingLanguages.length > 0) {
-        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+        return uniqueMeetingLanguages
+          .map((language) => getLanguageLabel(language))
+          .join(", ");
       }
     }
 
@@ -1024,22 +1153,21 @@ export function MeetingLivePage() {
     }
 
     if (uniqueMeetingLanguages.length > 1) {
-      return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+      return uniqueMeetingLanguages
+        .map((language) => getLanguageLabel(language))
+        .join(", ");
     }
 
     return "Live";
-  }, [meetingDetailsData?.meeting.languages, meetingDetailsData?.meeting.method, user?.languageCode]);
+  }, [
+    meetingDetailsData?.meeting.languages,
+    meetingDetailsData?.meeting.method,
+    user?.languageCode,
+  ]);
 
   const downloadableTranscriptLanguages = useMemo(() => {
-    const meetingLanguages = meetingDetailsData?.meeting.languages || [];
-    const dedupedLanguages = Array.from(new Set(meetingLanguages.filter(Boolean)));
-
-    if (dedupedLanguages.length > 0) {
-      return dedupedLanguages;
-    }
-
-    return user?.languageCode ? [user.languageCode] : [];
-  }, [meetingDetailsData?.meeting.languages, user?.languageCode]);
+    return Array.from(new Set(availableTranscriptLanguages.filter(Boolean)));
+  }, [availableTranscriptLanguages]);
 
   if (!meeting) {
     return (
@@ -1144,26 +1272,51 @@ export function MeetingLivePage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-ink-muted">
-                {downloadStatus ? (
-                  <span className="rounded-full border border-line/70 bg-canvas px-3 py-1.5 text-[11px]">
-                    {downloadStatus}
-                  </span>
+                {areDownloadsVisible &&
+                downloadableTranscriptLanguages.length > 0 ? (
+                  <>
+                    <label
+                      className="sr-only"
+                      htmlFor="transcript-language-select"
+                    >
+                      Transcript language
+                    </label>
+                    <select
+                      id="transcript-language-select"
+                      value={selectedTranscriptLanguage}
+                      onChange={(event: any) =>
+                        setSelectedTranscriptLanguage(
+                          String(event.target.value || ""),
+                        )
+                      }
+                      disabled={Boolean(downloadingLanguage)}
+                      className="rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadableTranscriptLanguages.map((language) => (
+                        <option key={language} value={language}>
+                          {getLanguageLabel(language)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleDownloadTranscript(
+                          selectedTranscriptLanguage,
+                        );
+                      }}
+                      disabled={
+                        Boolean(downloadingLanguage) ||
+                        !selectedTranscriptLanguage
+                      }
+                      className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadingLanguage === selectedTranscriptLanguage
+                        ? `Downloading ${getLanguageLabel(selectedTranscriptLanguage)}...`
+                        : "Download Transcript"}
+                    </button>
+                  </>
                 ) : null}
-                {downloadableTranscriptLanguages.map((language) => (
-                  <button
-                    key={language}
-                    type="button"
-                    onClick={() => {
-                      void handleDownloadTranscript(language);
-                    }}
-                    disabled={Boolean(downloadingLanguage)}
-                    className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {downloadingLanguage === language
-                      ? `Downloading ${getLanguageLabel(language)}...`
-                      : `Download ${getLanguageLabel(language)}`}
-                  </button>
-                ))}
                 <button
                   type="button"
                   onClick={() => setIsFollowEnabled((value) => !value)}
@@ -1193,11 +1346,13 @@ export function MeetingLivePage() {
                   {transcriptItems.map((item) => (
                     <div
                       key={item.id}
-                      className={`rounded-2xl px-3 py-2.5 text-sm shadow-sm ${item.isFinal ? "border border-lime/35 bg-[linear-gradient(135deg,rgba(160,197,72,0.16),rgba(255,255,255,0.72))] text-ink" : "border border-line/70 bg-panel/80 text-ink-muted"}`}
+                      className={`px-3 py-2.5 text-sm ${item.isFinal ? "text-ink" : "text-ink-muted"}`}
                     >
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                        {getLanguageLabel(item.language)} {item.isFinal ? "final" : "live"}
-                      </p>
+                      {item.speaker ? (
+                        <p className="mt-1 text-xs font-semibold text-ink-muted">
+                          {item.speaker}
+                        </p>
+                      ) : null}
                       <p className="mt-1 leading-6">{item.text}</p>
                     </div>
                   ))}
@@ -1335,15 +1490,16 @@ export function MeetingLivePage() {
                             ? "Connecting..."
                             : hasMeetingEnded
                               ? "Meeting Ended"
-                            : isAudioStreaming
-                              ? "Mic Live"
-                              : "Join Audio"}
+                              : isAudioStreaming
+                                ? "Mic Live"
+                                : "Join Audio"}
                         </button>
                       </div>
                     </div>
 
                     <p className="text-center text-xs text-ink-muted">
-                      Check your mic before going live. Bad audio quality leads to bad transcription quality.
+                      Check your mic before going live. Bad audio quality leads
+                      to bad transcription quality.
                     </p>
                   </div>
                 </div>

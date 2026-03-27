@@ -48,6 +48,7 @@ type MeetingDetailsResponse = {
     integration: string | null;
     method: "one_way" | "two_way" | null;
     languages: string[] | null;
+    transcript_languages: string[] | null;
     scheduled_time: string | null;
     started_at: string | null;
     ended_at: string | null;

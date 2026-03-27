@@ -10,6 +10,7 @@ import {
   type UpdateUserPayload,
 } from "../hooks/users";
 import { getLanguageLabel } from "../languages/LanguageList";
+import { useNotifications } from "../notifications/NotificationContext";
 
 type ManagedUser = {
   id: string;
@@ -49,9 +50,8 @@ export function UserSettingsPanel({
   const isSuperAdmin = user?.role === "super_admin";
   const isTenantAdmin = user?.role === "tenant_admin";
   const isAdmin = isSuperAdmin || isTenantAdmin;
+  const { notify } = useNotifications();
   const [search, setSearch] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -96,15 +96,12 @@ export function UserSettingsPanel({
   };
 
   const startEdit = (entry: ManagedUser) => {
-    setMessage(null);
-    setError(null);
     setEditingUserId(entry.id);
     setEditRole((entry.role as AdminRole) || "user");
   };
 
   const cancelEdit = () => {
     setEditingUserId(null);
-    setError(null);
   };
 
   const saveUserRole = async (targetUserId: string, role: AdminRole) => {
@@ -114,19 +111,23 @@ export function UserSettingsPanel({
     }
 
     setIsSaving(true);
-    setMessage(null);
-    setError(null);
 
     try {
       const payload: UpdateUserPayload = { role };
       await updateTenantUser(targetUserId, payload, targetTenantId);
       setEditingUserId(null);
       setConfirmState(null);
-      setMessage("User updated.");
+      notify({
+        title: "User Updated",
+        message: "User role changes were saved.",
+        variant: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Failed to update user.",
-      );
+      notify({
+        title: "Update Failed",
+        message: err instanceof ApiError ? err.message : "Failed to update user.",
+        variant: "error",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -139,8 +140,6 @@ export function UserSettingsPanel({
     }
 
     setIsDeleting(true);
-    setMessage(null);
-    setError(null);
 
     try {
       await deleteTenantUser(targetUserId, targetTenantId);
@@ -148,11 +147,17 @@ export function UserSettingsPanel({
         setEditingUserId(null);
       }
       setConfirmState(null);
-      setMessage("User deleted.");
+      notify({
+        title: "User Deleted",
+        message: "The user was removed successfully.",
+        variant: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Failed to delete user.",
-      );
+      notify({
+        title: "Delete Failed",
+        message: err instanceof ApiError ? err.message : "Failed to delete user.",
+        variant: "error",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -220,17 +225,6 @@ export function UserSettingsPanel({
           className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
         />
       </label>
-
-      {message ? (
-        <p className="rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-sm text-ink">
-          {message}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-ink">
-          {error}
-        </p>
-      ) : null}
 
       <div className="overflow-hidden rounded-xl border border-line bg-panel/40">
         <div className="max-h-80 overflow-auto">

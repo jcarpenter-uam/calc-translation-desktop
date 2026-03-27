@@ -4,6 +4,7 @@ import { AuthGate } from "./auth/AuthGate";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { initializeClientLogger, writeClientLog } from "./bugReports/clientLogger";
 import { AppLayout } from "./layout/AppLayout";
+import { NotificationProvider } from "./notifications/NotificationContext";
 import { Home } from "./pages/Home";
 import { AdminPage } from "./pages/Admin";
 import { CalendarPage } from "./pages/Calendar";
@@ -79,15 +80,17 @@ export function App({ platform }: AppProps) {
     >
       <AppInfoProvider clientType={platform}>
         <ThemeProvider>
-          <AuthProvider>
-            <RouteProvider mode={platform === "web" ? "path" : "hash"}>
-              <AppLayout>
-                <AuthGate>
-                  <AppContent platform={platform} />
-                </AuthGate>
-              </AppLayout>
-            </RouteProvider>
-          </AuthProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <RouteProvider mode={platform === "web" ? "path" : "hash"}>
+                <AppLayout>
+                  <AuthGate>
+                    <AppContent platform={platform} />
+                  </AuthGate>
+                </AppLayout>
+              </RouteProvider>
+            </AuthProvider>
+          </NotificationProvider>
         </ThemeProvider>
       </AppInfoProvider>
     </SWRConfig>

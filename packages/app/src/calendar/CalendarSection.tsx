@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
 import { ApiError } from "../hooks/api";
 import { useCalendarEvents, useSyncCalendar } from "../hooks/calendar";
+import { useNotifications } from "../notifications/NotificationContext";
 import { CalendarEventsList } from "./CalendarEventsList";
 
 /**
  * Shows upcoming provider-synced meetings and allows manual provider sync.
  */
 export function CalendarSection() {
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const { notify } = useNotifications();
 
   const eventsOptions = { limit: 24 };
   const { data, isLoading, error } = useCalendarEvents(eventsOptions);
@@ -25,26 +25,32 @@ export function CalendarSection() {
   }, [data?.events]);
 
   const onSync = async () => {
-    setSyncMessage(null);
-    setSyncError(null);
     setIsSyncing(true);
 
     try {
       const result = await syncCalendar();
-      setSyncMessage(
-        `Calendar sync complete (${result.savedCount} saved across ${result.providers.length} provider${result.providers.length === 1 ? "" : "s"}).`,
-      );
+      notify({
+        title: "Calendar Synced",
+        message: `Calendar sync complete (${result.savedCount} saved across ${result.providers.length} provider${result.providers.length === 1 ? "" : "s"}).`,
+        variant: "success",
+      });
       if (result.reauthProviders.length > 0) {
-        setSyncError(
-          `Re-auth required for: ${result.reauthProviders.join(", ")}. Sign in again with those providers.`,
-        );
+        notify({
+          title: "Re-auth Required",
+          message: `Re-auth required for: ${result.reauthProviders.join(", ")}. Sign in again with those providers.`,
+          variant: "warning",
+          durationMs: 5200,
+        });
       }
     } catch (err) {
-      setSyncError(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to sync calendar provider.",
-      );
+      notify({
+        title: "Sync Failed",
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Failed to sync calendar provider.",
+        variant: "error",
+      });
     } finally {
       setIsSyncing(false);
     }
@@ -76,18 +82,6 @@ export function CalendarSection() {
           </button>
         </div>
       </div>
-
-      {syncMessage ? (
-        <p className="mb-3 rounded-lg border border-lime/40 bg-lime/10 px-3 py-2 text-sm text-ink">
-          {syncMessage}
-        </p>
-      ) : null}
-
-      {syncError ? (
-        <p className="mb-3 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-ink">
-          {syncError}
-        </p>
-      ) : null}
 
       {isLoading ? (
         <p className="text-sm text-ink-muted">Loading calendar events...</p>

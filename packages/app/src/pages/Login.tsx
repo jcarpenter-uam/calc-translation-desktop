@@ -7,12 +7,13 @@ import {
   startLogin,
   type LoginChoiceOption,
 } from "../hooks/auth";
+import { useNotifications } from "../notifications/NotificationContext";
 
 export function Login() {
+  const { notify } = useNotifications();
   const [email, setEmail] = useState("");
   const [providerOptions, setProviderOptions] = useState<LoginChoiceOption[]>([]);
   const [submittedEmail, setSubmittedEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = async (event: any) => {
@@ -25,7 +26,6 @@ export function Login() {
 
     const returnTo = String((globalThis as any)?.location?.href || "/");
     setIsSubmitting(true);
-    setError(null);
 
     try {
       const result = await startLogin(trimmedEmail, returnTo);
@@ -34,7 +34,11 @@ export function Login() {
         setProviderOptions(result.options);
       }
     } catch (err: any) {
-      setError(err?.message || "Failed to start login.");
+      notify({
+        title: "Login Failed",
+        message: err?.message || "Failed to start login.",
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,12 +207,6 @@ export function Login() {
                 {isSubmitting ? "Working..." : "Login"}
               </button>
             </form>
-
-            {error ? (
-              <p className="mt-4 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-ink">
-                {error}
-              </p>
-            ) : null}
           </div>
         </div>
         </section>

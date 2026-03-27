@@ -9,6 +9,7 @@ import {
 } from "./clientLogger";
 import { submitBugReport } from "../hooks/bugReports";
 import { ApiError } from "../hooks/api";
+import { useNotifications } from "../notifications/NotificationContext";
 import { useAppRoute } from "../routing/RouteContext";
 
 type ReportBugModalProps = {
@@ -23,11 +24,10 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
   const { clientType } = useAppInfo();
   const { route } = useAppRoute();
   const { tenantId, tenantName, user } = useAuth();
+  const { notify } = useNotifications();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const metadata = useMemo(
     () => collectClientMetadata(clientType),
@@ -46,8 +46,6 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
   }
 
   const resetAndClose = () => {
-    setError(null);
-    setSuccessMessage(null);
     setTitle("");
     setDescription("");
     onClose();
@@ -55,8 +53,6 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -86,16 +82,23 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
         clientLogs,
       });
       writeClientLog("info", "Bug report submitted successfully", title || "untitled");
-      setSuccessMessage("Thanks - your bug report was submitted.");
+      notify({
+        title: "Bug Report Sent",
+        message: "Thanks - your bug report was submitted.",
+        variant: "success",
+      });
       setTitle("");
       setDescription("");
     } catch (submissionError) {
       writeClientLog("error", "Bug report submission failed", submissionError);
-      setError(
-        submissionError instanceof ApiError
-          ? submissionError.message
-          : "Failed to submit bug report.",
-      );
+      notify({
+        title: "Bug Report Failed",
+        message:
+          submissionError instanceof ApiError
+            ? submissionError.message
+            : "Failed to submit bug report.",
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -201,19 +204,6 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
               className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
             />
           </label>
-
-          {error ? (
-            <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-              {error}
-            </div>
-          ) : null}
-
-          {successMessage ? (
-            <div className="rounded-xl border border-lime/40 bg-lime/10 px-3 py-2 text-sm text-lime">
-              {successMessage}
-            </div>
-          ) : null}
-
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
