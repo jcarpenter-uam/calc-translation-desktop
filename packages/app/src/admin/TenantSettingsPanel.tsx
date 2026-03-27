@@ -1,29 +1,15 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
 import { ConfirmDialog } from "../general/ConfirmDialog";
-import { ApiError } from "../hooks/api";
 import {
-  useAllTenantSettings,
-  useCreateTenant,
-  useDeleteTenant,
-  useTenantSettings,
-  useUpdateTenantSettings,
-  type TenantDomain,
   type TenantSettings,
   type UpdateTenantSettingsPayload,
 } from "../hooks/tenants";
-import { useNotifications } from "../notifications/NotificationContext";
-
-type ProviderType = "google" | "entra";
-
-type ProviderDraft = {
-  enabled: boolean;
-  clientId: string;
-  clientSecret: string;
-  tenantHint: string;
-  hasSecret: boolean;
-  domains: string[];
-};
+import {
+  PROVIDERS,
+  type ProviderType,
+  useTenantEditorCard,
+  useTenantSettingsPanel,
+} from "../hooks/useTenantSettingsPanel";
 
 type TenantSettingsPanelProps = {
   selectedTenantId: string | null;
@@ -43,69 +29,9 @@ type TenantEditorCardProps = {
   defaultCollapsed?: boolean;
 };
 
-const PROVIDERS: ProviderType[] = ["google", "entra"];
-
-function expandDomains(providerDrafts: Record<ProviderType, ProviderDraft>): TenantDomain[] {
-  return PROVIDERS.flatMap((providerType) =>
-    providerDrafts[providerType].domains
-      .map((domain) => domain.trim().toLowerCase())
-      .filter((domain) => domain)
-      .map((domain) => ({
-        domain,
-        providerType,
-      })),
-  );
-}
-
-function createEmptyProviderDrafts(): Record<ProviderType, ProviderDraft> {
-  return {
-    google: {
-      enabled: false,
-      clientId: "",
-      clientSecret: "",
-      tenantHint: "",
-      hasSecret: false,
-      domains: [""],
-    },
-    entra: {
-      enabled: false,
-      clientId: "",
-      clientSecret: "",
-      tenantHint: "",
-      hasSecret: false,
-      domains: [""],
-    },
-  };
-}
-
-function buildProviderDrafts(settings: TenantSettings) {
-  const nextDrafts = createEmptyProviderDrafts();
-  for (const config of settings.authConfigs) {
-    const providerType = config.providerType as ProviderType;
-    nextDrafts[providerType] = {
-      enabled: true,
-      clientId: config.clientId,
-      clientSecret: "",
-      tenantHint: config.tenantHint || "",
-      hasSecret: config.hasSecret,
-      domains: [],
-    };
-  }
-  for (const domainEntry of settings.domains) {
-    const providerType = domainEntry.providerType as ProviderType;
-    if (!nextDrafts[providerType]) {
-      continue;
-    }
-    nextDrafts[providerType].domains.push(domainEntry.domain);
-  }
-  for (const providerType of PROVIDERS) {
-    if (nextDrafts[providerType].domains.length === 0) {
-      nextDrafts[providerType].domains = [""];
-    }
-  }
-  return nextDrafts;
-}
-
+/**
+ * Editable tenant settings card used for both single-tenant and all-tenant admin views.
+ */
 function TenantEditorCard({
   settings,
   allowDelete,
@@ -114,79 +40,29 @@ function TenantEditorCard({
   collapsible = false,
   defaultCollapsed = false,
 }: TenantEditorCardProps) {
-  const { notify } = useNotifications();
-  const [organizationName, setOrganizationName] = useState(
-    settings.tenant.name || "",
-  );
-  const [providerDrafts, setProviderDrafts] = useState<
-    Record<ProviderType, ProviderDraft>
-  >(buildProviderDrafts(settings));
-  const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [confirmMode, setConfirmMode] = useState<"save" | "delete" | null>(
-    null,
-  );
-  const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
-
-  useEffect(() => {
-    setOrganizationName(settings.tenant.name || "");
-    setProviderDrafts(buildProviderDrafts(settings));
-  }, [settings]);
-
-  const setProviderDraft = (
-    providerType: ProviderType,
-    nextValue: Partial<ProviderDraft>,
-  ) => {
-    setProviderDrafts((currentValue) => ({
-      ...currentValue,
-      [providerType]: {
-        ...currentValue[providerType],
-        ...nextValue,
-      },
-    }));
-  };
-
-  const buildPayload = (): UpdateTenantSettingsPayload => ({
-    organizationName: organizationName.trim() || null,
-    domains: expandDomains(providerDrafts),
-    authConfigs: PROVIDERS.filter(
-      (providerType) => providerDrafts[providerType].enabled,
-    ).map((providerType) => ({
-      providerType,
-      clientId: providerDrafts[providerType].clientId.trim(),
-      clientSecret: providerDrafts[providerType].clientSecret.trim() || null,
-      tenantHint:
-        providerType === "entra"
-          ? providerDrafts[providerType].tenantHint.trim() || null
-          : null,
-    })),
+  const {
+    organizationName,
+    setOrganizationName,
+    providerDrafts,
+    setProviderDraft,
+    error,
+    isSaving,
+    isDeleting,
+    confirmMode,
+    setConfirmMode,
+    isExpanded,
+    setIsExpanded,
+    enabledProviderCount,
+    configuredDomainCount,
+    confirmSave,
+    confirmDelete,
+    submitConfirm,
+  } = useTenantEditorCard({
+    settings,
+    onSave,
+    onDelete,
+    defaultCollapsed,
   });
-
-  const validate = () => {
-    const payload = buildPayload();
-    if (payload.domains.length === 0) {
-      setError("Add at least one domain.");
-      return false;
-    }
-    if (payload.authConfigs.length === 0) {
-      setError("Enable and configure at least one auth provider.");
-      return false;
-    }
-    for (const config of payload.authConfigs) {
-      if (!config.clientId) {
-        setError(`Client ID is required for ${config.providerType}.`);
-        return false;
-      }
-    }
-    setError(null);
-    return true;
-  };
-
-  const enabledProviderCount = PROVIDERS.filter(
-    (providerType) => providerDrafts[providerType].enabled,
-  ).length;
-  const configuredDomainCount = expandDomains(providerDrafts).length;
 
   return (
     <div className="space-y-4 rounded-2xl border border-line/70 bg-panel/40 p-4">
@@ -408,16 +284,12 @@ function TenantEditorCard({
                 Delete Tenant
               </button>
             ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                if (validate()) {
-                  setConfirmMode("save");
-                }
-              }}
-              className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
-            >
-              Save Changes
+             <button
+               type="button"
+               onClick={confirmSave}
+               className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
+             >
+               Save Changes
             </button>
           </div>
 
@@ -439,70 +311,7 @@ function TenantEditorCard({
             tone={confirmMode === "delete" ? "danger" : "default"}
             isBusy={isSaving || isDeleting}
             onConfirm={() => {
-              if (confirmMode === "delete" && onDelete) {
-                void (async () => {
-                  setIsDeleting(true);
-                  setError(null);
-                  try {
-                    await onDelete(settings.tenant.id);
-                    notify({
-                      title: "Tenant Deleted",
-                      message: "The tenant was removed successfully.",
-                      variant: "success",
-                    });
-                    setConfirmMode(null);
-                  } catch (err) {
-                    notify({
-                      title: "Delete Failed",
-                      message:
-                        err instanceof ApiError
-                          ? err.message
-                          : "Failed to delete tenant.",
-                      variant: "error",
-                    });
-                  } finally {
-                    setIsDeleting(false);
-                  }
-                })();
-                return;
-              }
-
-              void (async () => {
-                setIsSaving(true);
-                setError(null);
-                try {
-                  await onSave(settings.tenant.id, buildPayload());
-                  setProviderDrafts((currentValue) => ({
-                    google: {
-                      ...currentValue.google,
-                      clientSecret: "",
-                      hasSecret: true,
-                    },
-                    entra: {
-                      ...currentValue.entra,
-                      clientSecret: "",
-                      hasSecret: true,
-                    },
-                  }));
-                  notify({
-                    title: "Tenant Updated",
-                    message: "Tenant settings were saved.",
-                    variant: "success",
-                  });
-                  setConfirmMode(null);
-                } catch (err) {
-                  notify({
-                    title: "Save Failed",
-                    message:
-                      err instanceof ApiError
-                        ? err.message
-                        : "Failed to save tenant settings.",
-                    variant: "error",
-                  });
-                } finally {
-                  setIsSaving(false);
-                }
-              })();
+              void submitConfirm();
             }}
             onClose={() => {
               if (!isSaving && !isDeleting) {
@@ -521,84 +330,39 @@ export function TenantSettingsPanel({
   isAllTenantsView,
   tenantOptions,
 }: TenantSettingsPanelProps) {
-  const { user, tenantId } = useAuth();
-  const { notify } = useNotifications();
-  const isSuperAdmin = user?.role === "super_admin";
-  const isTenantAdmin = user?.role === "tenant_admin";
-  const isAdmin = isSuperAdmin || isTenantAdmin;
-  const [isCreating, setIsCreating] = useState(false);
-  const [newTenantId, setNewTenantId] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
-  const [providerDrafts, setProviderDrafts] = useState<
-    Record<ProviderType, ProviderDraft>
-  >(createEmptyProviderDrafts);
-  const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [confirmCreateOpen, setConfirmCreateOpen] = useState(false);
-
-  const effectiveTenantId = selectedTenantId || tenantId;
-  const selectedTenantLabel =
-    tenantOptions.find((entry) => entry.id === effectiveTenantId)?.name ||
-    effectiveTenantId ||
-    "current tenant";
-  const singleSettingsQuery = useTenantSettings(
-    effectiveTenantId || null,
-    isAdmin && !isCreating && !isAllTenantsView && Boolean(effectiveTenantId),
-  );
-  const allSettingsQuery = useAllTenantSettings(isAdmin && isAllTenantsView);
-  const updateTenantSettings = useUpdateTenantSettings();
-  const createTenant = useCreateTenant();
-  const deleteTenant = useDeleteTenant();
+  const {
+    isAdmin,
+    isSuperAdmin,
+    isAllTenantsView: isAllTenantsMode,
+    isCreating,
+    toggleCreate,
+    newTenantId,
+    setNewTenantId,
+    organizationName,
+    setOrganizationName,
+    providerDrafts,
+    setProviderDrafts,
+    error,
+    setError,
+    isSaving,
+    confirmCreateOpen,
+    setConfirmCreateOpen,
+    selectedTenantLabel,
+    singleSettingsQuery,
+    allSettingsQuery,
+    updateTenantSettings,
+    deleteTenant,
+    confirmCreate,
+    submitCreate,
+  } = useTenantSettingsPanel({
+    selectedTenantId,
+    isAllTenantsView,
+    tenantOptions,
+  });
 
   if (!isAdmin) {
     return null;
   }
-
-  const buildCreatePayload = (): UpdateTenantSettingsPayload => ({
-    organizationName: organizationName.trim() || null,
-    domains: expandDomains(providerDrafts),
-    authConfigs: PROVIDERS.filter(
-      (providerType) => providerDrafts[providerType].enabled,
-    ).map((providerType) => ({
-      providerType,
-      clientId: providerDrafts[providerType].clientId.trim(),
-      clientSecret: providerDrafts[providerType].clientSecret.trim() || null,
-      tenantHint:
-        providerType === "entra"
-          ? providerDrafts[providerType].tenantHint.trim() || null
-          : null,
-    })),
-  });
-
-  const validateCreate = () => {
-    const payload = buildCreatePayload();
-    if (!newTenantId.trim()) {
-      setError("Tenant ID is required.");
-      return false;
-    }
-    if (payload.domains.length === 0) {
-      setError("Add at least one domain.");
-      return false;
-    }
-    if (payload.authConfigs.length === 0) {
-      setError("Enable and configure at least one auth provider.");
-      return false;
-    }
-    for (const config of payload.authConfigs) {
-      if (!config.clientId) {
-        setError(`Client ID is required for ${config.providerType}.`);
-        return false;
-      }
-      if (!config.clientSecret) {
-        setError(
-          `Client secret is required for ${config.providerType} when creating a tenant.`,
-        );
-        return false;
-      }
-    }
-    setError(null);
-    return true;
-  };
 
   return (
     <div className="space-y-4 rounded-xl border border-line bg-canvas p-4">
@@ -611,7 +375,7 @@ export function TenantSettingsPanel({
             Domains and sign-in setup
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
-            {isAllTenantsView
+            {isAllTenantsMode
               ? "View and manage every tenant directly from this page-wide overview."
               : isSuperAdmin
                 ? `Configure routing and provider credentials for ${selectedTenantLabel}.`
@@ -619,13 +383,10 @@ export function TenantSettingsPanel({
           </p>
         </div>
 
-        {isSuperAdmin && isAllTenantsView ? (
+        {isSuperAdmin && isAllTenantsMode ? (
           <button
             type="button"
-            onClick={() => {
-              setIsCreating((currentValue) => !currentValue);
-              setError(null);
-            }}
+            onClick={toggleCreate}
             className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
             {isCreating ? "Close Create" : "Add Tenant"}
@@ -836,11 +597,7 @@ export function TenantSettingsPanel({
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => {
-                if (validateCreate()) {
-                  setConfirmCreateOpen(true);
-                }
-              }}
+              onClick={confirmCreate}
               disabled={isSaving}
               className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -850,7 +607,7 @@ export function TenantSettingsPanel({
         </div>
       ) : null}
 
-      {isAllTenantsView ? (
+      {isAllTenantsMode ? (
         allSettingsQuery.isLoading ? (
           <p className="text-sm text-ink-muted">Loading tenant settings...</p>
         ) : (
@@ -889,37 +646,7 @@ export function TenantSettingsPanel({
         tone="default"
         isBusy={isSaving}
         onConfirm={() => {
-          void (async () => {
-            setIsSaving(true);
-            setError(null);
-            try {
-              await createTenant({
-                tenantId: newTenantId.trim(),
-                ...buildCreatePayload(),
-              });
-              setNewTenantId("");
-              setOrganizationName("");
-              setProviderDrafts(createEmptyProviderDrafts());
-              setIsCreating(false);
-              notify({
-                title: "Tenant Created",
-                message: "The new tenant is ready to use.",
-                variant: "success",
-              });
-              setConfirmCreateOpen(false);
-            } catch (err) {
-              notify({
-                title: "Create Failed",
-                message:
-                  err instanceof ApiError
-                    ? err.message
-                    : "Failed to create tenant.",
-                variant: "error",
-              });
-            } finally {
-              setIsSaving(false);
-            }
-          })();
+          void submitCreate();
         }}
         onClose={() => {
           if (!isSaving) {

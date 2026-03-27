@@ -3,8 +3,8 @@ import { BugReportsPanel } from "../admin/BugReportsPanel";
 import { ServerLogsModal } from "../admin/ServerLogsModal";
 import { TenantSettingsPanel } from "../admin/TenantSettingsPanel";
 import { UserSettingsPanel } from "../admin/UserSettingsPanel";
-import { useAuth } from "../auth/AuthContext";
-import { useTenants } from "../hooks/users";
+import { useAuth } from "../contexts/AuthContext";
+import { useTenants } from "../hooks/tenants";
 
 export function AdminPage() {
   const { user, tenantName, tenantId } = useAuth();

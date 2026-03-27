@@ -1,5 +1,8 @@
-import { useAppRoute } from "../routing/RouteContext";
+import { useAppRoute } from "../contexts/RouteContext";
 
+/**
+ * Quick entry card that sends hosts to the full meeting configuration flow.
+ */
 export function HostMeeting() {
   const { navigateTo } = useAppRoute();
 

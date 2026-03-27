@@ -12,6 +12,9 @@ type JoinMeetingProps = {
   error?: string | null;
 };
 
+/**
+ * Join form that accepts either a pasted link or manually entered meeting details.
+ */
 export function JoinMeeting({
   onSubmit,
   isSubmitting = false,
@@ -85,6 +88,7 @@ export function JoinMeeting({
 
       {showManualFields === true ? (
         <div className="grid gap-4 rounded-2xl border border-line/70 bg-canvas p-4 sm:grid-cols-2 sm:p-5">
+          {/* Manual fields stay optional because most integrations can be resolved from a join URL. */}
           <label htmlFor="meetingId" className="block space-y-2">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
               Meeting ID

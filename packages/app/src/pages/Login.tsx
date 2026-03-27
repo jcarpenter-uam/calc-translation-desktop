@@ -7,8 +7,11 @@ import {
   startLogin,
   type LoginChoiceOption,
 } from "../hooks/auth";
-import { useNotifications } from "../notifications/NotificationContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
+/**
+ * Login entry point that supports both direct SSO redirects and provider selection flows.
+ */
 export function Login() {
   const { notify } = useNotifications();
   const [email, setEmail] = useState("");
@@ -70,6 +73,7 @@ export function Login() {
 
     const handleKeyDown = (event: { key?: string }) => {
       if (event.key === "Escape") {
+        // Treat the chooser like a modal so keyboard users can dismiss it quickly.
         setProviderOptions([]);
         setSubmittedEmail("");
       }
@@ -86,6 +90,7 @@ export function Login() {
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/55 px-4 backdrop-blur-sm"
       onClick={() => {
+        // Clicking the backdrop resets the chooser back to the email entry state.
         setProviderOptions([]);
         setSubmittedEmail("");
       }}

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNotifications } from "../contexts/NotificationContext";
 import {
   useBugReports,
   useUpdateBugReportStatus,
   type BugReport,
 } from "../hooks/bugReports";
 import { ApiError } from "../hooks/api";
-import { useNotifications } from "../notifications/NotificationContext";
 
 type BugReportFilter = "all" | "open" | "resolved";
 

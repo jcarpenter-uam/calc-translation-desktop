@@ -1,4 +1,4 @@
-import type { CalendarEvent } from "../hooks/calendar";
+import type { CalendarEvent } from "../hooks/user";
 
 const platformLabel: Record<CalendarEvent["platform"], string> = {
   teams: "Teams",

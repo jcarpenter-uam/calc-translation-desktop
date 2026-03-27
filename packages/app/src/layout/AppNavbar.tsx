@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
-import { useAppRoute } from "../routing/RouteContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useAppRoute } from "../contexts/RouteContext";
 
 type NavItem = {
   label: string;

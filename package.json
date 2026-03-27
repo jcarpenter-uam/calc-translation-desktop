@@ -1,8 +1,10 @@
 {
   "name": "calc-translation",
+  "version": "3.0.0",
   "type": "module",
   "private": true,
   "scripts": {
+    "version:sync": "node ./scripts/sync-frontend-versions.cjs",
     "dev": "concurrently -k \"bun run dev:web\" \"bun run dev:desktop\"",
     "dev:web": "bun run --cwd apps/web dev",
     "dev:desktop": "concurrently -k \"bun run --cwd apps/desktop/renderer dev\" \"wait-on tcp:5174 && bun run --cwd apps/desktop dev\""

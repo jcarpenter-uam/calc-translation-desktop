@@ -1,4 +1,4 @@
-import { useTheme, type ThemeMode } from "../theme/ThemeContext";
+import { useTheme, type ThemeMode } from "../contexts/ThemeContext";
 import { SettingHint } from "./SettingHint";
 
 const themeOptions: Array<{ value: ThemeMode; label: string }> = [

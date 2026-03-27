@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useAuth } from "./AuthContext";
 import { Login } from "../pages/Login";
+import { useAuth } from "../contexts/AuthContext";
 
 type AuthGateProps = {
   children: ReactNode;

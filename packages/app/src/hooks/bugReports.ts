@@ -1,7 +1,7 @@
 import useSWR, { useSWRConfig } from "swr";
 import { apiRequest, ApiError, buildApiUrl } from "./api";
 import type { ClientLogEntry } from "../bugReports/clientLogger";
-import type { ClientType } from "../app/AppInfoContext";
+import type { ClientType } from "../contexts/AppInfoContext";
 
 export type BugReport = {
   id: string;

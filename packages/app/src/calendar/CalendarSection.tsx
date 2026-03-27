@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
+import { useNotifications } from "../contexts/NotificationContext";
 import { ApiError } from "../hooks/api";
-import { useCalendarEvents, useSyncCalendar } from "../hooks/calendar";
-import { useNotifications } from "../notifications/NotificationContext";
+import { useCalendarEvents, useSyncCalendar } from "../hooks/user";
 import { CalendarEventsList } from "./CalendarEventsList";
 
 /**
@@ -35,6 +35,7 @@ export function CalendarSection() {
         variant: "success",
       });
       if (result.reauthProviders.length > 0) {
+        // Surface partial-success reauth needs separately so the main sync result is still visible.
         notify({
           title: "Re-auth Required",
           message: `Re-auth required for: ${result.reauthProviders.join(", ")}. Sign in again with those providers.`,

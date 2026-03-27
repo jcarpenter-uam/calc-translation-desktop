@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaCog } from "react-icons/fa";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { ReportBugModal } from "../bugReports/ReportBugModal";
 import {
   LANGUAGE_STORAGE_KEY,
@@ -8,6 +8,9 @@ import {
 } from "../settings/LanguageSelect";
 import { SettingsModal } from "../settings/SettingsModal";
 
+/**
+ * Top-level settings menu for account actions, language preference, and bug reporting.
+ */
 export function UserMenu() {
   const { status, user, logoutAndReset, updateLanguagePreference } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +29,7 @@ export function UserMenu() {
     const browser = globalThis as any;
 
     const onPointerDown = (event: any) => {
+      // Pointer-down closes more reliably than click when the menu spawns nested overlays.
       if (!menuRef.current?.contains?.(event?.target)) {
         setIsOpen(false);
       }
@@ -65,6 +69,7 @@ export function UserMenu() {
     try {
       await updateLanguagePreference(nextLanguage);
     } catch {
+      // Restore the server value if the optimistic local change fails.
       if (user?.languageCode) {
         setLanguage(user.languageCode);
       }

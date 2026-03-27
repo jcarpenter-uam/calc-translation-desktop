@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAppInfo } from "../app/AppInfoContext";
-import { useAuth } from "../auth/AuthContext";
+import { useAppInfo } from "../contexts/AppInfoContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
+import { useAppRoute } from "../contexts/RouteContext";
 import { collectClientMetadata } from "./clientMetadata";
 import {
   buildClientLogFileContent,
@@ -9,8 +11,6 @@ import {
 } from "./clientLogger";
 import { submitBugReport } from "../hooks/bugReports";
 import { ApiError } from "../hooks/api";
-import { useNotifications } from "../notifications/NotificationContext";
-import { useAppRoute } from "../routing/RouteContext";
 
 type ReportBugModalProps = {
   isOpen: boolean;

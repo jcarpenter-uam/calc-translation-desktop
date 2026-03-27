@@ -1,110 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../auth/AuthContext";
-import { ApiError } from "../hooks/api";
-import { useJoinMeeting } from "../hooks/meeting";
+import { useHomeMeetingJoin } from "../hooks/useHomeMeetingJoin";
 import { JoinMeeting } from "../meetings/JoinMeeting";
 import { HostMeeting } from "../meetings/HostMeeting";
-import { useAppRoute } from "../routing/RouteContext";
 
-function normalizeReadableId(value: string) {
-  return value.replace(/[\s-]/g, "").trim();
-}
-
-function resolveReadableIdFromJoinInput(joinUrl: string, meetingId: string) {
-  const manualId = normalizeReadableId(meetingId);
-  if (manualId) {
-    return manualId;
-  }
-
-  const trimmedJoinUrl = joinUrl.trim();
-  if (!trimmedJoinUrl) {
-    return null;
-  }
-
-  try {
-    const browser = globalThis as typeof globalThis & {
-      location?: { origin?: string };
-    };
-    const parsedUrl = new URL(trimmedJoinUrl, browser.location?.origin || "http://localhost");
-
-    return normalizeReadableId(
-      parsedUrl.searchParams.get("join") ||
-        parsedUrl.searchParams.get("readableId") ||
-        parsedUrl.pathname.split("/").filter(Boolean).at(-1) ||
-        "",
-    );
-  } catch {
-    return normalizeReadableId(trimmedJoinUrl);
-  }
-}
-
+/**
+ * Dashboard entry point for joining an existing meeting or configuring a new one.
+ */
 export function Home() {
-  const { user } = useAuth();
-  const { navigateToMeeting, route } = useAppRoute();
-  const joinMeeting = useJoinMeeting();
-  const [joinError, setJoinError] = useState<string | null>(null);
-  const [isJoining, setIsJoining] = useState(false);
-  const autoJoinAttemptRef = useRef<string | null>(null);
-
-  const browser = globalThis as typeof globalThis & {
-    location?: { search?: string };
-  };
-
-  const joinParam = useMemo(() => {
-    const params = new URLSearchParams(browser.location?.search || "");
-    return normalizeReadableId(params.get("join") || "");
-  }, [browser.location?.search]);
-
-  const handleJoin = async ({
-    meetingId,
-    joinUrl,
-  }: {
-    meetingId: string;
-    password: string;
-    joinUrl: string;
-  }) => {
-    const readableId = resolveReadableIdFromJoinInput(joinUrl, meetingId);
-    if (!readableId) {
-      setJoinError("Paste a valid join link or enter a meeting ID.");
-      return;
-    }
-
-    setIsJoining(true);
-    setJoinError(null);
-
-    try {
-      const joinedMeeting = await joinMeeting(readableId);
-      navigateToMeeting({
-        meetingId: joinedMeeting.meetingId,
-        readableId: joinedMeeting.readableId,
-        ticket: joinedMeeting.token,
-        isHost: joinedMeeting.isHost,
-      });
-    } catch (error) {
-      if (error instanceof ApiError) {
-        setJoinError(error.message);
-      } else if (error instanceof Error) {
-        setJoinError(error.message);
-      } else {
-        setJoinError("Unable to join that meeting right now.");
-      }
-    } finally {
-      setIsJoining(false);
-    }
-  };
-
-  useEffect(() => {
-    if (route !== "home" || !joinParam || autoJoinAttemptRef.current === joinParam) {
-      return;
-    }
-
-    autoJoinAttemptRef.current = joinParam;
-    void handleJoin({
-      meetingId: joinParam,
-      password: "",
-      joinUrl: "",
-    });
-  }, [joinParam, route]);
+  const { user, joinError, isJoining, handleJoin } = useHomeMeetingJoin();
 
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">

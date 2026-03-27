@@ -1,5 +1,5 @@
 import { CalendarSection } from "../calendar/CalendarSection";
-import { useAppRoute } from "../routing/RouteContext";
+import { useAppRoute } from "../contexts/RouteContext";
 
 export function CalendarPage() {
   const { navigateTo } = useAppRoute();

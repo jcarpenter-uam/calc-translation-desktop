@@ -1,23 +1,26 @@
 import { useEffect, useMemo } from "react";
-import { AppInfoProvider } from "./app/AppInfoContext";
+import { AppInfoProvider } from "./contexts/AppInfoContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { RouteProvider, useAppRoute } from "./contexts/RouteContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthGate } from "./auth/AuthGate";
-import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { initializeClientLogger, writeClientLog } from "./bugReports/clientLogger";
 import { AppLayout } from "./layout/AppLayout";
-import { NotificationProvider } from "./notifications/NotificationContext";
 import { Home } from "./pages/Home";
 import { AdminPage } from "./pages/Admin";
 import { CalendarPage } from "./pages/Calendar";
 import { ConfigureMeetingPage } from "./pages/ConfigureMeeting";
 import { MeetingLivePage } from "./pages/MeetingLive";
-import { RouteProvider, useAppRoute } from "./routing/RouteContext";
-import { ThemeProvider } from "./theme/ThemeContext";
 import { SWRConfig } from "swr";
 
 type AppProps = {
   platform: "web" | "desktop";
 };
 
+/**
+ * Chooses the active page after auth and route state have been resolved.
+ */
 function AppContent({ platform: _platform }: AppProps) {
   const { user } = useAuth();
   const { route, navigateTo } = useAppRoute();
@@ -64,6 +67,9 @@ function AppContent({ platform: _platform }: AppProps) {
   return <Home />;
 }
 
+/**
+ * Root application shell shared by the web and desktop renderers.
+ */
 export function App({ platform }: AppProps) {
   initializeClientLogger();
 
@@ -74,6 +80,8 @@ export function App({ platform }: AppProps) {
   return (
     <SWRConfig
       value={{
+        // Session-driven screens should refresh on reconnect, but noisy background retries make the
+        // shell feel unstable when the API is unavailable.
         revalidateOnReconnect: true,
         shouldRetryOnError: false,
       }}

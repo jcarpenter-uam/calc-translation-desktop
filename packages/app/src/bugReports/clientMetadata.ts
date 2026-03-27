@@ -1,4 +1,5 @@
-import type { ClientType } from "../app/AppInfoContext";
+import type { ClientType } from "../contexts/AppInfoContext";
+import { getFrontendVersion } from "../app/version";
 
 type ClientMetadata = {
   clientType: ClientType;
@@ -10,22 +11,7 @@ type ClientMetadata = {
 };
 
 function resolveAppVersion() {
-  const browser = globalThis as typeof globalThis & {
-    process?: {
-      env?: {
-        npm_package_version?: string;
-      };
-    };
-    desktop?: {
-      appVersion?: string;
-    };
-  };
-
-  return (
-    browser.desktop?.appVersion ||
-    browser.process?.env?.npm_package_version ||
-    "unknown"
-  );
+  return getFrontendVersion();
 }
 
 function detectOsFromValue(value: string | null | undefined) {
