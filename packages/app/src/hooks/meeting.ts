@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { ApiError, apiRequest, buildApiUrl } from "./api";
+import { ApiError, apiRequest, apiRequestBlob, buildApiUrl } from "./api";
 
 export type MeetingInvitee = {
   id: string;
@@ -188,6 +188,17 @@ export function useEndMeeting() {
       {
         method: "POST",
       },
+    );
+  };
+}
+
+/**
+ * Downloads an archived transcript file for a meeting/language pair.
+ */
+export function useDownloadMeetingTranscript() {
+  return async (meetingId: string, language: string) => {
+    return await apiRequestBlob(
+      `/meeting/${encodeURIComponent(meetingId)}/transcript/${encodeURIComponent(language)}`,
     );
   };
 }

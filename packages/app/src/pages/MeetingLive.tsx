@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ApiError } from "../hooks/api";
 import {
+  useDownloadMeetingTranscript,
   useEndMeeting,
   useMeetingDetails,
   useJoinMeeting,
@@ -52,6 +54,8 @@ export function MeetingLivePage() {
   const [areHostControlsVisible, setAreHostControlsVisible] = useState(true);
   const [isPreflightMonitoring, setIsPreflightMonitoring] = useState(false);
   const [isEndingMeeting, setIsEndingMeeting] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
+  const [downloadingLanguage, setDownloadingLanguage] = useState<string | null>(null);
   const [hasEndedMeetingLocally, setHasEndedMeetingLocally] = useState(false);
   const copyJoinResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -85,6 +89,7 @@ export function MeetingLivePage() {
     Boolean(meeting),
   );
   const endMeeting = useEndMeeting();
+  const downloadMeetingTranscript = useDownloadMeetingTranscript();
   const joinMeeting = useJoinMeeting();
   const { data: participantsData, isLoading: isParticipantsLoading } =
     useMeetingParticipants(meeting?.meetingId || null, Boolean(meeting));
@@ -223,6 +228,12 @@ export function MeetingLivePage() {
       origin?: string;
       protocol?: string;
       host?: string;
+    };
+    document?: {
+      body?: {
+        appendChild?: (node: any) => void;
+      };
+      createElement?: (tagName: "a") => any;
     };
     AudioContext?: new (options?: { sampleRate?: number }) => any;
     webkitAudioContext?: new (options?: { sampleRate?: number }) => any;
@@ -512,10 +523,19 @@ export function MeetingLivePage() {
 
           if (parsed?.type === "transcription") {
             const language = String(parsed.language || "unknown");
-            const text = String(parsed.text || "").trim();
+            const translationText =
+              typeof parsed.translationText === "string"
+                ? parsed.translationText.trim()
+                : "";
+            const transcriptionText =
+              typeof parsed.transcriptionText === "string"
+                ? parsed.transcriptionText.trim()
+                : "";
+            const text = String(translationText || parsed.text || transcriptionText || "").trim();
             const isFinal = Boolean(parsed.isFinal);
+            const viewerLanguage = user?.languageCode || null;
 
-            if (!text) {
+            if (!text || !viewerLanguage || language !== viewerLanguage) {
               return;
             }
 
@@ -864,6 +884,50 @@ export function MeetingLivePage() {
     }
   };
 
+  const handleDownloadTranscript = async (language: string) => {
+    if (!meeting || downloadingLanguage) {
+      return;
+    }
+
+    setDownloadingLanguage(language);
+    setDownloadStatus(null);
+
+    try {
+      const { blob, response } = await downloadMeetingTranscript(
+        meeting.meetingId,
+        language,
+      );
+      const objectUrl = URL.createObjectURL(blob);
+      const disposition = response.headers.get("content-disposition") || "";
+      const nameMatch = disposition.match(/filename="([^"]+)"/i);
+      const fallbackName = `${meeting.readableId}-${language}.vtt`;
+      const downloadName = nameMatch?.[1] || fallbackName;
+      const anchor = browser.document?.createElement?.("a");
+
+      if (!anchor) {
+        throw new Error("Download is not supported in this browser.");
+      }
+
+      anchor.href = objectUrl;
+      anchor.download = downloadName;
+      browser.document?.body?.appendChild?.(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      setDownloadStatus(`Downloaded ${getLanguageLabel(language)} transcript.`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setDownloadStatus(error.message);
+      } else {
+        setDownloadStatus(
+          error instanceof Error ? error.message : "Failed to download transcript.",
+        );
+      }
+    } finally {
+      setDownloadingLanguage(null);
+    }
+  };
+
   useEffect(() => {
     if (!meeting) {
       return;
@@ -965,6 +1029,17 @@ export function MeetingLivePage() {
 
     return "Live";
   }, [meetingDetailsData?.meeting.languages, meetingDetailsData?.meeting.method, user?.languageCode]);
+
+  const downloadableTranscriptLanguages = useMemo(() => {
+    const meetingLanguages = meetingDetailsData?.meeting.languages || [];
+    const dedupedLanguages = Array.from(new Set(meetingLanguages.filter(Boolean)));
+
+    if (dedupedLanguages.length > 0) {
+      return dedupedLanguages;
+    }
+
+    return user?.languageCode ? [user.languageCode] : [];
+  }, [meetingDetailsData?.meeting.languages, user?.languageCode]);
 
   if (!meeting) {
     return (
@@ -1069,6 +1144,26 @@ export function MeetingLivePage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-ink-muted">
+                {downloadStatus ? (
+                  <span className="rounded-full border border-line/70 bg-canvas px-3 py-1.5 text-[11px]">
+                    {downloadStatus}
+                  </span>
+                ) : null}
+                {downloadableTranscriptLanguages.map((language) => (
+                  <button
+                    key={language}
+                    type="button"
+                    onClick={() => {
+                      void handleDownloadTranscript(language);
+                    }}
+                    disabled={Boolean(downloadingLanguage)}
+                    className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {downloadingLanguage === language
+                      ? `Downloading ${getLanguageLabel(language)}...`
+                      : `Download ${getLanguageLabel(language)}`}
+                  </button>
+                ))}
                 <button
                   type="button"
                   onClick={() => setIsFollowEnabled((value) => !value)}

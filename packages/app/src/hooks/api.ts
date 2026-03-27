@@ -73,6 +73,47 @@ export async function apiRequest<T>(
   return parsedBody as T;
 }
 
+/**
+ * Shared binary request helper for API hooks.
+ */
+export async function apiRequestBlob(
+  path: string,
+  init?: RequestInit,
+): Promise<{ blob: Blob; response: Response }> {
+  const method = init?.method || "GET";
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl(path), {
+      credentials: "include",
+      ...init,
+      headers: {
+        ...(init?.headers || {}),
+      },
+    });
+  } catch (error) {
+    writeClientLog("error", "API network failure", method, path, error);
+    throw error;
+  }
+
+  if (!response.ok) {
+    const rawBody = await response.text();
+    const parsedBody = rawBody.length > 0 ? safeJsonParse(rawBody) : null;
+    const errorPayload = parsedBody as ApiErrorShape | null;
+    const message =
+      errorPayload?.error ||
+      errorPayload?.message ||
+      `Request failed: ${response.status}`;
+    writeClientLog("warn", "API request failed", method, path, response.status, message);
+    throw new ApiError(response.status, message, errorPayload);
+  }
+
+  return {
+    blob: await response.blob(),
+    response,
+  };
+}
+
 function safeJsonParse(value: string) {
   try {
     return JSON.parse(value) as unknown;
