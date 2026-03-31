@@ -12,14 +12,12 @@ import {
   type MeetingParticipant,
 } from "./meeting";
 import { getLanguageLabel } from "../languages/LanguageList";
-
-type TranscriptFinalItem = {
-  id: string;
-  text: string;
-  language: string;
-  speaker: string | null;
-  isFinal: boolean;
-};
+import {
+  hasTranslatedTranscriptContent,
+  renderTranscriptItem,
+  type TranscriptDisplayMode,
+  type TranscriptItem,
+} from "../meetings/transcriptDisplay";
 
 type AudioInputDevice = {
   id: string;
@@ -58,6 +56,36 @@ type BrowserLike = typeof globalThis & {
   webkitAudioContext?: new (options?: { sampleRate?: number }) => any;
 };
 
+function sanitizeDownloadFilenamePart(value: string | null | undefined, fallback: string) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const sanitized = value
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return sanitized || fallback;
+}
+
+function resolveTranscriptDownloadDate(value: string | null | undefined) {
+  if (!value) {
+    const fallback = new Date();
+    return `${String(fallback.getUTCMonth() + 1).padStart(2, "0")}-${String(fallback.getUTCDate()).padStart(2, "0")}`;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    const fallback = new Date();
+    return `${String(fallback.getUTCMonth() + 1).padStart(2, "0")}-${String(fallback.getUTCDate()).padStart(2, "0")}`;
+  }
+
+  return `${String(parsed.getUTCMonth() + 1).padStart(2, "0")}-${String(parsed.getUTCDate()).padStart(2, "0")}`;
+}
+
 /**
  * Encapsulates live-room socket, transcript, presence, audio, and transcript-download state.
  */
@@ -92,7 +120,9 @@ export function useMeetingLiveRoom() {
   const [selectedTranscriptLanguage, setSelectedTranscriptLanguage] = useState("");
   const [hasEndedMeetingLocally, setHasEndedMeetingLocally] = useState(false);
   const [, setMeetingStatusEvents] = useState<string[]>([]);
-  const [transcriptItems, setTranscriptItems] = useState<TranscriptFinalItem[]>([]);
+  const [transcriptItems, setTranscriptItems] = useState<TranscriptItem[]>([]);
+  const [transcriptDisplayMode, setTranscriptDisplayMode] =
+    useState<TranscriptDisplayMode>("translated_only");
   const [isFollowEnabled, setIsFollowEnabled] = useState(true);
   const [participantsById, setParticipantsById] = useState<Record<string, MeetingParticipant>>({});
 
@@ -141,6 +171,8 @@ export function useMeetingLiveRoom() {
     setAreDownloadsVisible(false);
     setAvailableTranscriptLanguages([]);
     setSelectedTranscriptLanguage("");
+    setTranscriptItems([]);
+    setTranscriptDisplayMode("translated_only");
   }, [meeting?.meetingId]);
 
   useEffect(() => {
@@ -473,7 +505,9 @@ export function useMeetingLiveRoom() {
 
   const appendTranscriptItem = (
     language: string,
-    text: string,
+    transcriptionText: string | null,
+    translationText: string | null,
+    sourceLanguage: string | null,
     speaker: string | null,
     isFinal: boolean,
   ) => {
@@ -488,15 +522,19 @@ export function useMeetingLiveRoom() {
         next[existingIndex] = {
           id: existingItem.id,
           language: existingItem.language,
-          text,
+          transcriptionText,
+          translationText,
+          sourceLanguage,
           speaker,
           isFinal,
         };
       } else {
         next.push({
           id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          text,
           language,
+          transcriptionText,
+          translationText,
+          sourceLanguage,
           speaker,
           isFinal,
         });
@@ -560,7 +598,7 @@ export function useMeetingLiveRoom() {
               typeof parsed.transcriptionText === "string"
                 ? parsed.transcriptionText.trim()
                 : "";
-            const text = String(
+            const fallbackText = String(
               translationText || parsed.text || transcriptionText || "",
             ).trim();
             const speaker =
@@ -568,13 +606,28 @@ export function useMeetingLiveRoom() {
                 ? parsed.speaker.trim() || null
                 : null;
             const isFinal = Boolean(parsed.isFinal);
+            const sourceLanguage =
+              typeof parsed.sourceLanguage === "string"
+                ? parsed.sourceLanguage.trim() || null
+                : null;
             const viewerLanguage = user?.languageCode || null;
+            const isTwoWayTranscript = language === "two_way";
 
-            if (!text || !viewerLanguage || language !== viewerLanguage) {
+            if (
+              !fallbackText ||
+              (!isTwoWayTranscript && (!viewerLanguage || language !== viewerLanguage))
+            ) {
               return;
             }
 
-            appendTranscriptItem(language, text, speaker, isFinal);
+            appendTranscriptItem(
+              language,
+              transcriptionText || fallbackText,
+              translationText || null,
+              sourceLanguage,
+              speaker,
+              isFinal,
+            );
             return;
           }
 
@@ -942,7 +995,7 @@ export function useMeetingLiveRoom() {
       const objectUrl = URL.createObjectURL(blob);
       const disposition = response.headers.get("content-disposition") || "";
       const nameMatch = disposition.match(/filename="([^"]+)"/i);
-      const fallbackName = `${meeting.readableId}-${language}.vtt`;
+      const fallbackName = `${sanitizeDownloadFilenamePart(meetingTopic, sanitizeDownloadFilenamePart(meeting.readableId, "meeting"))}_${resolveTranscriptDownloadDate(meetingDetailsData?.meeting.ended_at || meetingDetailsData?.meeting.started_at || meetingDetailsData?.meeting.scheduled_time)}_${sanitizeDownloadFilenamePart(language, "unknown")}.vtt`;
       const downloadName = nameMatch?.[1] || fallbackName;
       const anchor = browser.document?.createElement?.("a");
 
@@ -1063,6 +1116,22 @@ export function useMeetingLiveRoom() {
     return Array.from(new Set(availableTranscriptLanguages.filter(Boolean)));
   }, [availableTranscriptLanguages]);
 
+  const isOneWayViewer = !isHostView && meetingDetailsData?.meeting.method === "one_way";
+
+  const areTranscriptDisplayOptionsVisible = useMemo(() => {
+    if (!isOneWayViewer) {
+      return false;
+    }
+
+    return transcriptItems.some((item) => hasTranslatedTranscriptContent(item));
+  }, [isOneWayViewer, transcriptItems]);
+
+  const renderedTranscriptItems = useMemo(() => {
+    return transcriptItems.map((item) =>
+      renderTranscriptItem(item, transcriptDisplayMode, user?.languageCode || null),
+    );
+  }, [transcriptDisplayMode, transcriptItems, user?.languageCode]);
+
   return {
     meeting,
     navigateTo,
@@ -1081,7 +1150,10 @@ export function useMeetingLiveRoom() {
     isFollowEnabled,
     setIsFollowEnabled,
     transcriptContainerRef,
-    transcriptItems,
+    transcriptItems: renderedTranscriptItems,
+    transcriptDisplayMode,
+    setTranscriptDisplayMode,
+    areTranscriptDisplayOptionsVisible,
     hasMeetingEnded,
     areHostControlsVisible,
     showHostControls,

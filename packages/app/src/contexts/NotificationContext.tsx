@@ -27,7 +27,9 @@ type NotificationContextValue = {
   dismiss: () => void;
 };
 
-const NotificationContext = createContext<NotificationContextValue | null>(null);
+const NotificationContext = createContext<NotificationContextValue | null>(
+  null,
+);
 
 type NotificationProviderProps = {
   children: ReactNode;
@@ -45,21 +47,21 @@ function NotificationBanner({
   onDismiss: () => void;
   isVisible: boolean;
 }) {
-  const toneClasses = {
-    info: "border-sky-300/45 bg-white/85 text-slate-900",
-    success: "border-lime/45 bg-white/88 text-slate-900",
-    warning: "border-amber-300/55 bg-white/88 text-slate-900",
-    error: "border-rose-300/55 bg-white/88 text-slate-900",
-  } satisfies Record<AppNotificationVariant, string>;
+  const panelClassName =
+    "border-line/80 bg-panel/95 text-ink shadow-[0_28px_90px_rgb(var(--color-shadow)/0.22)]";
 
-  const accentClasses = {
-    info: "bg-sky-500",
-    success: "bg-lime",
-    warning: "bg-amber-400",
-    error: "bg-rose-500",
+  const variantLabels = {
+    info: notification.title || "Notice",
+    success: notification.title || "Success",
+    warning: notification.title || "Heads up",
+    error: notification.title || "Something went wrong",
   } satisfies Record<AppNotificationVariant, string>;
 
   const variant = notification.variant || "info";
+  const titleClassName = "text-ink-muted";
+  const messageClassName = "text-ink";
+  const closeButtonClassName =
+    "border border-line/80 bg-canvas/80 text-ink-muted hover:bg-canvas hover:text-ink";
 
   return (
     <div
@@ -68,28 +70,30 @@ function NotificationBanner({
       }`}
     >
       <div
-        className={`pointer-events-auto w-full max-w-md overflow-hidden rounded-[22px] border shadow-[0_20px_70px_rgba(15,23,42,0.22)] backdrop-blur-2xl transition-all duration-300 ease-out ${
+        className={`pointer-events-auto relative w-full max-w-lg overflow-hidden rounded-[24px] border backdrop-blur-2xl transition-all duration-300 ease-out ${
           isVisible ? "scale-100" : "scale-[0.97]"
-        } ${toneClasses[variant]}`}
+        } ${panelClassName}`}
         role="status"
         aria-live="polite"
       >
-        <div className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
-          <div className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${accentClasses[variant]}`} />
-          <div className="min-w-0 flex-1">
-            {notification.title ? (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                {notification.title}
-              </p>
-            ) : null}
-            <p className="mt-0.5 text-sm leading-5 text-slate-900">
+        <div className="relative flex items-start gap-3 px-4 py-4 sm:px-5">
+          <div className="min-w-0 flex-1 pt-0.5">
+            <p
+              className={`text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                titleClassName
+              }`}
+            >
+              {variantLabels[variant]}
+            </p>
+            <p className={`mt-1 text-sm leading-6 ${messageClassName}`}>
               {notification.message}
             </p>
           </div>
           <button
             type="button"
             onClick={onDismiss}
-            className="shrink-0 rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 transition hover:border-lime hover:text-lime"
+            className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${closeButtonClassName}`}
+            aria-label="Dismiss notification"
           >
             Close
           </button>
@@ -227,7 +231,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 export function useNotifications() {
   const value = useContext(NotificationContext);
   if (!value) {
-    throw new Error("useNotifications must be used inside NotificationProvider");
+    throw new Error(
+      "useNotifications must be used inside NotificationProvider",
+    );
   }
 
   return value;

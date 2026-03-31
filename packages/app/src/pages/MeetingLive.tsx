@@ -24,6 +24,9 @@ export function MeetingLivePage() {
     setIsFollowEnabled,
     transcriptContainerRef,
     transcriptItems,
+    transcriptDisplayMode,
+    setTranscriptDisplayMode,
+    areTranscriptDisplayOptionsVisible,
     hasMeetingEnded,
     areHostControlsVisible,
     showHostControls,
@@ -146,6 +149,31 @@ export function MeetingLivePage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-ink-muted">
+                {areTranscriptDisplayOptionsVisible ? (
+                  <div className="flex items-center gap-1 rounded-full border border-line bg-canvas/80 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setTranscriptDisplayMode("translated_only")}
+                      className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "translated_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
+                    >
+                      Translated only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTranscriptDisplayMode("transcribed_only")}
+                      className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "transcribed_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
+                    >
+                      Transcribed only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTranscriptDisplayMode("both")}
+                      className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "both" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
+                    >
+                      Show both
+                    </button>
+                  </div>
+                ) : null}
                 {areDownloadsVisible && downloadableTranscriptLanguages.length > 0 ? (
                   <>
                     <label className="sr-only" htmlFor="transcript-language-select">
@@ -216,7 +244,12 @@ export function MeetingLivePage() {
                           {item.speaker}
                         </p>
                       ) : null}
-                      <p className="mt-1 leading-6">{item.text}</p>
+                      <p className="mt-1 leading-6">{item.primaryText}</p>
+                      {item.secondaryText ? (
+                        <p className="mt-1 text-xs leading-5 text-ink-muted">
+                          {item.secondaryText}
+                        </p>
+                      ) : null}
                     </div>
                   ))}
                 </div>
