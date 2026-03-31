@@ -9,9 +9,22 @@ import { CalendarEventsList } from "./CalendarEventsList";
  */
 export function CalendarSection() {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [fromDate, setFromDate] = useState(() => formatDateInput(new Date()));
+  const [toDate, setToDate] = useState(() => {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    return formatDateInput(nextWeek);
+  });
   const { notify } = useNotifications();
 
-  const eventsOptions = { limit: 24 };
+  const eventsOptions = useMemo(
+    () => ({
+      limit: 100,
+      from: toRangeBoundary(fromDate, "start"),
+      to: toRangeBoundary(toDate, "end"),
+    }),
+    [fromDate, toDate],
+  );
   const { data, isLoading, error } = useCalendarEvents(eventsOptions);
   const syncCalendar = useSyncCalendar(eventsOptions);
 
@@ -70,13 +83,33 @@ export function CalendarSection() {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:items-end">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+              From
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.target.value)}
+                className="rounded-lg border border-line bg-panel px-3 py-2 text-sm font-medium normal-case tracking-normal text-ink outline-none transition focus:border-lime"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+              To
+              <input
+                type="date"
+                value={toDate}
+                onChange={(event) => setToDate(event.target.value)}
+                className="rounded-lg border border-line bg-panel px-3 py-2 text-sm font-medium normal-case tracking-normal text-ink outline-none transition focus:border-lime"
+              />
+            </label>
+          </div>
           <button
             type="button"
             onClick={() => {
               void onSync();
             }}
-            disabled={isSyncing}
+            disabled={isSyncing || !fromDate || !toDate}
             className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSyncing ? "Syncing..." : "Sync Calendar"}
@@ -99,4 +132,18 @@ export function CalendarSection() {
       )}
     </section>
   );
+}
+
+function formatDateInput(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function toRangeBoundary(value: string, boundary: "start" | "end") {
+  if (!value) {
+    return undefined;
+  }
+
+  return boundary === "start"
+    ? `${value}T00:00:00.000Z`
+    : `${value}T23:59:59.999Z`;
 }

@@ -55,6 +55,7 @@ type CalendarSyncResponse = {
 type CalendarEventsOptions = {
   limit?: number;
   from?: string;
+  to?: string;
   enabled?: boolean;
 };
 
@@ -63,12 +64,16 @@ type CalendarEventsOptions = {
  */
 export const currentUserKey = () => buildApiUrl("/user/me");
 
-function buildCalendarEventsPath({ limit = 8, from }: CalendarEventsOptions = {}) {
+function buildCalendarEventsPath({ limit = 8, from, to }: CalendarEventsOptions = {}) {
   const params = new URLSearchParams();
   params.set("limit", String(limit));
 
   if (from) {
     params.set("from", from);
+  }
+
+  if (to) {
+    params.set("to", to);
   }
 
   return `/user/calendar/events?${params.toString()}`;
@@ -163,10 +168,12 @@ export function useCalendarEvents(options: CalendarEventsOptions = {}) {
  */
 export function useSyncCalendar(options: CalendarEventsOptions = {}) {
   const { mutate } = useSWRConfig();
+  const { from, to } = options;
 
   return async () => {
     const result = await apiRequest<CalendarSyncResponse>("/user/calendar/sync", {
       method: "POST",
+      body: JSON.stringify({ from, to }),
     });
 
     await mutate(calendarEventsKey(options));
