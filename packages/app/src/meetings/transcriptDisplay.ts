@@ -2,6 +2,7 @@ export type TranscriptDisplayMode = "translated_only" | "transcribed_only" | "bo
 
 export type TranscriptItem = {
   id: string;
+  utteranceOrder: number | null;
   language: string;
   speaker: string | null;
   isFinal: boolean;
@@ -12,12 +13,51 @@ export type TranscriptItem = {
 
 export type RenderedTranscriptItem = {
   id: string;
+  utteranceOrder: number | null;
   language: string;
   speaker: string | null;
   isFinal: boolean;
   primaryText: string;
   secondaryText: string | null;
 };
+
+function compareTranscriptItems(left: TranscriptItem, right: TranscriptItem) {
+  const leftOrder = left.utteranceOrder ?? Number.MAX_SAFE_INTEGER;
+  const rightOrder = right.utteranceOrder ?? Number.MAX_SAFE_INTEGER;
+  if (leftOrder !== rightOrder) {
+    return leftOrder - rightOrder;
+  }
+
+  if (left.isFinal !== right.isFinal) {
+    return left.isFinal ? -1 : 1;
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+export function upsertTranscriptItem(current: TranscriptItem[], incoming: TranscriptItem) {
+  const next = [...current];
+
+  const existingIndex = next.findIndex((item) => {
+    if (
+      incoming.utteranceOrder !== null &&
+      item.utteranceOrder !== null &&
+      item.utteranceOrder === incoming.utteranceOrder
+    ) {
+      return true;
+    }
+
+    return item.language === incoming.language && !item.isFinal && item.utteranceOrder === null;
+  });
+
+  if (existingIndex >= 0) {
+    next[existingIndex] = incoming;
+  } else {
+    next.push(incoming);
+  }
+
+  return next.sort(compareTranscriptItems).slice(-300);
+}
 
 function normalizeText(value: string | null | undefined) {
   if (typeof value !== "string") {
@@ -75,6 +115,7 @@ export function renderTranscriptItem(
 
   return {
     id: item.id,
+    utteranceOrder: item.utteranceOrder,
     language: item.language,
     speaker: item.speaker,
     isFinal: item.isFinal,

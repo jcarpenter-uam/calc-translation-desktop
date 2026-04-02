@@ -15,6 +15,7 @@ import { getLanguageLabel } from "../languages/LanguageList";
 import {
   hasTranslatedTranscriptContent,
   renderTranscriptItem,
+  upsertTranscriptItem,
   type TranscriptDisplayMode,
   type TranscriptItem,
 } from "../meetings/transcriptDisplay";
@@ -26,6 +27,10 @@ type AudioInputDevice = {
 
 type BrowserLike = typeof globalThis & {
   __APP_VERSION__?: string;
+  console?: {
+    debug?: (...args: unknown[]) => void;
+    info?: (...args: unknown[]) => void;
+  };
   addEventListener?: (
     type: string,
     listener: () => void,
@@ -86,6 +91,10 @@ function resolveTranscriptDownloadDate(value: string | null | undefined) {
   return `${String(parsed.getUTCMonth() + 1).padStart(2, "0")}-${String(parsed.getUTCDate()).padStart(2, "0")}`;
 }
 
+function debugLiveRoom(browser: BrowserLike, event: string, details: Record<string, unknown>) {
+  browser.console?.info?.("[live-room]", event, details);
+}
+
 /**
  * Encapsulates live-room socket, transcript, presence, audio, and transcript-download state.
  */
@@ -101,7 +110,7 @@ export function useMeetingLiveRoom() {
     "idle" | "connecting" | "connected" | "error"
   >("idle");
   const [, setAudioStatus] = useState<string | null>(null);
-  const [, setRoomSubscribed] = useState(false);
+  const [roomSubscribed, setRoomSubscribed] = useState(false);
   const [preflightStatus, setPreflightStatus] = useState<
     "idle" | "checking" | "ready" | "error"
   >("idle");
@@ -139,6 +148,7 @@ export function useMeetingLiveRoom() {
   const preflightAudioContextRef = useRef<any>(null);
   const preflightSourceRef = useRef<any>(null);
   const transcriptContainerRef = useRef<any>(null);
+  const syncedRoomLanguageRef = useRef<string | null>(null);
 
   const meetingCode = meeting?.readableId || "-";
   const { data: meetingDetailsData } = useMeetingDetails(meeting?.meetingId || null, Boolean(meeting));
@@ -173,7 +183,14 @@ export function useMeetingLiveRoom() {
     setSelectedTranscriptLanguage("");
     setTranscriptItems([]);
     setTranscriptDisplayMode("translated_only");
+    syncedRoomLanguageRef.current = null;
   }, [meeting?.meetingId]);
+
+  useEffect(() => {
+    if (!roomSubscribed) {
+      syncedRoomLanguageRef.current = user?.languageCode || null;
+    }
+  }, [roomSubscribed, user?.languageCode]);
 
   useEffect(() => {
     if (!hasMeetingEnded) {
@@ -264,6 +281,7 @@ export function useMeetingLiveRoom() {
     socketConnectPromiseRef.current = null;
     const ws = wsRef.current;
     wsRef.current = null;
+    syncedRoomLanguageRef.current = null;
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) {
       ws.close();
     }
@@ -504,6 +522,8 @@ export function useMeetingLiveRoom() {
   }, []);
 
   const appendTranscriptItem = (
+    id: string,
+    utteranceOrder: number | null,
     language: string,
     transcriptionText: string | null,
     translationText: string | null,
@@ -512,35 +532,16 @@ export function useMeetingLiveRoom() {
     isFinal: boolean,
   ) => {
     setTranscriptItems((current) => {
-      const next = [...current];
-      const existingIndex = next.findIndex(
-        (item) => item.language === language && !item.isFinal,
-      );
-
-      if (existingIndex >= 0) {
-        const existingItem = next[existingIndex]!;
-        next[existingIndex] = {
-          id: existingItem.id,
-          language: existingItem.language,
-          transcriptionText,
-          translationText,
-          sourceLanguage,
-          speaker,
-          isFinal,
-        };
-      } else {
-        next.push({
-          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          language,
-          transcriptionText,
-          translationText,
-          sourceLanguage,
-          speaker,
-          isFinal,
-        });
-      }
-
-      return next.slice(-300);
+      return upsertTranscriptItem(current, {
+        id,
+        utteranceOrder,
+        language,
+        transcriptionText,
+        translationText,
+        sourceLanguage,
+        speaker,
+        isFinal,
+      });
     });
   };
 
@@ -610,17 +611,47 @@ export function useMeetingLiveRoom() {
               typeof parsed.sourceLanguage === "string"
                 ? parsed.sourceLanguage.trim() || null
                 : null;
-            const viewerLanguage = user?.languageCode || null;
+            const viewerLanguage = syncedRoomLanguageRef.current || user?.languageCode || null;
             const isTwoWayTranscript = language === "two_way";
 
             if (
               !fallbackText ||
               (!isTwoWayTranscript && (!viewerLanguage || language !== viewerLanguage))
             ) {
+              debugLiveRoom(browser, "transcript_filtered", {
+                meetingId: meeting?.meetingId || null,
+                messageLanguage: language,
+                viewerLanguage,
+                isTwoWayTranscript,
+                hasFallbackText: Boolean(fallbackText),
+                utteranceOrder:
+                  typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
+                    ? parsed.utteranceOrder
+                    : null,
+                isBackfilled: Boolean(parsed.isBackfilled),
+              });
               return;
             }
 
+            debugLiveRoom(browser, "transcript_received", {
+              meetingId: meeting?.meetingId || null,
+              messageLanguage: language,
+              viewerLanguage,
+              utteranceOrder:
+                typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
+                  ? parsed.utteranceOrder
+                  : null,
+              isBackfilled: Boolean(parsed.isBackfilled),
+              isHistory: Boolean(parsed.isHistory),
+            });
+
             appendTranscriptItem(
+              typeof parsed.utteranceId === "string"
+                ? parsed.utteranceId
+                : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+              typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
+                ? parsed.utteranceOrder
+                : null,
               language,
               transcriptionText || fallbackText,
               translationText || null,
@@ -713,10 +744,46 @@ export function useMeetingLiveRoom() {
 
               return;
             }
+
+            if (presenceEvent === "participant_updated" && parsed.participant) {
+              const participant = parsed.participant as any;
+              const id = String(participant.id || "");
+              if (id) {
+                setParticipantsById((current) => {
+                  const existing = current[id];
+                  return {
+                    ...current,
+                    [id]: {
+                      id,
+                      name: participant.name || existing?.name || null,
+                      email: participant.email || existing?.email || null,
+                      languageCode: participant.languageCode || existing?.languageCode || null,
+                      role: (participant.role || existing?.role || "user") as
+                        | "user"
+                        | "tenant_admin"
+                        | "super_admin",
+                      isHost: Boolean(existing?.isHost),
+                      isInvited: Boolean(existing?.isInvited),
+                      isConnected: participant.isConnected ?? existing?.isConnected ?? true,
+                    },
+                  };
+                });
+              }
+
+              return;
+            }
           }
 
           if (parsed?.type === "status") {
             const statusEvent = String(parsed.event || "");
+            if (statusEvent === "language_switched") {
+              syncedRoomLanguageRef.current =
+                typeof parsed.languageCode === "string" ? parsed.languageCode : syncedRoomLanguageRef.current;
+              debugLiveRoom(browser, "language_switched", {
+                meetingId: parsed.meetingId || meeting?.meetingId || null,
+                nextLanguage: syncedRoomLanguageRef.current,
+              });
+            }
             if (statusEvent === "meeting_ended") {
               const transcriptLanguages: string[] = Array.isArray(parsed.transcriptLanguages)
                 ? Array.from(
@@ -793,6 +860,11 @@ export function useMeetingLiveRoom() {
         };
       });
 
+      syncedRoomLanguageRef.current = user?.languageCode || null;
+      debugLiveRoom(browser, "subscribe_meeting", {
+        meetingId: meeting.meetingId,
+        viewerLanguage: syncedRoomLanguageRef.current,
+      });
       ws.send(
         JSON.stringify({
           action: "subscribe_meeting",
@@ -1060,6 +1132,36 @@ export function useMeetingLiveRoom() {
       void teardownAudioStreaming();
     };
   }, [meeting?.meetingId, meeting?.ticket]);
+
+  useEffect(() => {
+    if (!meeting || !roomSubscribed || hasMeetingEnded) {
+      return;
+    }
+
+    const nextLanguage = user?.languageCode || null;
+    if (!nextLanguage || syncedRoomLanguageRef.current === nextLanguage) {
+      return;
+    }
+
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    syncedRoomLanguageRef.current = nextLanguage;
+    setTranscriptItems([]);
+    debugLiveRoom(browser, "switch_language_request", {
+      meetingId: meeting.meetingId,
+      nextLanguage,
+    });
+    ws.send(
+      JSON.stringify({
+        action: "switch_language",
+        meetingId: meeting.meetingId,
+        languageCode: nextLanguage,
+      }),
+    );
+  }, [hasMeetingEnded, meeting, roomSubscribed, user?.languageCode]);
 
   const participants = useMemo(() => {
     return Object.values(participantsById).sort((left, right) => {
