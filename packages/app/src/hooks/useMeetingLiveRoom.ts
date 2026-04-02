@@ -523,7 +523,8 @@ export function useMeetingLiveRoom() {
 
   const appendTranscriptItem = (
     id: string,
-    utteranceOrder: number | null,
+    startedAtMs: number | null,
+    endedAtMs: number | null,
     language: string,
     transcriptionText: string | null,
     translationText: string | null,
@@ -534,7 +535,8 @@ export function useMeetingLiveRoom() {
     setTranscriptItems((current) => {
       return upsertTranscriptItem(current, {
         id,
-        utteranceOrder,
+        startedAtMs,
+        endedAtMs,
         language,
         transcriptionText,
         translationText,
@@ -599,9 +601,7 @@ export function useMeetingLiveRoom() {
               typeof parsed.transcriptionText === "string"
                 ? parsed.transcriptionText.trim()
                 : "";
-            const fallbackText = String(
-              translationText || parsed.text || transcriptionText || "",
-            ).trim();
+            const fallbackText = String(translationText || transcriptionText || "").trim();
             const speaker =
               typeof parsed.speaker === "string"
                 ? parsed.speaker.trim() || null
@@ -624,10 +624,6 @@ export function useMeetingLiveRoom() {
                 viewerLanguage,
                 isTwoWayTranscript,
                 hasFallbackText: Boolean(fallbackText),
-                utteranceOrder:
-                  typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
-                    ? parsed.utteranceOrder
-                    : null,
                 isBackfilled: Boolean(parsed.isBackfilled),
               });
               return;
@@ -637,10 +633,6 @@ export function useMeetingLiveRoom() {
               meetingId: meeting?.meetingId || null,
               messageLanguage: language,
               viewerLanguage,
-              utteranceOrder:
-                typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
-                  ? parsed.utteranceOrder
-                  : null,
               isBackfilled: Boolean(parsed.isBackfilled),
               isHistory: Boolean(parsed.isHistory),
             });
@@ -649,8 +641,11 @@ export function useMeetingLiveRoom() {
               typeof parsed.utteranceId === "string"
                 ? parsed.utteranceId
                 : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-              typeof parsed.utteranceOrder === "number" && Number.isFinite(parsed.utteranceOrder)
-                ? parsed.utteranceOrder
+              typeof parsed.startedAtMs === "number" && Number.isFinite(parsed.startedAtMs)
+                ? parsed.startedAtMs
+                : null,
+              typeof parsed.endedAtMs === "number" && Number.isFinite(parsed.endedAtMs)
+                ? parsed.endedAtMs
                 : null,
               language,
               transcriptionText || fallbackText,
@@ -944,7 +939,7 @@ export function useMeetingLiveRoom() {
       audioContextRef.current = audioContext;
       const source = audioContext.createMediaStreamSource(stream);
       audioSourceRef.current = source;
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const processor = audioContext.createScriptProcessor(2048, 1, 1);
       processorRef.current = processor;
       const outputGain = audioContext.createGain();
       outputGain.gain.value = 0;

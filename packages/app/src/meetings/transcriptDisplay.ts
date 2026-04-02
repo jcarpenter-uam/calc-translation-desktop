@@ -2,7 +2,8 @@ export type TranscriptDisplayMode = "translated_only" | "transcribed_only" | "bo
 
 export type TranscriptItem = {
   id: string;
-  utteranceOrder: number | null;
+  startedAtMs: number | null;
+  endedAtMs: number | null;
   language: string;
   speaker: string | null;
   isFinal: boolean;
@@ -13,7 +14,8 @@ export type TranscriptItem = {
 
 export type RenderedTranscriptItem = {
   id: string;
-  utteranceOrder: number | null;
+  startedAtMs: number | null;
+  endedAtMs: number | null;
   language: string;
   speaker: string | null;
   isFinal: boolean;
@@ -22,32 +24,47 @@ export type RenderedTranscriptItem = {
 };
 
 function compareTranscriptItems(left: TranscriptItem, right: TranscriptItem) {
-  const leftOrder = left.utteranceOrder ?? Number.MAX_SAFE_INTEGER;
-  const rightOrder = right.utteranceOrder ?? Number.MAX_SAFE_INTEGER;
-  if (leftOrder !== rightOrder) {
-    return leftOrder - rightOrder;
+  const leftStart = left.startedAtMs ?? Number.MAX_SAFE_INTEGER;
+  const rightStart = right.startedAtMs ?? Number.MAX_SAFE_INTEGER;
+  if (leftStart !== rightStart) {
+    return leftStart - rightStart;
+  }
+
+  const leftEnd = left.endedAtMs ?? leftStart;
+  const rightEnd = right.endedAtMs ?? rightStart;
+  if (leftEnd !== rightEnd) {
+    return leftEnd - rightEnd;
   }
 
   if (left.isFinal !== right.isFinal) {
     return left.isFinal ? -1 : 1;
   }
-
   return left.id.localeCompare(right.id);
 }
 
 export function upsertTranscriptItem(current: TranscriptItem[], incoming: TranscriptItem) {
   const next = [...current];
+  const incomingTimeKey = [incoming.startedAtMs ?? "null", incoming.endedAtMs ?? "null"].join("|");
 
   const existingIndex = next.findIndex((item) => {
+    if (!incoming.isFinal && !item.isFinal && item.language === incoming.language) {
+      return true;
+    }
+
+    const itemTimeKey = [item.startedAtMs ?? "null", item.endedAtMs ?? "null"].join("|");
     if (
-      incoming.utteranceOrder !== null &&
-      item.utteranceOrder !== null &&
-      item.utteranceOrder === incoming.utteranceOrder
+      incoming.language === item.language &&
+      incomingTimeKey !== "null|null" &&
+      incomingTimeKey === itemTimeKey
     ) {
       return true;
     }
 
-    return item.language === incoming.language && !item.isFinal && item.utteranceOrder === null;
+    return (
+      item.language === incoming.language &&
+      !item.isFinal &&
+      (item.startedAtMs === null || item.startedAtMs === incoming.startedAtMs)
+    );
   });
 
   if (existingIndex >= 0) {
@@ -115,7 +132,8 @@ export function renderTranscriptItem(
 
   return {
     id: item.id,
-    utteranceOrder: item.utteranceOrder,
+    startedAtMs: item.startedAtMs,
+    endedAtMs: item.endedAtMs,
     language: item.language,
     speaker: item.speaker,
     isFinal: item.isFinal,
