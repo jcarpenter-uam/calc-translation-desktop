@@ -77,9 +77,9 @@ export function CalendarSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
             Calendar
           </p>
-          <h2 className="mt-1 text-lg font-semibold">Upcoming Meetings</h2>
+          <h2 className="mt-1 text-lg font-semibold">Synced Meetings</h2>
           <p className="mt-1 text-sm text-ink-muted">
-            We only show events with Teams, Google Meet, Zoom, or app links.
+            We show synced events with Teams, Google Meet, Zoom, or app links, including cancelled meetings.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export function CalendarSection() {
         </p>
       ) : sortedEvents.length === 0 ? (
         <p className="text-sm text-ink-muted">
-          No supported upcoming meeting links found yet.
+          No supported synced meeting links found yet.
         </p>
       ) : (
         <CalendarEventsList events={sortedEvents} />

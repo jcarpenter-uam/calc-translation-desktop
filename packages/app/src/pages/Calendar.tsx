@@ -15,7 +15,7 @@ export function CalendarPage() {
               </p>
               <h1 className="text-2xl font-semibold">Meeting Calendar</h1>
               <p className="mt-2 text-sm text-ink-muted">
-                Browse all upcoming provider-synced meeting links.
+                Browse provider-synced meeting links and see when meetings have been cancelled.
               </p>
             </div>
 

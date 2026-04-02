@@ -33,7 +33,7 @@ export type CalendarEvent = {
   title: string | null;
   startsAt: string | null;
   endsAt: string | null;
-  status: string | null;
+  status: "cancelled" | "confirmed" | string | null;
   platform: "teams" | "google_meet" | "zoom" | "app";
   joinUrl: string;
   lastSyncedAt: string;
