@@ -14,7 +14,6 @@ import {
 } from "./meeting";
 import { getLanguageLabel } from "../languages/LanguageList";
 import {
-  hasTranslatedTranscriptContent,
   renderTranscriptItem,
   upsertTranscriptItem,
   type TranscriptDisplayMode,
@@ -848,17 +847,24 @@ export function useMeetingLiveRoom() {
               setAreDownloadsVisible(true);
               setAvailableTranscriptLanguages(transcriptLanguages);
               setAvailableSummaryLanguages(summaryLanguages);
+              const hasTranscriptDownloads = transcriptLanguages.length > 0;
+              const hasSummaryDownloads = summaryLanguages.length > 0;
               notify(
-                transcriptLanguages.length > 0
+                hasTranscriptDownloads || hasSummaryDownloads
                   ? {
-                      title: "Transcript Ready",
+                      title: "Downloads Ready",
                       message:
-                        "Transcript downloads are ready. Choose a language and save the VTT file.",
+                        hasTranscriptDownloads && hasSummaryDownloads
+                          ? "Transcript VTT files and summary markdown files are ready to download."
+                          : hasTranscriptDownloads
+                            ? "Transcript VTT files are ready to download."
+                            : "Summary markdown files are ready to download.",
                       variant: "success",
                     }
                   : {
                       title: "Meeting Ended",
-                      message: "Meeting ended. Transcript files are still being prepared.",
+                      message:
+                        "Meeting ended. Transcript and summary files are still being prepared.",
                       variant: "info",
                     },
               );
@@ -1319,15 +1325,15 @@ export function useMeetingLiveRoom() {
     return Array.from(new Set(availableSummaryLanguages.filter(Boolean)));
   }, [availableSummaryLanguages]);
 
-  const isOneWayViewer = !isHostView && meetingDetailsData?.meeting.method === "one_way";
+  const isOneWayMeeting = meetingDetailsData?.meeting.method === "one_way";
 
   const areTranscriptDisplayOptionsVisible = useMemo(() => {
-    if (!isOneWayViewer) {
+    if (!isOneWayMeeting) {
       return false;
     }
 
-    return transcriptItems.some((item) => hasTranslatedTranscriptContent(item));
-  }, [isOneWayViewer, transcriptItems]);
+    return transcriptItems.length > 0;
+  }, [isOneWayMeeting, transcriptItems]);
 
   const renderedTranscriptItems = useMemo(() => {
     return transcriptItems.map((item) =>

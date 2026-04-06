@@ -16,8 +16,7 @@
   --color-lime-hover: 101 163 13;
   --color-lime-contrast: 54 83 20;
   --color-shadow: 39 39 42;
-  --scrollbar-size: 10px;
-  --scrollbar-track: 244 244 245;
+  --scrollbar-size: 8px;
   --scrollbar-thumb: 212 212 216;
   --scrollbar-thumb-hover: 161 161 170;
 }
@@ -36,7 +35,6 @@
   --color-lime-hover: 190 242 100;
   --color-lime-contrast: 54 83 20;
   --color-shadow: 24 24 27;
-  --scrollbar-track: 39 39 42;
   --scrollbar-thumb: 82 82 91;
   --scrollbar-thumb-hover: 113 113 122;
 }
@@ -56,7 +54,6 @@
     --color-lime-hover: 190 242 100;
     --color-lime-contrast: 54 83 20;
     --color-shadow: 24 24 27;
-    --scrollbar-track: 39 39 42;
     --scrollbar-thumb: 82 82 91;
     --scrollbar-thumb-hover: 113 113 122;
   }
@@ -71,7 +68,7 @@ body {
 
 .app-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--scrollbar-thumb)) rgb(var(--scrollbar-track));
+  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.65) transparent;
 }
 
 .app-scrollbar::-webkit-scrollbar {
@@ -80,23 +77,25 @@ body {
 }
 
 .app-scrollbar::-webkit-scrollbar-track {
-  background: rgb(var(--scrollbar-track));
+  background: transparent;
   border-radius: 999px;
 }
 
 .app-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(var(--scrollbar-thumb));
-  border: 2px solid rgb(var(--scrollbar-track));
+  background: rgb(var(--scrollbar-thumb) / 0.65);
+  border: 2px solid transparent;
   border-radius: 999px;
+  background-clip: padding-box;
 }
 
 .app-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--scrollbar-thumb-hover));
+  background-clip: padding-box;
 }
 
 .app-scrollbar-subtle {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.75) transparent;
+  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.65) transparent;
 }
 
 .app-scrollbar-subtle::-webkit-scrollbar {
@@ -109,23 +108,25 @@ body {
 }
 
 .app-scrollbar-subtle::-webkit-scrollbar-thumb {
-  background: rgb(var(--scrollbar-thumb) / 0.75);
+  background: rgb(var(--scrollbar-thumb) / 0.65);
   border: 2px solid transparent;
   border-radius: 999px;
+  background-clip: padding-box;
 }
 
 .app-scrollbar-subtle::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--scrollbar-thumb-hover));
+  background-clip: padding-box;
 }
 
 .app-scrollbar-language {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.45) transparent;
+  scrollbar-color: rgb(var(--scrollbar-thumb) / 0.65) transparent;
 }
 
 .app-scrollbar-language::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
 }
 
 .app-scrollbar-language::-webkit-scrollbar-track {
@@ -133,13 +134,13 @@ body {
 }
 
 .app-scrollbar-language::-webkit-scrollbar-thumb {
-  background: rgb(var(--scrollbar-thumb) / 0.45);
+  background: rgb(var(--scrollbar-thumb) / 0.65);
   border: 2px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
 }
 
 .app-scrollbar-language::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--scrollbar-thumb-hover) / 0.65);
+  background: rgb(var(--scrollbar-thumb-hover));
   background-clip: padding-box;
 }

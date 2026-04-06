@@ -1,5 +1,6 @@
 import { useMeetingLiveRoom } from "../hooks/useMeetingLiveRoom";
 import { getLanguageLabel } from "../languages/LanguageList";
+import { GrDownload } from "react-icons/gr";
 
 /**
  * Live meeting room for audio streaming and transcript updates.
@@ -17,12 +18,10 @@ export function MeetingLivePage() {
     areDownloadsVisible,
     downloadableTranscriptLanguages,
     selectedTranscriptLanguage,
-    setSelectedTranscriptLanguage,
     downloadingLanguage,
     handleDownloadTranscript,
     downloadableSummaryLanguages,
     selectedSummaryLanguage,
-    setSelectedSummaryLanguage,
     downloadingSummaryLanguage,
     handleDownloadSummary,
     isFollowEnabled,
@@ -117,7 +116,9 @@ export function MeetingLivePage() {
                               className={`rounded-2xl border px-3 py-2 text-xs normal-case tracking-normal ${participant.isConnected ? "border-line/70 bg-canvas/80" : "border-line/60 bg-panel/70"}`}
                             >
                               <p className="truncate font-semibold text-ink">
-                                {participant.name || participant.email || participant.id}
+                                {participant.name ||
+                                  participant.email ||
+                                  participant.id}
                                 {participant.isHost ? " (Host)" : ""}
                               </p>
                             </div>
@@ -153,19 +154,23 @@ export function MeetingLivePage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-ink-muted">
+              <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-ink-muted">
                 {areTranscriptDisplayOptionsVisible ? (
-                  <div className="flex items-center gap-1 rounded-full border border-line bg-canvas/80 p-1">
+                  <div className="flex h-10 items-center gap-1 rounded-full border border-line bg-canvas/80 p-1">
                     <button
                       type="button"
-                      onClick={() => setTranscriptDisplayMode("translated_only")}
+                      onClick={() =>
+                        setTranscriptDisplayMode("translated_only")
+                      }
                       className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "translated_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
                     >
                       Translated only
                     </button>
                     <button
                       type="button"
-                      onClick={() => setTranscriptDisplayMode("transcribed_only")}
+                      onClick={() =>
+                        setTranscriptDisplayMode("transcribed_only")
+                      }
                       className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "transcribed_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
                     >
                       Transcribed only
@@ -179,88 +184,93 @@ export function MeetingLivePage() {
                     </button>
                   </div>
                 ) : null}
-                {areDownloadsVisible && downloadableTranscriptLanguages.length > 0 ? (
-                  <>
-                    <label className="sr-only" htmlFor="transcript-language-select">
-                      Transcript language
-                    </label>
-                    <select
-                      id="transcript-language-select"
-                      value={selectedTranscriptLanguage}
-                      onChange={(event: any) =>
-                        setSelectedTranscriptLanguage(String(event.target.value || ""))
-                      }
-                      disabled={Boolean(downloadingLanguage)}
-                      className="rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {downloadableTranscriptLanguages.map((language) => (
-                        <option key={language} value={language}>
-                          {getLanguageLabel(language)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleDownloadTranscript(selectedTranscriptLanguage);
-                      }}
-                      disabled={Boolean(downloadingLanguage) || !selectedTranscriptLanguage}
-                      className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {downloadingLanguage === selectedTranscriptLanguage
-                        ? `Downloading ${getLanguageLabel(selectedTranscriptLanguage)}...`
-                        : "Download Transcript"}
-                    </button>
-                  </>
+                {areDownloadsVisible &&
+                (downloadableTranscriptLanguages.length > 0 ||
+                  downloadableSummaryLanguages.length > 0) ? (
+                  <div className="flex items-center gap-2 px-2 py-2">
+                    {downloadableTranscriptLanguages.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDownloadTranscript(
+                            selectedTranscriptLanguage,
+                          );
+                        }}
+                        disabled={
+                          Boolean(downloadingLanguage) ||
+                          !selectedTranscriptLanguage
+                        }
+                        className="h-10 rounded-full border border-line bg-canvas px-3 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <GrDownload
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {downloadingLanguage === selectedTranscriptLanguage
+                              ? `Downloading ${getLanguageLabel(selectedTranscriptLanguage)} ...`
+                              : "Transcript"}
+                          </span>
+                        </span>
+                      </button>
+                    ) : null}
+
+                    {downloadableSummaryLanguages.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDownloadSummary(selectedSummaryLanguage);
+                        }}
+                        disabled={
+                          Boolean(downloadingSummaryLanguage) ||
+                          !selectedSummaryLanguage
+                        }
+                        className="h-10 rounded-full border border-line bg-canvas px-3 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <span className="inline-flex items-center gap-1.5">
+                          <GrDownload
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {downloadingSummaryLanguage ===
+                            selectedSummaryLanguage
+                              ? `Downloading ${getLanguageLabel(selectedSummaryLanguage)} ...`
+                              : "Summary"}
+                          </span>
+                        </span>
+                      </button>
+                    ) : null}
+
+                    <div className="group relative">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line/80 bg-canvas text-[11px] font-semibold text-ink-muted transition group-hover:border-lime group-hover:text-lime">
+                        ?
+                      </span>
+                      <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-line/80 bg-panel/95 p-3 text-[11px] leading-5 text-ink-muted opacity-0 shadow-panel backdrop-blur-xl transition group-hover:opacity-100">
+                        Downloads use your current language setting when
+                        available. Otherwise the first available language is
+                        used.
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
-                {areDownloadsVisible && downloadableSummaryLanguages.length > 0 ? (
-                  <>
-                    <label className="sr-only" htmlFor="summary-language-select">
-                      Summary language
-                    </label>
-                    <select
-                      id="summary-language-select"
-                      value={selectedSummaryLanguage}
-                      onChange={(event: any) =>
-                        setSelectedSummaryLanguage(String(event.target.value || ""))
-                      }
-                      disabled={Boolean(downloadingSummaryLanguage)}
-                      className="rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {downloadableSummaryLanguages.map((language) => (
-                        <option key={language} value={language}>
-                          {getLanguageLabel(language)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleDownloadSummary(selectedSummaryLanguage);
-                      }}
-                      disabled={Boolean(downloadingSummaryLanguage) || !selectedSummaryLanguage}
-                      className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {downloadingSummaryLanguage === selectedSummaryLanguage
-                        ? `Downloading ${getLanguageLabel(selectedSummaryLanguage)}...`
-                        : "Download Summary"}
-                    </button>
-                  </>
+                {!hasMeetingEnded ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsFollowEnabled((value) => !value)}
+                    className="h-10 rounded-full border border-line bg-canvas px-4 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
+                  >
+                    {isFollowEnabled ? "Pause Follow" : "Resume Follow"}
+                  </button>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => setIsFollowEnabled((value) => !value)}
-                  className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime"
-                >
-                  {isFollowEnabled ? "Pause Follow" : "Resume Follow"}
-                </button>
               </div>
             </div>
 
             <div
               ref={transcriptContainerRef}
               className={
-                "h-[min(62vh,640px)] overflow-auto rounded-[24px] border border-line/70 bg-canvas/90 p-3 sm:p-4"
+                "h-[min(62vh,640px)] app-scrollbar overflow-auto rounded-[24px] border border-line/70 bg-canvas/90 p-3 sm:p-4"
               }
             >
               {transcriptItems.length === 0 ? (
@@ -347,7 +357,9 @@ export function MeetingLivePage() {
                           disabled={!joinUrl}
                           className="rounded-full border border-line bg-canvas/80 px-4 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {copyJoinStatus === "Join URL copied." ? "Copied" : "Invite"}
+                          {copyJoinStatus === "Join URL copied."
+                            ? "Copied"
+                            : "Invite"}
                         </button>
                         <button
                           type="button"
@@ -370,7 +382,9 @@ export function MeetingLivePage() {
                       <div className="flex flex-1 flex-wrap items-center gap-2">
                         <select
                           value={selectedDeviceId}
-                          onChange={(event: any) => setSelectedDeviceId(String(event.target.value))}
+                          onChange={(event: any) =>
+                            setSelectedDeviceId(String(event.target.value))
+                          }
                           onFocus={() => showHostControls()}
                           disabled={audioInputDevices.length === 0}
                           className="min-w-[12rem] flex-1 rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 md:max-w-sm"
@@ -429,7 +443,8 @@ export function MeetingLivePage() {
                     </div>
 
                     <p className="text-center text-xs text-ink-muted">
-                      Check your mic before going live. Bad audio quality leads to bad transcription quality.
+                      Check your mic before going live. Bad audio quality leads
+                      to bad transcription quality.
                     </p>
                   </div>
                 </div>
