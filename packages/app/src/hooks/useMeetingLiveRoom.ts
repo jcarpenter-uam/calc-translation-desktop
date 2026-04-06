@@ -4,6 +4,7 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { useAppRoute } from "../contexts/RouteContext";
 import { ApiError, getApiBaseUrl } from "./api";
 import {
+  useDownloadMeetingSummary,
   useDownloadMeetingTranscript,
   useEndMeeting,
   useJoinMeeting,
@@ -124,9 +125,12 @@ export function useMeetingLiveRoom() {
   const [isPreflightMonitoring, setIsPreflightMonitoring] = useState(false);
   const [isEndingMeeting, setIsEndingMeeting] = useState(false);
   const [downloadingLanguage, setDownloadingLanguage] = useState<string | null>(null);
+  const [downloadingSummaryLanguage, setDownloadingSummaryLanguage] = useState<string | null>(null);
   const [areDownloadsVisible, setAreDownloadsVisible] = useState(false);
   const [availableTranscriptLanguages, setAvailableTranscriptLanguages] = useState<string[]>([]);
   const [selectedTranscriptLanguage, setSelectedTranscriptLanguage] = useState("");
+  const [availableSummaryLanguages, setAvailableSummaryLanguages] = useState<string[]>([]);
+  const [selectedSummaryLanguage, setSelectedSummaryLanguage] = useState("");
   const [hasEndedMeetingLocally, setHasEndedMeetingLocally] = useState(false);
   const [, setMeetingStatusEvents] = useState<string[]>([]);
   const [transcriptItems, setTranscriptItems] = useState<TranscriptItem[]>([]);
@@ -154,6 +158,7 @@ export function useMeetingLiveRoom() {
   const { data: meetingDetailsData } = useMeetingDetails(meeting?.meetingId || null, Boolean(meeting));
   const endMeeting = useEndMeeting();
   const downloadMeetingTranscript = useDownloadMeetingTranscript();
+  const downloadMeetingSummary = useDownloadMeetingSummary();
   const joinMeeting = useJoinMeeting();
   const { data: participantsData, isLoading: isParticipantsLoading } = useMeetingParticipants(
     meeting?.meetingId || null,
@@ -181,6 +186,8 @@ export function useMeetingLiveRoom() {
     setAreDownloadsVisible(false);
     setAvailableTranscriptLanguages([]);
     setSelectedTranscriptLanguage("");
+    setAvailableSummaryLanguages([]);
+    setSelectedSummaryLanguage("");
     setTranscriptItems([]);
     setTranscriptDisplayMode("translated_only");
     syncedRoomLanguageRef.current = null;
@@ -219,6 +226,24 @@ export function useMeetingLiveRoom() {
   ]);
 
   useEffect(() => {
+    if (!hasMeetingEnded || availableSummaryLanguages.length > 0) {
+      return;
+    }
+
+    const fallbackLanguages = (meetingDetailsData?.meeting.summary_languages || []).filter(
+      (language): language is string => typeof language === "string" && Boolean(language),
+    );
+
+    if (fallbackLanguages.length > 0) {
+      setAvailableSummaryLanguages(Array.from(new Set(fallbackLanguages)));
+    }
+  }, [
+    availableSummaryLanguages.length,
+    hasMeetingEnded,
+    meetingDetailsData?.meeting.summary_languages,
+  ]);
+
+  useEffect(() => {
     if (availableTranscriptLanguages.length === 0) {
       if (selectedTranscriptLanguage) {
         setSelectedTranscriptLanguage("");
@@ -237,6 +262,26 @@ export function useMeetingLiveRoom() {
       setSelectedTranscriptLanguage(availableTranscriptLanguages[0] || "");
     }
   }, [availableTranscriptLanguages, selectedTranscriptLanguage, user?.languageCode]);
+
+  useEffect(() => {
+    if (availableSummaryLanguages.length === 0) {
+      if (selectedSummaryLanguage) {
+        setSelectedSummaryLanguage("");
+      }
+      return;
+    }
+
+    if (user?.languageCode && availableSummaryLanguages.includes(user.languageCode)) {
+      if (selectedSummaryLanguage !== user.languageCode) {
+        setSelectedSummaryLanguage(user.languageCode);
+      }
+      return;
+    }
+
+    if (!availableSummaryLanguages.includes(selectedSummaryLanguage)) {
+      setSelectedSummaryLanguage(availableSummaryLanguages[0] || "");
+    }
+  }, [availableSummaryLanguages, selectedSummaryLanguage, user?.languageCode]);
 
   const addStatusEvent = (message: string) => {
     setMeetingStatusEvents((current) => [message, ...current.slice(0, 19)]);
@@ -789,10 +834,20 @@ export function useMeetingLiveRoom() {
                     ),
                   )
                 : [];
+              const summaryLanguages: string[] = Array.isArray(parsed.summaryLanguages)
+                ? Array.from(
+                    new Set(
+                      parsed.summaryLanguages
+                        .map((language: unknown) => String(language || "").trim())
+                        .filter(Boolean),
+                    ),
+                  )
+                : [];
 
               setHasEndedMeetingLocally(true);
               setAreDownloadsVisible(true);
               setAvailableTranscriptLanguages(transcriptLanguages);
+              setAvailableSummaryLanguages(summaryLanguages);
               notify(
                 transcriptLanguages.length > 0
                   ? {
@@ -1098,6 +1153,53 @@ export function useMeetingLiveRoom() {
     }
   };
 
+  const handleDownloadSummary = async (language: string) => {
+    if (!meeting || downloadingSummaryLanguage) {
+      return;
+    }
+
+    setDownloadingSummaryLanguage(language);
+    try {
+      const { blob, response } = await downloadMeetingSummary(meeting.meetingId, language);
+      const objectUrl = URL.createObjectURL(blob);
+      const disposition = response.headers.get("content-disposition") || "";
+      const nameMatch = disposition.match(/filename="([^"]+)"/i);
+      const fallbackName = `${sanitizeDownloadFilenamePart(meetingTopic, sanitizeDownloadFilenamePart(meeting.readableId, "meeting"))}_${resolveTranscriptDownloadDate(meetingDetailsData?.meeting.ended_at || meetingDetailsData?.meeting.started_at || meetingDetailsData?.meeting.scheduled_time)}_${sanitizeDownloadFilenamePart(language, "unknown")}_summary.md`;
+      const downloadName = nameMatch?.[1] || fallbackName;
+      const anchor = browser.document?.createElement?.("a");
+
+      if (!anchor) {
+        throw new Error("Download is not supported in this browser.");
+      }
+
+      anchor.href = objectUrl;
+      anchor.download = downloadName;
+      browser.document?.body?.appendChild?.(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      notify({
+        title: "Summary Downloaded",
+        message: `Saved the ${getLanguageLabel(language)} summary as a Markdown file.`,
+        variant: "success",
+      });
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "Failed to download summary.";
+      notify({
+        title: "Download Failed",
+        message,
+        variant: "error",
+      });
+    } finally {
+      setDownloadingSummaryLanguage(null);
+    }
+  };
+
   useEffect(() => {
     if (!meeting) {
       return;
@@ -1213,6 +1315,10 @@ export function useMeetingLiveRoom() {
     return Array.from(new Set(availableTranscriptLanguages.filter(Boolean)));
   }, [availableTranscriptLanguages]);
 
+  const downloadableSummaryLanguages = useMemo(() => {
+    return Array.from(new Set(availableSummaryLanguages.filter(Boolean)));
+  }, [availableSummaryLanguages]);
+
   const isOneWayViewer = !isHostView && meetingDetailsData?.meeting.method === "one_way";
 
   const areTranscriptDisplayOptionsVisible = useMemo(() => {
@@ -1244,6 +1350,11 @@ export function useMeetingLiveRoom() {
     setSelectedTranscriptLanguage,
     downloadingLanguage,
     handleDownloadTranscript,
+    downloadableSummaryLanguages,
+    selectedSummaryLanguage,
+    setSelectedSummaryLanguage,
+    downloadingSummaryLanguage,
+    handleDownloadSummary,
     isFollowEnabled,
     setIsFollowEnabled,
     transcriptContainerRef,

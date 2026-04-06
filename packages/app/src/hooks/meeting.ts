@@ -50,6 +50,7 @@ type MeetingDetailsResponse = {
     spoken_languages: string[] | null;
     viewer_languages: string[] | null;
     transcript_languages: string[] | null;
+    summary_languages: string[] | null;
     scheduled_time: string | null;
     started_at: string | null;
     ended_at: string | null;
@@ -201,6 +202,17 @@ export function useDownloadMeetingTranscript() {
   return async (meetingId: string, language: string) => {
     return await apiRequestBlob(
       `/meeting/${encodeURIComponent(meetingId)}/transcript/${encodeURIComponent(language)}`,
+    );
+  };
+}
+
+/**
+ * Downloads an archived summary file for a meeting/language pair.
+ */
+export function useDownloadMeetingSummary() {
+  return async (meetingId: string, language: string) => {
+    return await apiRequestBlob(
+      `/meeting/${encodeURIComponent(meetingId)}/summary/${encodeURIComponent(language)}`,
     );
   };
 }

@@ -20,6 +20,11 @@ export function MeetingLivePage() {
     setSelectedTranscriptLanguage,
     downloadingLanguage,
     handleDownloadTranscript,
+    downloadableSummaryLanguages,
+    selectedSummaryLanguage,
+    setSelectedSummaryLanguage,
+    downloadingSummaryLanguage,
+    handleDownloadSummary,
     isFollowEnabled,
     setIsFollowEnabled,
     transcriptContainerRef,
@@ -205,6 +210,40 @@ export function MeetingLivePage() {
                       {downloadingLanguage === selectedTranscriptLanguage
                         ? `Downloading ${getLanguageLabel(selectedTranscriptLanguage)}...`
                         : "Download Transcript"}
+                    </button>
+                  </>
+                ) : null}
+                {areDownloadsVisible && downloadableSummaryLanguages.length > 0 ? (
+                  <>
+                    <label className="sr-only" htmlFor="summary-language-select">
+                      Summary language
+                    </label>
+                    <select
+                      id="summary-language-select"
+                      value={selectedSummaryLanguage}
+                      onChange={(event: any) =>
+                        setSelectedSummaryLanguage(String(event.target.value || ""))
+                      }
+                      disabled={Boolean(downloadingSummaryLanguage)}
+                      className="rounded-full border border-line bg-canvas px-3 py-1.5 text-xs text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadableSummaryLanguages.map((language) => (
+                        <option key={language} value={language}>
+                          {getLanguageLabel(language)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleDownloadSummary(selectedSummaryLanguage);
+                      }}
+                      disabled={Boolean(downloadingSummaryLanguage) || !selectedSummaryLanguage}
+                      className="rounded-full border border-line bg-canvas px-3 py-1.5 transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadingSummaryLanguage === selectedSummaryLanguage
+                        ? `Downloading ${getLanguageLabel(selectedSummaryLanguage)}...`
+                        : "Download Summary"}
                     </button>
                   </>
                 ) : null}
