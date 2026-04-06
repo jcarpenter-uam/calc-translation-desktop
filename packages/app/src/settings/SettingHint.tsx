@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
+import { useI18n } from "../contexts/UiI18nContext";
 
 type SettingHintProps = {
   text: string;
 };
 
 export function SettingHint({ text }: SettingHintProps) {
+  const { t } = useI18n();
   const tooltipRef = useRef<any>(null);
   const [alignment, setAlignment] = useState<"center" | "left" | "right">(
     "center",
@@ -42,7 +44,7 @@ export function SettingHint({ text }: SettingHintProps) {
     >
       <button
         type="button"
-        aria-label="Setting info"
+        aria-label={t("settings.title")}
         className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold leading-none text-ink-muted transition group-hover:border-lime group-hover:text-lime"
       >
         ?

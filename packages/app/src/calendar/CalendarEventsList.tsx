@@ -1,17 +1,19 @@
 import type { CalendarEvent } from "../hooks/user";
-
-const platformLabel: Record<CalendarEvent["platform"], string> = {
-  teams: "Teams",
-  google_meet: "Google Meet",
-  zoom: "Zoom",
-  app: "App",
-};
+import { useI18n } from "../contexts/UiI18nContext";
 
 type CalendarEventsListProps = {
   events: CalendarEvent[];
 };
 
 export function CalendarEventsList({ events }: CalendarEventsListProps) {
+  const { formatDateTime, formatTime, locale, t } = useI18n();
+  const platformLabel: Record<CalendarEvent["platform"], string> = {
+    teams: t("platform.teams"),
+    google_meet: t("platform.googleMeet"),
+    zoom: t("platform.zoom"),
+    app: t("platform.app"),
+  };
+
   return (
     <div className="space-y-2">
       {events.map((event) => {
@@ -36,17 +38,20 @@ export function CalendarEventsList({ events }: CalendarEventsListProps) {
                       isCancelled ? "text-ink-muted line-through" : "text-ink",
                     ].join(" ")}
                   >
-                    {event.title || "Untitled event"}
+                    {event.title || t("calendar.untitled")}
                   </p>
                   {isCancelled ? (
                     <span className="w-fit rounded-full border border-rose-300 bg-rose-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">
-                      Cancelled
+                      {t("calendar.cancelled")}
                     </span>
                   ) : null}
                 </div>
                 <p className={isCancelled ? "text-xs text-rose-700/80" : "text-xs text-ink-muted"}>
-                  {formatDateTime(event.startsAt)}
-                  {event.endsAt ? ` - ${formatTime(event.endsAt)}` : ""}
+                  {renderDateTimeRange(
+                    startsAtLabel(t, formatDateTime, event.startsAt),
+                    endsAtLabel(formatTime, event.endsAt),
+                    locale,
+                  )}
                 </p>
               </div>
               <span className="w-fit rounded-full border border-line px-2.5 py-1 text-xs font-semibold text-ink-muted">
@@ -56,7 +61,7 @@ export function CalendarEventsList({ events }: CalendarEventsListProps) {
 
             {isCancelled ? (
               <p className="mt-2 text-xs font-medium text-rose-700/80">
-                This meeting was cancelled.
+                {t("calendar.cancelledMessage")}
               </p>
             ) : (
               <a
@@ -65,7 +70,7 @@ export function CalendarEventsList({ events }: CalendarEventsListProps) {
                 rel="noreferrer"
                 className="mt-2 inline-block text-xs font-semibold text-lime transition hover:text-lime-hover"
               >
-                Join on {platformLabel[event.platform]}
+                {t("calendar.joinOn", { platform: platformLabel[event.platform] })}
               </a>
             )}
           </article>
@@ -75,33 +80,52 @@ export function CalendarEventsList({ events }: CalendarEventsListProps) {
   );
 }
 
-function formatDateTime(value: string | null) {
+function startsAtLabel(
+  t: (key: string) => string,
+  formatDateTime: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string,
+  value: string | null,
+) {
   if (!value) {
-    return "Time not available";
+    return t("calendar.timeUnavailable");
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Time not available";
+    return t("calendar.timeUnavailable");
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return formatDateTime(date, {
     weekday: "short",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(date);
+  });
 }
 
-function formatTime(value: string) {
+function endsAtLabel(
+  formatTime: (value: string | Date, options?: Intl.DateTimeFormatOptions) => string,
+  value: string | null,
+) {
+  if (!value) {
+    return "";
+  }
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return formatTime(date, {
     hour: "numeric",
     minute: "2-digit",
-  }).format(date);
+  });
+}
+
+function renderDateTimeRange(startLabel: string, endLabel: string, _locale: string) {
+  if (!endLabel) {
+    return startLabel;
+  }
+
+  return `${startLabel} - ${endLabel}`;
 }

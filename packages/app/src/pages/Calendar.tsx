@@ -1,8 +1,10 @@
 import { CalendarSection } from "../calendar/CalendarSection";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useAppRoute } from "../contexts/RouteContext";
 
 export function CalendarPage() {
   const { navigateTo } = useAppRoute();
+  const { t } = useI18n();
 
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
@@ -11,11 +13,11 @@ export function CalendarPage() {
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Calendar
+                {t("nav.calendar")}
               </p>
-              <h1 className="text-2xl font-semibold">Meeting Calendar</h1>
+              <h1 className="text-2xl font-semibold">{t("calendar.pageTitle")}</h1>
               <p className="mt-2 text-sm text-ink-muted">
-                Browse provider-synced meeting links and see when meetings have been cancelled.
+                {t("calendar.pageSubtitle")}
               </p>
             </div>
 
@@ -24,7 +26,7 @@ export function CalendarPage() {
               onClick={() => navigateTo("home")}
               className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
             >
-              Back to Dashboard
+              {t("common.backToDashboard")}
             </button>
           </div>
 

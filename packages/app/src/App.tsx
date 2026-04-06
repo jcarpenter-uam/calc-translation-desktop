@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { RouteProvider, useAppRoute } from "./contexts/RouteContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { UiI18nProvider, useI18n } from "./contexts/UiI18nContext";
 import { AuthGate } from "./auth/AuthGate";
 import { initializeClientLogger, writeClientLog } from "./bugReports/clientLogger";
 import { AppLayout } from "./layout/AppLayout";
@@ -24,6 +25,11 @@ type AppProps = {
 function AppContent({ platform: _platform }: AppProps) {
   const { user } = useAuth();
   const { route, navigateTo } = useAppRoute();
+  const { syncTranscriptLanguage, t } = useI18n();
+
+  useEffect(() => {
+    syncTranscriptLanguage(user?.languageCode);
+  }, [syncTranscriptLanguage, user?.languageCode]);
 
   const isAdmin = useMemo(() => {
     return user?.role === "tenant_admin" || user?.role === "super_admin";
@@ -34,14 +40,14 @@ function AppContent({ platform: _platform }: AppProps) {
       <main className="min-h-[calc(100dvh-3rem)] px-6 py-16 text-ink">
         <div className="mx-auto max-w-xl rounded-2xl border border-line bg-panel/90 p-8 shadow-panel">
           <p className="text-sm text-ink-muted">
-            You do not have permission to access the admin console.
+            {t("admin.noAccess")}
           </p>
           <button
             type="button"
             onClick={() => navigateTo("home")}
             className="mt-4 rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
-            Back to Dashboard
+            {t("common.backToDashboard")}
           </button>
         </div>
       </main>
@@ -88,17 +94,19 @@ export function App({ platform }: AppProps) {
     >
       <AppInfoProvider clientType={platform}>
         <ThemeProvider>
-          <NotificationProvider>
-            <AuthProvider>
-              <RouteProvider mode={platform === "web" ? "path" : "hash"}>
-                <AppLayout>
-                  <AuthGate>
-                    <AppContent platform={platform} />
-                  </AuthGate>
-                </AppLayout>
-              </RouteProvider>
-            </AuthProvider>
-          </NotificationProvider>
+          <UiI18nProvider>
+            <NotificationProvider>
+              <AuthProvider>
+                <RouteProvider mode={platform === "web" ? "path" : "hash"}>
+                  <AppLayout>
+                    <AuthGate>
+                      <AppContent platform={platform} />
+                    </AuthGate>
+                  </AppLayout>
+                </RouteProvider>
+              </AuthProvider>
+            </NotificationProvider>
+          </UiI18nProvider>
         </ThemeProvider>
       </AppInfoProvider>
     </SWRConfig>

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useI18n } from "./UiI18nContext";
 
 type AppNotificationVariant = "info" | "success" | "warning" | "error";
 
@@ -47,14 +48,15 @@ function NotificationBanner({
   onDismiss: () => void;
   isVisible: boolean;
 }) {
+  const { t } = useI18n();
   const panelClassName =
     "border-line/80 bg-panel/95 text-ink shadow-[0_28px_90px_rgb(var(--color-shadow)/0.22)]";
 
   const variantLabels = {
-    info: notification.title || "Notice",
-    success: notification.title || "Success",
-    warning: notification.title || "Heads up",
-    error: notification.title || "Something went wrong",
+    info: notification.title || t("notifications.notice"),
+    success: notification.title || t("notifications.success"),
+    warning: notification.title || t("notifications.warning"),
+    error: notification.title || t("notifications.error"),
   } satisfies Record<AppNotificationVariant, string>;
 
   const variant = notification.variant || "info";
@@ -93,9 +95,9 @@ function NotificationBanner({
             type="button"
             onClick={onDismiss}
             className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${closeButtonClassName}`}
-            aria-label="Dismiss notification"
+            aria-label={t("notifications.dismiss")}
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>

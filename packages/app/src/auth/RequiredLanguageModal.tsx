@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { ApiError } from "../hooks/api";
 import { getLanguageLabel } from "../languages/LanguageList";
 import {
@@ -18,6 +19,7 @@ type RequiredLanguageModalProps = {
  */
 export function RequiredLanguageModal({ isOpen }: RequiredLanguageModalProps) {
   const { user, updateLanguagePreference } = useAuth();
+  const { locale, t } = useI18n();
   const [language, setLanguage] = useState<string>(readInitialLanguage);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -57,7 +59,7 @@ export function RequiredLanguageModal({ isOpen }: RequiredLanguageModalProps) {
       setErrorMessage(
         error instanceof ApiError
           ? error.message
-          : "We could not save your language right now. Please try again.",
+          : t("requiredLanguage.error"),
       );
     } finally {
       setIsSaving(false);
@@ -80,25 +82,24 @@ export function RequiredLanguageModal({ isOpen }: RequiredLanguageModalProps) {
                 id="required-language-title"
                 className="text-2xl font-semibold text-ink"
               >
-                Choose your language
+                {t("requiredLanguage.title")}
               </h2>
             </div>
           </div>
 
           <div className="mt-6 grid gap-4">
             <div className="rounded-2xl border border-line bg-canvas p-4 text-sm leading-6 text-ink-muted">
-              <p className="font-semibold text-ink">What this means</p>
+              <p className="font-semibold text-ink">{t("requiredLanguage.whatThisMeans")}</p>
               <p className="mt-2">
-                We will use{" "}
-                <span className="font-semibold text-ink">
-                  {getLanguageLabel(language)}
-                </span>{" "}
-                as your default translated view in live meetings and related
-                transcripts.
+                {t("requiredLanguage.defaultView", {
+                  language: getLanguageLabel(language, locale),
+                })}
               </p>
               <p className="mt-2">
-                This does not lock the whole room to one language. It only sets
-                your personal default and you can always change it later.
+                {t("requiredLanguage.defaultUi")}
+              </p>
+              <p className="mt-2">
+                {t("requiredLanguage.notLocked")}
               </p>
             </div>
 
@@ -123,7 +124,7 @@ export function RequiredLanguageModal({ isOpen }: RequiredLanguageModalProps) {
               disabled={isSaving}
               className="rounded-xl border border-lime/50 bg-lime/10 px-4 py-2 text-sm font-semibold text-lime transition hover:border-lime hover:bg-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSaving ? "Saving..." : "Save language"}
+              {isSaving ? t("requiredLanguage.saving") : t("requiredLanguage.save")}
             </button>
           </div>
         </div>

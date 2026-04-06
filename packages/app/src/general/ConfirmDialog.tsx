@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../contexts/UiI18nContext";
 
 type ConfirmDialogTone = "default" | "danger";
 
@@ -22,13 +23,17 @@ export function ConfirmDialog({
   isOpen,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   tone = "default",
   isBusy = false,
   onConfirm,
   onClose,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
+  const resolvedConfirmLabel = confirmLabel || t("confirm.confirm");
+  const resolvedCancelLabel = cancelLabel || t("common.cancel");
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -92,7 +97,7 @@ export function ConfirmDialog({
       >
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-            Confirm Action
+            {t("confirm.action")}
           </p>
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-ink">{title}</h2>
@@ -107,7 +112,7 @@ export function ConfirmDialog({
             disabled={isBusy}
             className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             type="button"
@@ -115,7 +120,7 @@ export function ConfirmDialog({
             disabled={isBusy}
             className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${confirmButtonClassName}`}
           >
-            {isBusy ? "Working..." : confirmLabel}
+            {isBusy ? t("common.working") : resolvedConfirmLabel}
           </button>
         </div>
       </div>

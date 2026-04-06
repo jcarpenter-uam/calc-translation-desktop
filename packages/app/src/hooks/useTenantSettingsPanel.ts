@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ApiError } from "./api";
 import {
@@ -115,6 +116,7 @@ export function useTenantEditorCard({
   onDelete?: (tenantId: string) => Promise<unknown>;
   defaultCollapsed?: boolean;
 }) {
+  const { t } = useI18n();
   const { notify } = useNotifications();
   const [organizationName, setOrganizationName] = useState(settings.tenant.name || "");
   const [providerDrafts, setProviderDrafts] = useState<Record<ProviderType, ProviderDraft>>(
@@ -167,16 +169,16 @@ export function useTenantEditorCard({
   const validate = () => {
     const payload = buildPayload();
     if (payload.domains.length === 0) {
-      setError("Add at least one domain.");
+      setError(t("admin.tenants.error.domainRequired"));
       return false;
     }
     if (payload.authConfigs.length === 0) {
-      setError("Enable and configure at least one auth provider.");
+      setError(t("admin.tenants.error.providerRequired"));
       return false;
     }
     for (const config of payload.authConfigs) {
       if (!config.clientId) {
-        setError(`Client ID is required for ${config.providerType}.`);
+        setError(t("admin.tenants.error.clientIdRequired", { provider: config.providerType }));
         return false;
       }
     }
@@ -201,15 +203,15 @@ export function useTenantEditorCard({
       try {
         await onDelete(settings.tenant.id);
         notify({
-          title: "Tenant Deleted",
-          message: "The tenant was removed successfully.",
+          title: t("admin.tenants.deletedTitle"),
+          message: t("admin.tenants.deletedMessage"),
           variant: "success",
         });
         setConfirmMode(null);
       } catch (err) {
         notify({
-          title: "Delete Failed",
-          message: err instanceof ApiError ? err.message : "Failed to delete tenant.",
+          title: t("admin.tenants.deleteFailedTitle"),
+          message: err instanceof ApiError ? err.message : t("admin.tenants.deleteFailedMessage"),
           variant: "error",
         });
       } finally {
@@ -235,15 +237,15 @@ export function useTenantEditorCard({
         },
       }));
       notify({
-        title: "Tenant Updated",
-        message: "Tenant settings were saved.",
+        title: t("admin.tenants.updatedTitle"),
+        message: t("admin.tenants.updatedMessage"),
         variant: "success",
       });
       setConfirmMode(null);
     } catch (err) {
       notify({
-        title: "Save Failed",
-        message: err instanceof ApiError ? err.message : "Failed to save tenant settings.",
+        title: t("admin.tenants.saveFailedTitle"),
+        message: err instanceof ApiError ? err.message : t("admin.tenants.saveFailedMessage"),
         variant: "error",
       });
     } finally {
@@ -292,6 +294,7 @@ export function useTenantSettingsPanel({
   tenantOptions: Array<{ id: string; name: string | null }>;
 }) {
   const { user, tenantId } = useAuth();
+  const { t } = useI18n();
   const { notify } = useNotifications();
   const isSuperAdmin = user?.role === "super_admin";
   const isTenantAdmin = user?.role === "tenant_admin";
@@ -311,7 +314,7 @@ export function useTenantSettingsPanel({
   const selectedTenantLabel =
     tenantOptions.find((entry) => entry.id === effectiveTenantId)?.name ||
     effectiveTenantId ||
-    "current tenant";
+    t("admin.tenants.currentTenant");
 
   const singleSettingsQuery = useTenantSettings(
     effectiveTenantId || null,
@@ -341,24 +344,26 @@ export function useTenantSettingsPanel({
   const validateCreate = () => {
     const payload = buildCreatePayload();
     if (!newTenantId.trim()) {
-      setError("Tenant ID is required.");
+      setError(t("admin.tenants.error.tenantIdRequired"));
       return false;
     }
     if (payload.domains.length === 0) {
-      setError("Add at least one domain.");
+      setError(t("admin.tenants.error.domainRequired"));
       return false;
     }
     if (payload.authConfigs.length === 0) {
-      setError("Enable and configure at least one auth provider.");
+      setError(t("admin.tenants.error.providerRequired"));
       return false;
     }
     for (const config of payload.authConfigs) {
       if (!config.clientId) {
-        setError(`Client ID is required for ${config.providerType}.`);
+        setError(t("admin.tenants.error.clientIdRequired", { provider: config.providerType }));
         return false;
       }
       if (!config.clientSecret) {
-        setError(`Client secret is required for ${config.providerType} when creating a tenant.`);
+        setError(
+          t("admin.tenants.error.clientSecretRequired", { provider: config.providerType }),
+        );
         return false;
       }
     }
@@ -390,15 +395,15 @@ export function useTenantSettingsPanel({
       setProviderDrafts(createEmptyProviderDrafts());
       setIsCreating(false);
       notify({
-        title: "Tenant Created",
-        message: "The new tenant is ready to use.",
+        title: t("admin.tenants.createdTitle"),
+        message: t("admin.tenants.createdMessage"),
         variant: "success",
       });
       setConfirmCreateOpen(false);
     } catch (err) {
       notify({
-        title: "Create Failed",
-        message: err instanceof ApiError ? err.message : "Failed to create tenant.",
+        title: t("admin.tenants.createFailedTitle"),
+        message: err instanceof ApiError ? err.message : t("admin.tenants.createFailedMessage"),
         variant: "error",
       });
     } finally {

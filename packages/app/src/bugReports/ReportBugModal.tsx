@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppInfo } from "../contexts/AppInfoContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useAppRoute } from "../contexts/RouteContext";
 import { collectClientMetadata } from "./clientMetadata";
@@ -25,6 +26,7 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
   const { route } = useAppRoute();
   const { tenantId, tenantName, user } = useAuth();
   const { notify } = useNotifications();
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,8 +85,8 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
       });
       writeClientLog("info", "Bug report submitted successfully", title || "untitled");
       notify({
-        title: "Bug Report Sent",
-        message: "Thanks - your bug report was submitted.",
+        title: t("bugReport.sentTitle"),
+        message: t("bugReport.sentMessage"),
         variant: "success",
       });
       setTitle("");
@@ -92,11 +94,11 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
     } catch (submissionError) {
       writeClientLog("error", "Bug report submission failed", submissionError);
       notify({
-        title: "Bug Report Failed",
+        title: t("bugReport.failedTitle"),
         message:
           submissionError instanceof ApiError
             ? submissionError.message
-            : "Failed to submit bug report.",
+            : t("bugReport.failedMessage"),
         variant: "error",
       });
     } finally {
@@ -109,7 +111,7 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
       className="fixed inset-0 z-[70] overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Report Bug"
+      aria-label={t("bugReport.title")}
       onClick={() => {
         if (!isSubmitting) {
           resetAndClose();
@@ -123,11 +125,11 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Diagnostics
+              {t("bugReport.section")}
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-ink">Report Bug</h2>
+            <h2 className="mt-1 text-xl font-semibold text-ink">{t("bugReport.title")}</h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Send a short description and the latest client logs so the super-admin team can investigate.
+              {t("bugReport.subtitle")}
             </p>
           </div>
           <button
@@ -136,61 +138,61 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
             disabled={isSubmitting}
             className="rounded-xl border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
 
         <form className="mt-6 max-h-[calc(100dvh-10rem)] space-y-4 overflow-y-auto pr-1" onSubmit={onSubmit}>
           <div className="grid gap-3 rounded-2xl border border-line bg-canvas p-4 text-sm text-ink-muted sm:grid-cols-2">
             <p>
-              User: <span className="font-semibold text-ink">{user?.name || user?.email || user?.id || "Unknown"}</span>
+              {t("bugReport.user")}: <span className="font-semibold text-ink">{user?.name || user?.email || user?.id || t("bugReport.unknown")}</span>
             </p>
             <p>
-              Email: <span className="font-semibold text-ink">{user?.email || "Unavailable"}</span>
+              {t("bugReport.email")}: <span className="font-semibold text-ink">{user?.email || t("bugReport.unavailable")}</span>
             </p>
             <p>
-              Tenant: <span className="font-semibold text-ink">{tenantName || tenantId || "Unavailable"}</span>
+              {t("bugReport.tenant")}: <span className="font-semibold text-ink">{tenantName || tenantId || t("bugReport.unavailable")}</span>
             </p>
             <p>
-              Role: <span className="font-semibold text-ink">{user?.role || "Unknown"}</span>
+              {t("bugReport.role")}: <span className="font-semibold text-ink">{user?.role || t("bugReport.unknown")}</span>
             </p>
             <p>
-              Client: <span className="font-semibold uppercase text-ink">{metadata.clientType}</span>
+              {t("bugReport.client")}: <span className="font-semibold uppercase text-ink">{metadata.clientType}</span>
             </p>
             <p>
-              Platform: <span className="font-semibold uppercase text-ink">{metadata.osPlatform}</span>
+              {t("bugReport.platform")}: <span className="font-semibold uppercase text-ink">{metadata.osPlatform}</span>
             </p>
             <p>
-              App Version: <span className="font-semibold text-ink">{metadata.appVersion}</span>
+              {t("bugReport.appVersion")}: <span className="font-semibold text-ink">{metadata.appVersion}</span>
             </p>
             <p>
-              Route: <span className="font-semibold text-ink">{route}</span>
+              {t("bugReport.route")}: <span className="font-semibold text-ink">{route}</span>
             </p>
             <p className="sm:col-span-2">
-              Browser: <span className="font-semibold text-ink">{metadata.browserName ? `${metadata.browserName} ${metadata.browserVersion || ""}`.trim() : "Unavailable"}</span>
+              {t("bugReport.browser")}: <span className="font-semibold text-ink">{metadata.browserName ? `${metadata.browserName} ${metadata.browserVersion || ""}`.trim() : t("bugReport.unavailable")}</span>
             </p>
             <p className="sm:col-span-2">
-              Attached Logs: <span className="font-semibold text-ink">{attachedLogCount}</span>
+              {t("bugReport.attachedLogs")}: <span className="font-semibold text-ink">{attachedLogCount}</span>
             </p>
           </div>
 
           <label className="block space-y-1">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Title
+               {t("bugReport.issueTitle")}
             </span>
             <input
               value={title}
               onChange={(event: any) => setTitle(String(event.currentTarget.value))}
               required
               maxLength={200}
-              placeholder="Short summary of the problem"
+              placeholder={t("bugReport.issueTitlePlaceholder")}
               className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
             />
           </label>
 
           <label className="block space-y-1">
             <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              What happened?
+               {t("bugReport.description")}
             </span>
             <textarea
               value={description}
@@ -200,7 +202,7 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
               required
               rows={6}
               maxLength={5000}
-              placeholder="What were you trying to do, and what did you expect to happen?"
+              placeholder={t("bugReport.descriptionPlaceholder")}
               className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-muted focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
             />
           </label>
@@ -211,14 +213,14 @@ export function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
               disabled={isSubmitting}
               className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="rounded-xl border border-lime/50 bg-lime/10 px-4 py-2 text-sm font-semibold text-lime transition hover:border-lime hover:bg-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? "Submitting..." : "Submit Report"}
+              {isSubmitting ? t("bugReport.submitting") : t("bugReport.submit")}
             </button>
           </div>
         </form>

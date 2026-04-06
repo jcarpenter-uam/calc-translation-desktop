@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ApiError } from "./api";
 import {
@@ -46,6 +47,7 @@ export function useUserSettingsPanel({
   tenantOptions: Array<{ id: string; name: string | null }>;
 }) {
   const { user, tenantId } = useAuth();
+  const { t } = useI18n();
   const { notify } = useNotifications();
   const isSuperAdmin = user?.role === "super_admin";
   const isTenantAdmin = user?.role === "tenant_admin";
@@ -108,14 +110,14 @@ export function useUserSettingsPanel({
       setEditingUserId(null);
       setConfirmState(null);
       notify({
-        title: "User Updated",
-        message: "User role changes were saved.",
+        title: t("admin.users.updatedTitle"),
+        message: t("admin.users.updatedMessage"),
         variant: "success",
       });
     } catch (err) {
       notify({
-        title: "Update Failed",
-        message: err instanceof ApiError ? err.message : "Failed to update user.",
+        title: t("admin.users.updateFailedTitle"),
+        message: err instanceof ApiError ? err.message : t("admin.users.updateFailedMessage"),
         variant: "error",
       });
     } finally {
@@ -137,14 +139,14 @@ export function useUserSettingsPanel({
       }
       setConfirmState(null);
       notify({
-        title: "User Deleted",
-        message: "The user was removed successfully.",
+        title: t("admin.users.deletedTitle"),
+        message: t("admin.users.deletedMessage"),
         variant: "success",
       });
     } catch (err) {
       notify({
-        title: "Delete Failed",
-        message: err instanceof ApiError ? err.message : "Failed to delete user.",
+        title: t("admin.users.deleteFailedTitle"),
+        message: err instanceof ApiError ? err.message : t("admin.users.deleteFailedMessage"),
         variant: "error",
       });
     } finally {

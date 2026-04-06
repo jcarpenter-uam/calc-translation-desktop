@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { SettingHint } from "./SettingHint";
+import { useI18n } from "../contexts/UiI18nContext";
 import {
   DEFAULT_LANGUAGE_CODE,
   LANGUAGE_OPTIONS,
@@ -24,6 +25,7 @@ type LanguageSelectProps = {
 };
 
 export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
+  const { locale, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<any>(null);
   const listRef = useRef<any>(null);
@@ -158,9 +160,9 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
           htmlFor="language-select"
           className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted"
         >
-          Language
+          {t("transcriptLanguage.title")}
         </label>
-        <SettingHint text="Sets your preferred language for your account." />
+        <SettingHint text={t("transcriptLanguage.hint")} />
       </div>
       <div className="relative">
         <button
@@ -177,7 +179,7 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
           onKeyDown={onTriggerKeyDown}
           className="flex w-full items-center justify-between rounded-lg border border-line bg-panel px-3 py-2 text-left text-sm text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
         >
-          <span>{getLanguageLabel(value)}</span>
+          <span>{getLanguageLabel(value, locale)}</span>
           <span
             aria-hidden="true"
             className={`ml-3 text-xs text-ink-muted transition-transform ${
@@ -220,10 +222,10 @@ export function LanguageSelect({ value, onChange }: LanguageSelectProps) {
                       : "text-ink-muted hover:bg-canvas hover:text-ink"
                   } ${isSelected ? "font-semibold text-ink" : "font-medium"}`}
                 >
-                  <span>{option.label}</span>
+                  <span>{getLanguageLabel(option.value, locale)}</span>
                   {isSelected ? (
                     <span className="text-xs uppercase tracking-[0.12em] text-lime">
-                      Selected
+                      {t("common.selected")}
                     </span>
                   ) : null}
                 </button>

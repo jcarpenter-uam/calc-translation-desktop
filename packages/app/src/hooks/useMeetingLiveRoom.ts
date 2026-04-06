@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useAppRoute } from "../contexts/RouteContext";
 import { ApiError, getApiBaseUrl } from "./api";
@@ -101,6 +102,7 @@ function debugLiveRoom(browser: BrowserLike, event: string, details: Record<stri
 export function useMeetingLiveRoom() {
   const { meeting, navigateTo } = useAppRoute();
   const { user } = useAuth();
+  const { locale, t } = useI18n();
   const { notify } = useNotifications();
   const browser = globalThis as BrowserLike;
   const isHostView = Boolean(meeting?.isHost);
@@ -852,19 +854,18 @@ export function useMeetingLiveRoom() {
               notify(
                 hasTranscriptDownloads || hasSummaryDownloads
                   ? {
-                      title: "Downloads Ready",
+                      title: t("meeting.downloadsReady"),
                       message:
                         hasTranscriptDownloads && hasSummaryDownloads
-                          ? "Transcript VTT files and summary markdown files are ready to download."
+                          ? t("meeting.downloadsReadyAll")
                           : hasTranscriptDownloads
-                            ? "Transcript VTT files are ready to download."
-                            : "Summary markdown files are ready to download.",
+                            ? t("meeting.downloadsReadyTranscript")
+                            : t("meeting.downloadsReadySummary"),
                       variant: "success",
                     }
                   : {
-                      title: "Meeting Ended",
-                      message:
-                        "Meeting ended. Transcript and summary files are still being prepared.",
+                      title: t("meeting.meetingEndedTitle"),
+                      message: t("meeting.meetingEndedPreparing"),
                       variant: "info",
                     },
               );
@@ -1052,10 +1053,10 @@ export function useMeetingLiveRoom() {
     }
 
     if (!joinUrl || !browser.navigator?.clipboard?.writeText) {
-      setCopyJoinStatus("Copy is unavailable in this browser.");
+      setCopyJoinStatus(t("meeting.copyUnavailable"));
       notify({
-        title: "Invite Link",
-        message: "Copy is unavailable in this browser.",
+        title: t("meeting.inviteLink"),
+        message: t("meeting.copyUnavailable"),
         variant: "warning",
       });
       return;
@@ -1063,21 +1064,21 @@ export function useMeetingLiveRoom() {
 
     try {
       await browser.navigator.clipboard.writeText(joinUrl);
-      setCopyJoinStatus("Join URL copied.");
+      setCopyJoinStatus(t("meeting.joinUrlCopied"));
       notify({
-        title: "Invite Link",
-        message: "Join URL copied.",
+        title: t("meeting.inviteLink"),
+        message: t("meeting.joinUrlCopied"),
         variant: "success",
       });
       copyJoinResetTimeoutRef.current = setTimeout(() => {
-        setCopyJoinStatus((current) => (current === "Join URL copied." ? null : current));
+        setCopyJoinStatus((current) => (current === t("meeting.joinUrlCopied") ? null : current));
         copyJoinResetTimeoutRef.current = null;
       }, 2000);
     } catch {
-      setCopyJoinStatus("Failed to copy join URL.");
+      setCopyJoinStatus(t("meeting.copyFailed"));
       notify({
-        title: "Invite Link",
-        message: "Failed to copy join URL.",
+        title: t("meeting.inviteLink"),
+        message: t("meeting.copyFailed"),
         variant: "error",
       });
     }
@@ -1128,7 +1129,7 @@ export function useMeetingLiveRoom() {
       const anchor = browser.document?.createElement?.("a");
 
       if (!anchor) {
-        throw new Error("Download is not supported in this browser.");
+        throw new Error(t("meeting.downloadUnsupported"));
       }
 
       anchor.href = objectUrl;
@@ -1138,8 +1139,10 @@ export function useMeetingLiveRoom() {
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
       notify({
-        title: "Transcript Downloaded",
-        message: `Saved the ${getLanguageLabel(language)} transcript as a VTT file.`,
+          title: t("meeting.transcriptDownloaded"),
+          message: t("meeting.transcriptDownloadedMessage", {
+          language: getLanguageLabel(language, locale),
+        }),
         variant: "success",
       });
     } catch (error) {
@@ -1148,9 +1151,9 @@ export function useMeetingLiveRoom() {
           ? error.message
           : error instanceof Error
             ? error.message
-            : "Failed to download transcript.";
+            : t("meeting.downloadTranscriptFailed");
       notify({
-        title: "Download Failed",
+        title: t("meeting.downloadFailed"),
         message,
         variant: "error",
       });
@@ -1175,7 +1178,7 @@ export function useMeetingLiveRoom() {
       const anchor = browser.document?.createElement?.("a");
 
       if (!anchor) {
-        throw new Error("Download is not supported in this browser.");
+        throw new Error(t("meeting.downloadUnsupported"));
       }
 
       anchor.href = objectUrl;
@@ -1185,8 +1188,10 @@ export function useMeetingLiveRoom() {
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
       notify({
-        title: "Summary Downloaded",
-        message: `Saved the ${getLanguageLabel(language)} summary as a Markdown file.`,
+          title: t("meeting.summaryDownloaded"),
+          message: t("meeting.summaryDownloadedMessage", {
+          language: getLanguageLabel(language, locale),
+        }),
         variant: "success",
       });
     } catch (error) {
@@ -1195,9 +1200,9 @@ export function useMeetingLiveRoom() {
           ? error.message
           : error instanceof Error
             ? error.message
-            : "Failed to download summary.";
+            : t("meeting.downloadSummaryFailed");
       notify({
-        title: "Download Failed",
+        title: t("meeting.downloadFailed"),
         message,
         variant: "error",
       });
@@ -1294,28 +1299,34 @@ export function useMeetingLiveRoom() {
 
     if (meetingDetailsData?.meeting.method === "two_way") {
       if (uniqueMeetingLanguages.length === 2) {
-        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(" <-> ");
+        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language, locale)).join(" <-> ");
       }
 
       if (uniqueMeetingLanguages.length > 0) {
-        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+        return uniqueMeetingLanguages.map((language) => getLanguageLabel(language, locale)).join(", ");
       }
     }
 
     if (user?.languageCode) {
-      return getLanguageLabel(user.languageCode);
+      return getLanguageLabel(user.languageCode, locale);
     }
 
     if (uniqueMeetingLanguages.length === 1) {
-      return getLanguageLabel(uniqueMeetingLanguages[0]!);
+      return getLanguageLabel(uniqueMeetingLanguages[0]!, locale);
     }
 
     if (uniqueMeetingLanguages.length > 1) {
-      return uniqueMeetingLanguages.map((language) => getLanguageLabel(language)).join(", ");
+      return uniqueMeetingLanguages.map((language) => getLanguageLabel(language, locale)).join(", ");
     }
 
-    return "Live";
-  }, [meetingDetailsData?.meeting.method, meetingDetailsData?.meeting.spoken_languages, user?.languageCode]);
+    return t("meeting.live");
+  }, [
+    meetingDetailsData?.meeting.method,
+    meetingDetailsData?.meeting.spoken_languages,
+    locale,
+    t,
+    user?.languageCode,
+  ]);
 
   const downloadableTranscriptLanguages = useMemo(() => {
     return Array.from(new Set(availableTranscriptLanguages.filter(Boolean)));

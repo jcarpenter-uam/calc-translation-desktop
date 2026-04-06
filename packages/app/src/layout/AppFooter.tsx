@@ -1,6 +1,9 @@
 import { FaGithub } from "react-icons/fa";
+import { useI18n } from "../contexts/UiI18nContext";
 
 export function AppFooter() {
+  const { t } = useI18n();
+
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-40 px-4 py-4">
       <div className="flex w-full justify-end">
@@ -8,7 +11,7 @@ export function AppFooter() {
           href="https://github.com/jcarpenter-uam/calc-translation"
           target="_blank"
           rel="noreferrer"
-          aria-label="GitHub"
+          aria-label={t("common.github")}
           className="text-ink-muted transition hover:text-accent"
         >
           <FaGithub className="h-5 w-5" aria-hidden="true" />

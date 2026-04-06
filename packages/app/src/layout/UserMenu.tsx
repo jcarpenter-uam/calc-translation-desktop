@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaCog } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { ReportBugModal } from "../bugReports/ReportBugModal";
 import {
   LANGUAGE_STORAGE_KEY,
@@ -13,6 +14,7 @@ import { SettingsModal } from "../settings/SettingsModal";
  */
 export function UserMenu() {
   const { status, user, logoutAndReset, updateLanguagePreference } = useAuth();
+  const { canTranslateLanguage, setUiTranslationEnabled, syncTranscriptLanguage, t, uiTranslationEnabled } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isReportBugOpen, setIsReportBugOpen] = useState(false);
@@ -21,8 +23,8 @@ export function UserMenu() {
 
   const isAuthenticated = status === "authenticated";
   const displayUser = useMemo(
-    () => user?.name || user?.email || "Unknown user",
-    [user?.email, user?.name],
+    () => user?.name || user?.email || t("settings.unknownUser"),
+    [t, user?.email, user?.name],
   );
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export function UserMenu() {
 
   const onLanguageChange = async (nextLanguage: string) => {
     setLanguage(nextLanguage);
+    syncTranscriptLanguage(nextLanguage);
 
     try {
       await updateLanguagePreference(nextLanguage);
@@ -72,6 +75,7 @@ export function UserMenu() {
       // Restore the server value if the optimistic local change fails.
       if (user?.languageCode) {
         setLanguage(user.languageCode);
+        syncTranscriptLanguage(user.languageCode);
       }
     }
   };
@@ -93,7 +97,7 @@ export function UserMenu() {
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-panel/90 text-ink shadow-panel transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
           aria-haspopup="menu"
           aria-expanded={isOpen}
-          aria-label="Open user menu"
+          aria-label={t("settings.openUserMenu")}
         >
           <FaCog
             className={`h-4 w-4 transition-transform duration-200 ease-out ${
@@ -107,7 +111,7 @@ export function UserMenu() {
           <div
             className="absolute left-0 mt-2 w-72 rounded-2xl border border-line bg-panel/95 p-3 shadow-panel backdrop-blur-sm"
             role="menu"
-            aria-label="User menu"
+              aria-label={t("settings.userMenu")}
           >
             <button
               type="button"
@@ -118,7 +122,7 @@ export function UserMenu() {
               className="mb-3 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
               role="menuitem"
             >
-              Settings
+              {t("settings.button")}
             </button>
             <button
               type="button"
@@ -129,13 +133,13 @@ export function UserMenu() {
               className="mb-3 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-left text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
               role="menuitem"
             >
-              Report Bug
+              {t("settings.reportBug")}
             </button>
 
             {isAuthenticated ? (
               <div className="mb-3 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-muted">
                 <p>
-                  Logged in as{" "}
+                  {t("settings.loggedInAs")}{" "}
                   <span className="font-semibold text-ink">{displayUser}</span>
                 </p>
                 <button
@@ -146,7 +150,7 @@ export function UserMenu() {
                   }}
                   className="mt-2 text-sm font-semibold text-accent transition hover:text-accent-hover focus:outline-none"
                 >
-                  Logout?
+                  {t("settings.logout")}
                 </button>
               </div>
             ) : null}
@@ -154,14 +158,17 @@ export function UserMenu() {
         ) : null}
       </div>
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        language={language}
-        onClose={() => setIsSettingsOpen(false)}
-        onLanguageChange={(value) => {
-          void onLanguageChange(value);
-        }}
-      />
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          language={language}
+          isUiTranslationEnabled={uiTranslationEnabled}
+          canTranslateUi={canTranslateLanguage(language)}
+          onClose={() => setIsSettingsOpen(false)}
+          onLanguageChange={(value) => {
+            void onLanguageChange(value);
+          }}
+          onUiTranslationChange={setUiTranslationEnabled}
+        />
       <ReportBugModal
         isOpen={isReportBugOpen}
         onClose={() => setIsReportBugOpen(false)}

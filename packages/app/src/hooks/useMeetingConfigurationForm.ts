@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useAppRoute } from "../contexts/RouteContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { getLanguageFlagSrc, LanguageList } from "../languages/LanguageList";
 import { ApiError } from "./api";
 import { useCreateMeeting, useJoinMeeting } from "./meeting";
@@ -32,6 +33,7 @@ export const INTEGRATION_OPTIONS: IntegrationOption[] = [
  */
 export function useMeetingConfigurationForm() {
   const { navigateToMeeting } = useAppRoute();
+  const { t } = useI18n();
   const createMeeting = useCreateMeeting();
   const joinMeeting = useJoinMeeting();
 
@@ -103,7 +105,7 @@ export function useMeetingConfigurationForm() {
       selectedSpokenLanguages.length >= 2
     ) {
       setSubmitError(
-        "Two-way meetings need exactly two spoken languages. Deselect one to choose another.",
+        t("configure.error.twoWayExactTwo"),
       );
       return;
     }
@@ -114,7 +116,7 @@ export function useMeetingConfigurationForm() {
       selectedSpokenLanguages.length >= MAX_ONE_WAY_SPOKEN_LANGUAGES
     ) {
       setSubmitError(
-        `One-way meetings can include at most ${MAX_ONE_WAY_SPOKEN_LANGUAGES} spoken languages.`,
+        t("configure.error.oneWayMax", { count: MAX_ONE_WAY_SPOKEN_LANGUAGES }),
       );
       return;
     }
@@ -146,19 +148,19 @@ export function useMeetingConfigurationForm() {
     event.preventDefault();
 
     if (method === "two_way" && selectedSpokenLanguages.length !== 2) {
-      setSubmitError("Two-way meetings need exactly two spoken languages before you can start.");
+      setSubmitError(t("configure.error.twoWayBeforeStart"));
       return;
     }
 
     if (method === "one_way" && selectedSpokenLanguages.length > MAX_ONE_WAY_SPOKEN_LANGUAGES) {
       setSubmitError(
-        `One-way meetings can include at most ${MAX_ONE_WAY_SPOKEN_LANGUAGES} spoken languages.`,
+        t("configure.error.oneWayMax", { count: MAX_ONE_WAY_SPOKEN_LANGUAGES }),
       );
       return;
     }
 
     if (method === "one_way" && selectedSpokenLanguages.length === 0) {
-      setSubmitError("One-way meetings need at least one spoken language before you can start.");
+      setSubmitError(t("configure.error.oneWayBeforeStart"));
       return;
     }
 
@@ -170,7 +172,7 @@ export function useMeetingConfigurationForm() {
 
         new URL(externalJoinUrl);
       } catch {
-        setSubmitError("Zoom meetings require a valid meeting URL before you can start.");
+        setSubmitError(t("configure.error.zoomUrl"));
         return;
       }
     }
@@ -201,7 +203,7 @@ export function useMeetingConfigurationForm() {
       } else if (error instanceof Error) {
         setSubmitError(error.message);
       } else {
-        setSubmitError("Unable to create and start the meeting.");
+        setSubmitError(t("configure.error.createMeeting"));
       }
     } finally {
       setIsSubmitting(false);

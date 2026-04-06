@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ApiError } from "../hooks/api";
 import { useCalendarEvents, useSyncCalendar } from "../hooks/user";
@@ -8,6 +9,7 @@ import { CalendarEventsList } from "./CalendarEventsList";
  * Shows upcoming provider-synced meetings and allows manual provider sync.
  */
 export function CalendarSection() {
+  const { t } = useI18n();
   const [isSyncing, setIsSyncing] = useState(false);
   const [fromDate, setFromDate] = useState(() => formatDateInput(new Date()));
   const [toDate, setToDate] = useState(() => {
@@ -43,26 +45,32 @@ export function CalendarSection() {
     try {
       const result = await syncCalendar();
       notify({
-        title: "Calendar Synced",
-        message: `Calendar sync complete (${result.savedCount} saved across ${result.providers.length} provider${result.providers.length === 1 ? "" : "s"}).`,
+        title: t("calendar.syncedTitle"),
+        message: t("calendar.syncedMessage", {
+          savedCount: result.savedCount,
+          providerCount: result.providers.length,
+          providerSuffix: result.providers.length === 1 ? "" : "s",
+        }),
         variant: "success",
       });
       if (result.reauthProviders.length > 0) {
         // Surface partial-success reauth needs separately so the main sync result is still visible.
         notify({
-          title: "Re-auth Required",
-          message: `Re-auth required for: ${result.reauthProviders.join(", ")}. Sign in again with those providers.`,
+          title: t("calendar.reauthTitle"),
+          message: t("calendar.reauthMessage", {
+            providers: result.reauthProviders.join(", "),
+          }),
           variant: "warning",
           durationMs: 5200,
         });
       }
     } catch (err) {
       notify({
-        title: "Sync Failed",
+        title: t("calendar.syncFailed"),
         message:
           err instanceof ApiError
             ? err.message
-            : "Failed to sync calendar provider.",
+            : t("calendar.syncFailedMessage"),
         variant: "error",
       });
     } finally {
@@ -75,18 +83,18 @@ export function CalendarSection() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-            Calendar
+            {t("nav.calendar")}
           </p>
-          <h2 className="mt-1 text-lg font-semibold">Synced Meetings</h2>
+          <h2 className="mt-1 text-lg font-semibold">{t("calendar.syncedMeetings")}</h2>
           <p className="mt-1 text-sm text-ink-muted">
-            We show synced events with Teams, Google Meet, Zoom, or app links, including cancelled meetings.
+            {t("calendar.syncedSubtitle")}
           </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:items-end">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              From
+              {t("common.from")}
               <input
                 type="date"
                 value={fromDate}
@@ -95,7 +103,7 @@ export function CalendarSection() {
               />
             </label>
             <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              To
+              {t("common.to")}
               <input
                 type="date"
                 value={toDate}
@@ -112,20 +120,20 @@ export function CalendarSection() {
             disabled={isSyncing || !fromDate || !toDate}
             className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSyncing ? "Syncing..." : "Sync Calendar"}
+            {isSyncing ? t("calendar.syncing") : t("calendar.sync")}
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-ink-muted">Loading calendar events...</p>
+        <p className="text-sm text-ink-muted">{t("calendar.loading")}</p>
       ) : error ? (
         <p className="text-sm text-ink-muted">
-          Could not load calendar events right now.
+          {t("calendar.loadFailed")}
         </p>
       ) : sortedEvents.length === 0 ? (
         <p className="text-sm text-ink-muted">
-          No supported synced meeting links found yet.
+          {t("calendar.empty")}
         </p>
       ) : (
         <CalendarEventsList events={sortedEvents} />

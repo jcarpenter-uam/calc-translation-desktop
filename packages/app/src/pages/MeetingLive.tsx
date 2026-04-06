@@ -1,4 +1,5 @@
 import { useMeetingLiveRoom } from "../hooks/useMeetingLiveRoom";
+import { useI18n } from "../contexts/UiI18nContext";
 import { getLanguageLabel } from "../languages/LanguageList";
 import { GrDownload } from "react-icons/gr";
 
@@ -6,6 +7,7 @@ import { GrDownload } from "react-icons/gr";
  * Live meeting room for audio streaming and transcript updates.
  */
 export function MeetingLivePage() {
+  const { locale, t } = useI18n();
   const {
     meeting,
     navigateTo,
@@ -57,14 +59,14 @@ export function MeetingLivePage() {
       <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
         <section className="mx-auto w-full max-w-4xl rounded-3xl border border-line/80 bg-panel/90 p-6 shadow-panel">
           <p className="text-sm text-ink-muted">
-            No active meeting session found. Start from Dashboard.
+            {t("meeting.noActiveSession")}
           </p>
           <button
             type="button"
             onClick={() => navigateTo("home")}
             className="mt-4 rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
-            Back to Dashboard
+            {t("common.backToDashboard")}
           </button>
         </section>
       </main>
@@ -82,8 +84,8 @@ export function MeetingLivePage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-                {isHostView ? "Host Console" : "Live Transcript"}
-              </p>
+                 {isHostView ? t("meeting.hostConsole") : t("meeting.liveTranscript")}
+               </p>
               <div className="grid grid-cols-2 gap-4">
                 <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
                   {meetingTopic}
@@ -91,22 +93,22 @@ export function MeetingLivePage() {
                 <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
                   <div className="group relative z-30">
                     <span className="inline-flex rounded-full border border-line/70 bg-canvas/80 px-3 py-1.5">
-                      {connectedCount} Participants
+                      {connectedCount} {t("meeting.participants")}
                     </span>
                     <div className="pointer-events-none absolute left-0 top-full z-[70] mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line/80 bg-panel/95 p-3 opacity-0 shadow-panel backdrop-blur-xl transition duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                          Participants
+                          {t("meeting.participants")}
                         </p>
                       </div>
 
                       {isParticipantsLoading ? (
                         <p className="mt-3 text-xs normal-case tracking-normal text-ink-muted">
-                          Loading participants...
+                          {t("meeting.loadingParticipants")}
                         </p>
                       ) : participants.length === 0 ? (
                         <p className="mt-3 text-xs normal-case tracking-normal text-ink-muted">
-                          No participants found.
+                          {t("meeting.noParticipants")}
                         </p>
                       ) : (
                         <div className="mt-3 max-h-64 space-y-2 overflow-auto pr-1">
@@ -119,7 +121,7 @@ export function MeetingLivePage() {
                                 {participant.name ||
                                   participant.email ||
                                   participant.id}
-                                {participant.isHost ? " (Host)" : ""}
+                                {participant.isHost ? ` ${t("meeting.hostSuffix")}` : ""}
                               </p>
                             </div>
                           ))}
@@ -139,7 +141,7 @@ export function MeetingLivePage() {
                 }}
                 className="rounded-full border border-line bg-canvas/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-lime hover:text-lime"
               >
-                Leave
+                {t("meeting.leave")}
               </button>
             ) : null}
           </div>
@@ -150,8 +152,8 @@ export function MeetingLivePage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                  {transcriptLanguageLabel} Transcript
-                </p>
+                    {transcriptLanguageLabel} {t("meeting.transcript")}
+                  </p>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2 text-xs text-ink-muted">
@@ -164,8 +166,8 @@ export function MeetingLivePage() {
                       }
                       className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "translated_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
                     >
-                      Translated only
-                    </button>
+                       {t("meeting.translatedOnly")}
+                     </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -173,15 +175,15 @@ export function MeetingLivePage() {
                       }
                       className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "transcribed_only" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
                     >
-                      Transcribed only
-                    </button>
+                       {t("meeting.transcribedOnly")}
+                     </button>
                     <button
                       type="button"
                       onClick={() => setTranscriptDisplayMode("both")}
                       className={`rounded-full px-3 py-1.5 transition ${transcriptDisplayMode === "both" ? "bg-accent text-accent-contrast" : "hover:text-lime"}`}
                     >
-                      Show both
-                    </button>
+                       {t("meeting.showBoth")}
+                     </button>
                   </div>
                 ) : null}
                 {areDownloadsVisible &&
@@ -209,9 +211,11 @@ export function MeetingLivePage() {
                           />
                           <span>
                             {downloadingLanguage === selectedTranscriptLanguage
-                              ? `Downloading ${getLanguageLabel(selectedTranscriptLanguage)} ...`
-                              : "Transcript"}
-                          </span>
+                                 ? t("meeting.downloadingTranscript", {
+                                   language: getLanguageLabel(selectedTranscriptLanguage, locale),
+                                 })
+                               : t("meeting.downloadTranscript")}
+                           </span>
                         </span>
                       </button>
                     ) : null}
@@ -236,9 +240,11 @@ export function MeetingLivePage() {
                           <span>
                             {downloadingSummaryLanguage ===
                             selectedSummaryLanguage
-                              ? `Downloading ${getLanguageLabel(selectedSummaryLanguage)} ...`
-                              : "Summary"}
-                          </span>
+                                 ? t("meeting.downloadingTranscript", {
+                                   language: getLanguageLabel(selectedSummaryLanguage, locale),
+                                 })
+                               : t("meeting.downloadSummary")}
+                           </span>
                         </span>
                       </button>
                     ) : null}
@@ -248,9 +254,7 @@ export function MeetingLivePage() {
                         ?
                       </span>
                       <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-56 rounded-2xl border border-line/80 bg-panel/95 p-3 text-[11px] leading-5 text-ink-muted opacity-0 shadow-panel backdrop-blur-xl transition group-hover:opacity-100">
-                        Downloads use your current language setting when
-                        available. Otherwise the first available language is
-                        used.
+                        {t("meeting.downloadsHint")}
                       </div>
                     </div>
                   </div>
@@ -261,8 +265,8 @@ export function MeetingLivePage() {
                     onClick={() => setIsFollowEnabled((value) => !value)}
                     className="h-10 rounded-full border border-line bg-canvas px-4 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime"
                   >
-                    {isFollowEnabled ? "Pause Follow" : "Resume Follow"}
-                  </button>
+                     {isFollowEnabled ? t("meeting.pauseFollow") : t("meeting.resumeFollow")}
+                   </button>
                 ) : null}
               </div>
             </div>
@@ -277,9 +281,9 @@ export function MeetingLivePage() {
                 <div className="flex h-full min-h-[220px] items-center justify-center rounded-[20px] border border-dashed border-line/80 bg-panel/60 px-6 text-center">
                   <p className="max-w-md text-sm leading-6 text-ink-muted">
                     {isHostView
-                      ? "Final transcript lines appear here once you start sending audio."
-                      : "The host has not started speaking yet. Live transcript lines will appear here as soon as audio begins."}
-                  </p>
+                       ? t("meeting.hostEmptyTranscript")
+                       : t("meeting.viewerEmptyTranscript")}
+                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -320,7 +324,7 @@ export function MeetingLivePage() {
                   onClick={() => showHostControls()}
                   className={`pointer-events-auto rounded-full border border-line/70 bg-panel/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted shadow-panel backdrop-blur-xl transition ${areHostControlsVisible ? "opacity-0" : "opacity-100 hover:border-lime hover:text-lime"}`}
                 >
-                  Show controls
+                  {t("meeting.showControls")}
                 </button>
 
                 <div
@@ -330,8 +334,8 @@ export function MeetingLivePage() {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                          Meeting controls
-                        </p>
+                           {t("meeting.controls")}
+                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
@@ -344,10 +348,10 @@ export function MeetingLivePage() {
                           className={`rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isPreflightMonitoring ? "border-lime/40 bg-lime/15 text-ink" : "border-line bg-canvas/80 text-ink hover:border-lime hover:text-lime"}`}
                         >
                           {preflightStatus === "checking"
-                            ? "Checking..."
+                            ? t("meeting.checking")
                             : isPreflightMonitoring
-                              ? "Stop Mic Check"
-                              : "Check Mic"}
+                              ? t("meeting.stopMicCheck")
+                              : t("meeting.checkMic")}
                         </button>
                         <button
                           type="button"
@@ -357,9 +361,9 @@ export function MeetingLivePage() {
                           disabled={!joinUrl}
                           className="rounded-full border border-line bg-canvas/80 px-4 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {copyJoinStatus === "Join URL copied."
-                            ? "Copied"
-                            : "Invite"}
+                          {copyJoinStatus === t("meeting.joinUrlCopied")
+                            ? t("meeting.copied")
+                            : t("meeting.invite")}
                         </button>
                         <button
                           type="button"
@@ -370,10 +374,10 @@ export function MeetingLivePage() {
                           className="rounded-full border border-rose-300/70 bg-rose-50/70 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-400 hover:bg-rose-100/80 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {hasMeetingEnded
-                            ? "Ended"
+                            ? t("meeting.ended")
                             : isEndingMeeting
-                              ? "Ending..."
-                              : "End"}
+                              ? t("meeting.ending")
+                              : t("meeting.end")}
                         </button>
                       </div>
                     </div>
@@ -406,7 +410,7 @@ export function MeetingLivePage() {
                           disabled={!isAudioStreaming}
                           className="rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          Mute
+                           {t("meeting.mute")}
                         </button>
                         <button
                           type="button"
@@ -416,7 +420,7 @@ export function MeetingLivePage() {
                           disabled={isHostView && !hasMeetingEnded}
                           className="rounded-full border border-line bg-canvas/80 px-4 py-2.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          Leave
+                           {t("meeting.leave")}
                         </button>
                         <button
                           type="button"
@@ -432,19 +436,18 @@ export function MeetingLivePage() {
                           className={`rounded-full px-4 py-2.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${isAudioStreaming ? "border border-lime/40 bg-lime/20 text-ink" : "border border-line bg-ink text-canvas hover:border-lime hover:bg-lime hover:text-ink"}`}
                         >
                           {socketStatus === "connecting"
-                            ? "Connecting..."
+                            ? t("meeting.connecting")
                             : hasMeetingEnded
-                              ? "Meeting Ended"
+                              ? t("meeting.meetingEnded")
                               : isAudioStreaming
-                                ? "Mic Live"
-                                : "Join Audio"}
+                                ? t("meeting.micLive")
+                                : t("meeting.joinAudio")}
                         </button>
                       </div>
                     </div>
 
                     <p className="text-center text-xs text-ink-muted">
-                      Check your mic before going live. Bad audio quality leads
-                      to bad transcription quality.
+                      {t("meeting.micWarning")}
                     </p>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useI18n } from "../contexts/UiI18nContext";
 import { ConfirmDialog } from "../general/ConfirmDialog";
 import {
   type TenantSettings,
@@ -6,7 +6,6 @@ import {
 } from "../hooks/tenants";
 import {
   PROVIDERS,
-  type ProviderType,
   useTenantEditorCard,
   useTenantSettingsPanel,
 } from "../hooks/useTenantSettingsPanel";
@@ -40,9 +39,8 @@ function TenantEditorCard({
   collapsible = false,
   defaultCollapsed = false,
 }: TenantEditorCardProps) {
+  const { t } = useI18n();
   const {
-    organizationName,
-    setOrganizationName,
     providerDrafts,
     setProviderDraft,
     error,
@@ -55,7 +53,6 @@ function TenantEditorCard({
     enabledProviderCount,
     configuredDomainCount,
     confirmSave,
-    confirmDelete,
     submitConfirm,
   } = useTenantEditorCard({
     settings,
@@ -69,7 +66,7 @@ function TenantEditorCard({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Tenant
+            {t("admin.tenants.tenant")}
           </p>
           <h3 className="mt-1 text-lg font-semibold text-ink">
             {settings.tenant.name || settings.tenant.id}
@@ -84,7 +81,7 @@ function TenantEditorCard({
               onClick={() => setIsExpanded((currentValue) => !currentValue)}
               className="rounded-xl border border-line px-3 py-2 font-semibold text-ink transition hover:border-lime hover:text-lime"
             >
-              {isExpanded ? "Collapse" : "Expand"}
+              {isExpanded ? t("admin.tenants.collapse") : t("admin.tenants.expand")}
             </button>
           ) : null}
         </div>
@@ -100,7 +97,7 @@ function TenantEditorCard({
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-xl border border-line/70 bg-canvas/60 px-3 py-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Tenant ID
+               {t("admin.tenants.tenantId")}
             </p>
             <p className="mt-1 text-sm font-semibold text-ink">
               {settings.tenant.id}
@@ -108,18 +105,18 @@ function TenantEditorCard({
           </div>
           <div className="rounded-xl border border-line/70 bg-canvas/60 px-3 py-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Domains
+               {t("admin.tenants.domains")}
             </p>
             <p className="mt-1 text-sm font-semibold text-ink">
-              {configuredDomainCount} configured
+               {t("admin.tenants.configuredCount", { count: configuredDomainCount })}
             </p>
           </div>
           <div className="rounded-xl border border-line/70 bg-canvas/60 px-3 py-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Providers
+               {t("admin.tenants.providers")}
             </p>
             <p className="mt-1 text-sm font-semibold text-ink">
-              {enabledProviderCount} enabled
+               {t("admin.tenants.enabledCount", { count: enabledProviderCount })}
             </p>
           </div>
         </div>
@@ -140,13 +137,13 @@ function TenantEditorCard({
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-semibold capitalize text-ink">
-                        {providerType} Provider
-                      </h4>
-                      <p className="text-sm text-ink-muted">
-                        {isEntra
-                          ? "Configure Microsoft Entra SSO credentials."
-                          : "Configure Google SSO credentials."}
-                      </p>
+                         {t("admin.tenants.providerTitle", { provider: providerType })}
+                       </h4>
+                       <p className="text-sm text-ink-muted">
+                         {isEntra
+                           ? t("admin.tenants.entraDescription")
+                           : t("admin.tenants.googleDescription")}
+                       </p>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-ink">
                       <input
@@ -158,17 +155,17 @@ function TenantEditorCard({
                           })
                         }
                       />
-                      Enabled
-                    </label>
+                       {t("admin.tenants.enabled")}
+                     </label>
                   </div>
 
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Domains
+                       {t("admin.tenants.domains")}
                     </span>
                     <div className="space-y-2 rounded-lg border border-line bg-panel p-3">
                       <p className="text-xs text-ink-muted">
-                        Use the same domain in multiple provider sections to show a provider chooser at sign-in.
+                        {t("admin.tenants.domainHint")}
                       </p>
                       {draft.domains.map((domain, domainIndex) => (
                         <div key={`${settings.tenant.id}-${providerType}-${domainIndex}`} className="flex gap-2">
@@ -182,7 +179,7 @@ function TenantEditorCard({
                               })
                             }
                             disabled={!draft.enabled}
-                            placeholder="example.com"
+                            placeholder={t("admin.tenants.domainPlaceholder")}
                             className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                           <button
@@ -199,7 +196,7 @@ function TenantEditorCard({
                             disabled={!draft.enabled}
                             className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            Remove
+                            {t("admin.tenants.remove")}
                           </button>
                         </div>
                       ))}
@@ -209,14 +206,14 @@ function TenantEditorCard({
                         disabled={!draft.enabled}
                         className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Add Domain
+                        {t("admin.tenants.addDomain")}
                       </button>
                     </div>
                   </label>
 
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Client ID
+                       {t("admin.tenants.clientId")}
                     </span>
                     <input
                       value={draft.clientId}
@@ -232,7 +229,7 @@ function TenantEditorCard({
 
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Client Secret
+                       {t("admin.tenants.clientSecret")}
                     </span>
                     <input
                       value={draft.clientSecret}
@@ -244,8 +241,8 @@ function TenantEditorCard({
                       disabled={!draft.enabled}
                       placeholder={
                         draft.hasSecret
-                          ? "Leave blank to keep existing secret"
-                          : "Paste client secret"
+                          ? t("admin.tenants.keepExistingSecret")
+                          : t("admin.tenants.pasteClientSecret")
                       }
                       className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                     />
@@ -254,7 +251,7 @@ function TenantEditorCard({
                   {isEntra ? (
                     <label className="block space-y-1">
                       <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        Tenant Hint
+                         {t("admin.tenants.tenantHint")}
                       </span>
                       <input
                         value={draft.tenantHint}
@@ -264,7 +261,7 @@ function TenantEditorCard({
                           })
                         }
                         disabled={!draft.enabled}
-                        placeholder="common or tenant GUID"
+                         placeholder={t("admin.tenants.tenantHintPlaceholder")}
                         className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                     </label>
@@ -281,33 +278,37 @@ function TenantEditorCard({
                 onClick={() => setConfirmMode("delete")}
                 className="rounded-lg border border-red-400/40 px-4 py-2 text-sm font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200"
               >
-                Delete Tenant
-              </button>
+                 {t("admin.tenants.deleteTenant")}
+               </button>
             ) : null}
              <button
                type="button"
                onClick={confirmSave}
                className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
              >
-               Save Changes
-            </button>
+                {t("admin.tenants.saveChanges")}
+             </button>
           </div>
 
           <ConfirmDialog
             isOpen={Boolean(confirmMode)}
             title={
               confirmMode === "delete"
-                ? "Delete tenant?"
-                : "Save tenant settings?"
-            }
-            description={
-              confirmMode === "delete"
-                ? `Delete ${settings.tenant.name || settings.tenant.id} and remove its tenant-scoped data?`
-                : `Save the current tenant settings for ${settings.tenant.name || settings.tenant.id}?`
-            }
-            confirmLabel={
-              confirmMode === "delete" ? "Delete Tenant" : "Save Changes"
-            }
+                 ? t("admin.tenants.deleteTenantTitle")
+                 : t("admin.tenants.saveTenantTitle")
+             }
+             description={
+               confirmMode === "delete"
+                 ? t("admin.tenants.deleteTenantDescription", {
+                     tenant: settings.tenant.name || settings.tenant.id,
+                   })
+                 : t("admin.tenants.saveTenantDescription", {
+                     tenant: settings.tenant.name || settings.tenant.id,
+                   })
+             }
+             confirmLabel={
+               confirmMode === "delete" ? t("admin.tenants.deleteTenant") : t("admin.tenants.saveChanges")
+             }
             tone={confirmMode === "delete" ? "danger" : "default"}
             isBusy={isSaving || isDeleting}
             onConfirm={() => {
@@ -330,6 +331,7 @@ export function TenantSettingsPanel({
   isAllTenantsView,
   tenantOptions,
 }: TenantSettingsPanelProps) {
+  const { t } = useI18n();
   const {
     isAdmin,
     isSuperAdmin,
@@ -343,7 +345,6 @@ export function TenantSettingsPanel({
     providerDrafts,
     setProviderDrafts,
     error,
-    setError,
     isSaving,
     confirmCreateOpen,
     setConfirmCreateOpen,
@@ -369,17 +370,17 @@ export function TenantSettingsPanel({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Tenant Settings
+            {t("admin.tenants.section")}
           </p>
           <h2 className="mt-1 text-lg font-semibold text-ink">
-            Domains and sign-in setup
+            {t("admin.tenants.title")}
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
             {isAllTenantsMode
-              ? "View and manage every tenant directly from this page-wide overview."
+              ? t("admin.tenants.subtitleAll")
               : isSuperAdmin
-                ? `Configure routing and provider credentials for ${selectedTenantLabel}.`
-                : "Keep your tenant's domains and SSO provider settings current."}
+                ? t("admin.tenants.subtitleTenantAdmin", { tenant: selectedTenantLabel })
+                : t("admin.tenants.subtitleTenant")}
           </p>
         </div>
 
@@ -389,7 +390,7 @@ export function TenantSettingsPanel({
             onClick={toggleCreate}
             className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
-            {isCreating ? "Close Create" : "Add Tenant"}
+            {isCreating ? t("admin.tenants.closeCreate") : t("admin.tenants.addTenant")}
           </button>
         ) : null}
       </div>
@@ -404,36 +405,36 @@ export function TenantSettingsPanel({
         <div className="space-y-5 rounded-2xl border border-line/70 bg-panel/40 p-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Create Tenant
+              {t("admin.tenants.createTenant")}
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-ink">New tenant</h3>
+            <h3 className="mt-1 text-lg font-semibold text-ink">{t("admin.tenants.newTenant")}</h3>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-1">
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                Tenant ID
+                 {t("admin.tenants.tenantId")}
               </span>
               <input
                 value={newTenantId}
                 onChange={(event: any) =>
                   setNewTenantId(String(event.target.value))
                 }
-                placeholder="tenant-acme"
+                 placeholder={t("admin.tenants.tenantIdPlaceholder")}
                 className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
               />
             </label>
 
             <label className="space-y-1">
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                Organization Name
+                 {t("admin.tenants.organizationName")}
               </span>
               <input
                 value={organizationName}
                 onChange={(event: any) =>
                   setOrganizationName(String(event.target.value))
                 }
-                placeholder="Acme Corporation"
+                 placeholder={t("admin.tenants.organizationPlaceholder")}
                 className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
               />
             </label>
@@ -451,12 +452,12 @@ export function TenantSettingsPanel({
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-semibold capitalize text-ink">
-                        {providerType} Provider
+                         {t("admin.tenants.providerTitle", { provider: providerType })}
                       </h4>
                       <p className="text-sm text-ink-muted">
                         {isEntra
-                          ? "Configure Microsoft Entra SSO credentials."
-                          : "Configure Google SSO credentials."}
+                           ? t("admin.tenants.entraDescription")
+                           : t("admin.tenants.googleDescription")}
                       </p>
                     </div>
                     <label className="flex items-center gap-2 text-sm text-ink">
@@ -473,16 +474,16 @@ export function TenantSettingsPanel({
                           }))
                         }
                       />
-                      Enabled
+                       {t("admin.tenants.enabled")}
                     </label>
                   </div>
                   <label className="block space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Domains
+                       {t("admin.tenants.domains")}
                     </span>
                     <div className="space-y-2 rounded-lg border border-line bg-panel p-3">
                       <p className="text-xs text-ink-muted">
-                        Use the same domain in multiple provider sections to show a provider chooser at sign-in.
+                         {t("admin.tenants.domainHint")}
                       </p>
                       {draft.domains.map((domain, domainIndex) => (
                         <div key={`create-${providerType}-${domainIndex}`} className="flex gap-2">
@@ -500,7 +501,7 @@ export function TenantSettingsPanel({
                               }))
                             }
                             disabled={!draft.enabled}
-                            placeholder="example.com"
+                             placeholder={t("admin.tenants.domainPlaceholder")}
                             className="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                           />
                           <button
@@ -520,7 +521,7 @@ export function TenantSettingsPanel({
                             disabled={!draft.enabled}
                             className="rounded-lg border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            Remove
+                             {t("admin.tenants.remove")}
                           </button>
                         </div>
                       ))}
@@ -538,7 +539,7 @@ export function TenantSettingsPanel({
                         disabled={!draft.enabled}
                         className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Add Domain
+                         {t("admin.tenants.addDomain")}
                       </button>
                     </div>
                   </label>
@@ -554,7 +555,7 @@ export function TenantSettingsPanel({
                       }))
                     }
                     disabled={!draft.enabled}
-                    placeholder="Client ID"
+                    placeholder={t("admin.tenants.clientId")}
                     className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <input
@@ -569,7 +570,7 @@ export function TenantSettingsPanel({
                       }))
                     }
                     disabled={!draft.enabled}
-                    placeholder="Client Secret"
+                    placeholder={t("admin.tenants.clientSecret")}
                     className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   {isEntra ? (
@@ -585,7 +586,7 @@ export function TenantSettingsPanel({
                         }))
                       }
                       disabled={!draft.enabled}
-                      placeholder="Tenant Hint"
+                      placeholder={t("admin.tenants.tenantHint")}
                       className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   ) : null}
@@ -601,15 +602,15 @@ export function TenantSettingsPanel({
               disabled={isSaving}
               className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Create Tenant
-            </button>
+               {t("admin.tenants.createTenant")}
+             </button>
           </div>
         </div>
       ) : null}
 
       {isAllTenantsMode ? (
         allSettingsQuery.isLoading ? (
-          <p className="text-sm text-ink-muted">Loading tenant settings...</p>
+          <p className="text-sm text-ink-muted">{t("admin.tenants.loading")}</p>
         ) : (
           <div className="space-y-4">
             {(allSettingsQuery.data?.tenants || []).map((settings) => (
@@ -626,7 +627,7 @@ export function TenantSettingsPanel({
           </div>
         )
       ) : singleSettingsQuery.isLoading ? (
-        <p className="text-sm text-ink-muted">Loading tenant settings...</p>
+        <p className="text-sm text-ink-muted">{t("admin.tenants.loading")}</p>
       ) : singleSettingsQuery.data ? (
         <TenantEditorCard
           settings={singleSettingsQuery.data}
@@ -640,9 +641,11 @@ export function TenantSettingsPanel({
 
       <ConfirmDialog
         isOpen={confirmCreateOpen}
-        title="Create tenant?"
-        description={`Create tenant ${newTenantId.trim() || "(missing id)"} with the current routing and provider settings?`}
-        confirmLabel="Create Tenant"
+        title={t("admin.tenants.createTenantTitle")}
+        description={t("admin.tenants.createTenantDescription", {
+          tenant: newTenantId.trim() || t("admin.tenants.missingId"),
+        })}
+        confirmLabel={t("admin.tenants.createTenant")}
         tone="default"
         isBusy={isSaving}
         onConfirm={() => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useServerLogs } from "../hooks/serverLogs";
 
 type ServerLogsModalProps = {
@@ -13,6 +14,7 @@ type LogTab = "combined" | "error";
  * Super-admin modal for inspecting recent server logs.
  */
 export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<LogTab>("combined");
   const logsQuery = useServerLogs(isOpen, 300);
 
@@ -57,7 +59,7 @@ export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
       className="fixed inset-0 z-[70] overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Server Logs"
+      aria-label={t("admin.logs.title")}
       onClick={onClose}
     >
       <div
@@ -67,11 +69,11 @@ export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Diagnostics
+              {t("admin.logs.section")}
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-ink">Server Logs</h2>
+            <h2 className="mt-1 text-xl font-semibold text-ink">{t("admin.logs.title")}</h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Review the latest combined and error server logs. Only visible to super admins.
+              {t("admin.logs.subtitle")}
             </p>
           </div>
           <button
@@ -79,7 +81,7 @@ export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
             onClick={onClose}
             className="rounded-xl border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
 
@@ -98,12 +100,12 @@ export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
                     : "border-line text-ink-muted hover:border-lime hover:text-lime"
                 }`}
               >
-                {tab}
+                {tab === "combined" ? t("admin.logs.combined") : t("admin.logs.error")}
               </button>
             );
           })}
           <p className="ml-auto text-xs text-ink-muted">
-            {activeLog?.fileName || "No log file"}
+            {activeLog?.fileName || t("admin.logs.noFile")}
           </p>
         </div>
 
@@ -115,10 +117,10 @@ export function ServerLogsModal({ isOpen, onClose }: ServerLogsModalProps) {
 
         <div className="mt-4 min-h-0 flex-1 overflow-auto rounded-2xl border border-line bg-canvas p-4">
           {logsQuery.isLoading ? (
-            <p className="text-sm text-ink-muted">Loading server logs...</p>
+            <p className="text-sm text-ink-muted">{t("admin.logs.loading")}</p>
           ) : (
             <pre className="whitespace-pre-wrap break-words font-mono text-xs text-ink-muted">
-              {activeLog?.content || "No log content available."}
+              {activeLog?.content || t("admin.logs.noContent")}
             </pre>
           )}
         </div>

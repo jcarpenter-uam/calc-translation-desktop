@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import {
   useBugReports,
@@ -23,6 +24,7 @@ function BugReportDetailsModal({
   onStatusChange,
   isUpdating,
 }: BugReportDetailsModalProps) {
+  const { formatDateTime, t } = useI18n();
   useEffect(() => {
     if (!report) {
       return;
@@ -68,7 +70,7 @@ function BugReportDetailsModal({
       className="fixed inset-0 z-[70] overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label={`Bug report: ${report.title}`}
+      aria-label={t("admin.bugs.reportAria", { title: report.title })}
       onClick={onClose}
     >
       <div
@@ -78,11 +80,20 @@ function BugReportDetailsModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Bug Report Details
+              {t("admin.bugs.details")}
             </p>
             <h2 className="mt-1 text-xl font-semibold text-ink">{report.title}</h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Submitted {new Date(report.createdAt).toLocaleString()} by {report.userName || report.userEmail || report.userId || "Unknown"}
+              {t("admin.bugs.submittedBy", {
+                date: formatDateTime(report.createdAt, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+                user: report.userName || report.userEmail || report.userId || t("admin.bugs.unknown"),
+              })}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -100,14 +111,14 @@ function BugReportDetailsModal({
               onClick={onClose}
               className="rounded-xl border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
             >
-              Close
+              {t("common.close")}
             </button>
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-canvas p-3">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Report Status
+            {t("admin.bugs.status")}
           </p>
           <div className="flex gap-2">
             <button
@@ -116,7 +127,7 @@ function BugReportDetailsModal({
               onClick={() => void onStatusChange(report.id, "open")}
               className="rounded-lg border border-line px-2.5 py-1.5 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Mark Open
+              {t("admin.bugs.markOpen")}
             </button>
             <button
               type="button"
@@ -124,7 +135,7 @@ function BugReportDetailsModal({
               onClick={() => void onStatusChange(report.id, "resolved")}
               className="rounded-lg border border-lime/50 bg-lime/10 px-2.5 py-1.5 text-xs font-semibold text-lime transition hover:border-lime hover:bg-lime/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isUpdating ? "Saving..." : "Mark Resolved"}
+              {isUpdating ? t("admin.bugs.saving") : t("admin.bugs.markResolved")}
             </button>
           </div>
         </div>
@@ -132,7 +143,7 @@ function BugReportDetailsModal({
           <div className="space-y-4">
             <div className="rounded-2xl border border-line bg-canvas p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                Description
+                {t("admin.bugs.description")}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink">
                 {report.description}
@@ -141,41 +152,41 @@ function BugReportDetailsModal({
 
             <div className="grid gap-3 rounded-2xl border border-line bg-canvas p-4 text-sm text-ink-muted sm:grid-cols-2">
               <p>
-                User: <span className="font-semibold text-ink">{report.userName || report.userId || "Unknown"}</span>
+                {t("bugReport.user")}: <span className="font-semibold text-ink">{report.userName || report.userId || t("admin.bugs.unknown")}</span>
               </p>
               <p>
-                Email: <span className="font-semibold text-ink">{report.userEmail || "Unavailable"}</span>
+                {t("bugReport.email")}: <span className="font-semibold text-ink">{report.userEmail || t("bugReport.unavailable")}</span>
               </p>
               <p>
-                Tenant: <span className="font-semibold text-ink">{report.tenantId || "None"}</span>
+                {t("bugReport.tenant")}: <span className="font-semibold text-ink">{report.tenantId || t("admin.bugs.none")}</span>
               </p>
               <p>
-                Role: <span className="font-semibold text-ink">{report.userRole || "Unknown"}</span>
+                {t("bugReport.role")}: <span className="font-semibold text-ink">{report.userRole || t("admin.bugs.unknown")}</span>
               </p>
               <p>
-                Client: <span className="font-semibold uppercase text-ink">{report.clientType}</span>
+                {t("bugReport.client")}: <span className="font-semibold uppercase text-ink">{report.clientType}</span>
               </p>
               <p>
-                Platform: <span className="font-semibold uppercase text-ink">{report.osPlatform}</span>
+                {t("bugReport.platform")}: <span className="font-semibold uppercase text-ink">{report.osPlatform}</span>
               </p>
               <p>
-                Version: <span className="font-semibold text-ink">{report.appVersion}</span>
+                {t("admin.bugs.version")}: <span className="font-semibold text-ink">{report.appVersion}</span>
               </p>
               <p>
-                Route: <span className="font-semibold text-ink">{report.currentRoute || "Unknown"}</span>
+                {t("bugReport.route")}: <span className="font-semibold text-ink">{report.currentRoute || t("admin.bugs.unknown")}</span>
               </p>
               <p className="sm:col-span-2">
-                Browser: <span className="font-semibold text-ink">{report.browserName ? `${report.browserName} ${report.browserVersion || ""}`.trim() : "Unavailable"}</span>
+                {t("bugReport.browser")}: <span className="font-semibold text-ink">{report.browserName ? `${report.browserName} ${report.browserVersion || ""}`.trim() : t("bugReport.unavailable")}</span>
               </p>
             </div>
           </div>
 
           <div className="flex min-h-0 flex-col rounded-2xl border border-line bg-canvas p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Attached Logs
+              {t("admin.bugs.attachedLogs")}
             </p>
             <p className="mt-1 text-xs text-ink-muted">
-              {report.clientLogFileName || "bug-report.log"}
+              {report.clientLogFileName || t("admin.bugs.defaultLogFile")}
             </p>
             <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-auto rounded-xl border border-line bg-panel p-3 font-mono text-xs text-ink-muted">
               {report.clientLogFileContent ? (
@@ -190,7 +201,7 @@ function BugReportDetailsModal({
                   </p>
                 ))
               ) : (
-                <p>No client logs attached.</p>
+                 <p>{t("admin.bugs.noLogs")}</p>
               )}
             </div>
           </div>
@@ -211,6 +222,7 @@ function BugReportDetailsModal({
  */
 export function BugReportsPanel() {
   const { notify } = useNotifications();
+  const { formatDateTime, t } = useI18n();
   const [filter, setFilter] = useState<BugReportFilter>("open");
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -224,20 +236,20 @@ export function BugReportsPanel() {
       const response = await updateBugReportStatus(id, status);
       setSelectedReport(response.report);
       notify({
-        title: "Bug Report Updated",
+        title: t("admin.bugs.updatedTitle"),
         message:
           status === "resolved"
-            ? "The bug report was marked resolved."
-            : "The bug report was reopened.",
+            ? t("admin.bugs.updatedResolved")
+            : t("admin.bugs.updatedOpen"),
         variant: "success",
       });
     } catch (error) {
       notify({
-        title: "Update Failed",
+        title: t("admin.bugs.updateFailedTitle"),
         message:
           error instanceof ApiError
             ? error.message
-            : "Failed to update bug report status.",
+            : t("admin.bugs.updateFailedMessage"),
         variant: "error",
       });
     } finally {
@@ -250,13 +262,13 @@ export function BugReportsPanel() {
       <div className="space-y-4 rounded-xl border border-line bg-canvas p-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Bug Reports
+            {t("admin.bugs.section")}
           </p>
           <h2 className="mt-1 text-lg font-semibold text-ink">
-            Client diagnostics inbox
+            {t("admin.bugs.title")}
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
-            Review recent user-submitted issues, then open any report for the full diagnostics payload.
+            {t("admin.bugs.subtitle")}
           </p>
         </div>
 
@@ -275,7 +287,7 @@ export function BugReportsPanel() {
                     : "border-line text-ink-muted hover:border-lime hover:text-lime"
                 }`}
               >
-                {value}
+                {t(`admin.bugs.filter.${value}`)}
               </button>
             );
           })}
@@ -288,12 +300,12 @@ export function BugReportsPanel() {
         ) : null}
 
         {reportsQuery.isLoading ? (
-          <p className="text-sm text-ink-muted">Loading bug reports...</p>
+          <p className="text-sm text-ink-muted">{t("admin.bugs.loading")}</p>
         ) : null}
 
         {!reportsQuery.isLoading && (reportsQuery.data?.reports.length || 0) === 0 ? (
           <p className="rounded-xl border border-line bg-panel px-3 py-4 text-sm text-ink-muted">
-            No bug reports yet.
+            {t("admin.bugs.empty")}
           </p>
         ) : null}
 
@@ -306,7 +318,13 @@ export function BugReportsPanel() {
               <div className="min-w-0 space-y-1">
                 <h3 className="truncate text-base font-semibold text-ink">{report.title}</h3>
                 <p className="text-sm text-ink-muted">
-                  {report.userName || report.userEmail || report.userId || "Unknown"} · {new Date(report.createdAt).toLocaleString()}
+                  {report.userName || report.userEmail || report.userId || t("admin.bugs.unknown")} · {formatDateTime(report.createdAt, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </p>
                 <p className="text-xs uppercase tracking-[0.12em] text-ink-muted">
                   {report.clientType} · {report.osPlatform} · {report.appVersion}
@@ -328,7 +346,7 @@ export function BugReportsPanel() {
                   onClick={() => setSelectedReport(report)}
                   className="rounded-xl border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
                 >
-                  View Details
+                  {t("admin.bugs.viewDetails")}
                 </button>
               </div>
             </article>

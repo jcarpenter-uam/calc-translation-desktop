@@ -1,4 +1,5 @@
 import { useHomeMeetingJoin } from "../hooks/useHomeMeetingJoin";
+import { useI18n } from "../contexts/UiI18nContext";
 import { JoinMeeting } from "../meetings/JoinMeeting";
 import { HostMeeting } from "../meetings/HostMeeting";
 
@@ -7,6 +8,7 @@ import { HostMeeting } from "../meetings/HostMeeting";
  */
 export function Home() {
   const { user, joinError, isJoining, handleJoin } = useHomeMeetingJoin();
+  const { t } = useI18n();
 
   return (
     <main className="min-h-[calc(100dvh-3rem)] px-6 py-8 text-ink">
@@ -15,13 +17,13 @@ export function Home() {
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Dashboard
+                {t("home.dashboard")}
               </p>
               <h1 className="text-2xl font-semibold">
-                Welcome Back {user?.name || user?.email}
+                {t("home.welcomeBack", { name: user?.name || user?.email || "" })}
               </h1>
               <p className="mt-2 text-sm text-ink-muted">
-                Join an existing session quickly or start configuring a new one.
+                {t("home.subtitle")}
               </p>
             </div>
           </div>

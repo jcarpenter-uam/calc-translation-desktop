@@ -1,20 +1,21 @@
 import { useTheme, type ThemeMode } from "../contexts/ThemeContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { SettingHint } from "./SettingHint";
-
-const themeOptions: Array<{ value: ThemeMode; label: string }> = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-];
 
 export function ThemeToggle() {
   const { theme, effectiveTheme, setThemeMode } = useTheme();
+  const { t } = useI18n();
+  const themeOptions: Array<{ value: ThemeMode; label: string }> = [
+    { value: "light", label: t("theme.light") },
+    { value: "dark", label: t("theme.dark") },
+    { value: "system", label: t("theme.system") },
+  ];
 
   return (
     <div className="rounded-xl border border-line bg-canvas p-3">
       <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-        Theme
-        <SettingHint text="Choose how the app looks: light, dark, or follow your system setting." />
+        {t("theme.title")}
+        <SettingHint text={t("theme.hint")} />
       </p>
       <div className="flex items-center gap-1">
         {themeOptions.map((option) => {
@@ -32,7 +33,7 @@ export function ThemeToggle() {
               }`}
               title={
                 option.value === "system"
-                  ? `Following system (${effectiveTheme})`
+                  ? t("theme.followingSystem", { theme: effectiveTheme })
                   : undefined
               }
             >

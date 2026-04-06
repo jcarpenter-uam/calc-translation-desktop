@@ -1,4 +1,5 @@
 import { useAppRoute } from "../contexts/RouteContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import {
   INTEGRATION_OPTIONS,
   MAX_ONE_WAY_SPOKEN_LANGUAGES,
@@ -10,6 +11,7 @@ import {
  */
 export function ConfigureMeetingPage() {
   const { navigateTo } = useAppRoute();
+  const { t } = useI18n();
   const {
     topic,
     setTopic,
@@ -44,12 +46,11 @@ export function ConfigureMeetingPage() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                Host Setup
+                {t("configure.hostSetup")}
               </p>
-              <h1 className="text-2xl font-semibold">Configure your meeting</h1>
+              <h1 className="text-2xl font-semibold">{t("configure.title")}</h1>
               <p className="mt-2 text-sm text-ink-muted">
-                Set the translation mode, language coverage, and room details,
-                then jump straight into the live session.
+                {t("configure.subtitle")}
               </p>
             </div>
 
@@ -58,7 +59,7 @@ export function ConfigureMeetingPage() {
               onClick={() => navigateTo("home")}
               className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
             >
-              Back to Dashboard
+              {t("common.backToDashboard")}
             </button>
           </div>
 
@@ -67,18 +68,18 @@ export function ConfigureMeetingPage() {
               <section className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6">
                 <div className="mb-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                    Meeting Basics
+                    {t("configure.meetingBasics")}
                   </p>
                   <h2 className="mt-1 text-lg font-semibold text-ink">
-                    Name and source
+                    {t("configure.nameAndSource")}
                   </h2>
                 </div>
 
                 <div className="grid gap-4">
                   <label htmlFor="meeting-topic" className="block space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Meeting title
-                    </span>
+                       {t("configure.meetingTitle")}
+                     </span>
                     <input
                       id="meeting-topic"
                       type="text"
@@ -86,7 +87,7 @@ export function ConfigureMeetingPage() {
                       onChange={(event: any) =>
                         setTopic(String(event.currentTarget.value))
                       }
-                      placeholder="Customer onboarding kickoff"
+                      placeholder={t("configure.meetingTitlePlaceholder")}
                       className="w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                     />
                   </label>
@@ -96,8 +97,8 @@ export function ConfigureMeetingPage() {
                     className="block space-y-2"
                   >
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Scheduled time
-                    </span>
+                       {t("configure.scheduledTime")}
+                     </span>
                     <input
                       id="meeting-scheduled-time"
                       type="datetime-local"
@@ -108,14 +109,13 @@ export function ConfigureMeetingPage() {
                       className="w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                     />
                     <p className="text-xs text-ink-muted">
-                      Optional metadata for planning and list views. Starting
-                      the room still happens when you enter it.
+                      {t("configure.scheduledTimeHint")}
                     </p>
                   </label>
 
                   <div className="space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Meeting source
+                       {t("configure.meetingSource")}
                     </span>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {INTEGRATION_OPTIONS.map((option) => {
@@ -133,9 +133,15 @@ export function ConfigureMeetingPage() {
                             }`}
                           >
                             <p className="text-sm font-semibold">
-                              {option.label}
+                               {option.value === "native"
+                                 ? t("integration.native.label")
+                                 : t("integration.zoom.label")}
+                             </p>
+                            <p className="mt-1 text-xs">
+                              {option.value === "native"
+                                ? t("integration.native.description")
+                                : t("integration.zoom.description")}
                             </p>
-                            <p className="mt-1 text-xs">{option.description}</p>
                           </button>
                         );
                       })}
@@ -145,7 +151,7 @@ export function ConfigureMeetingPage() {
                   {integration === "zoom" ? (
                     <label className="block space-y-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        Zoom meeting URL
+                        {t("configure.zoomMeetingUrl")}
                       </span>
                       <input
                         type="url"
@@ -154,12 +160,11 @@ export function ConfigureMeetingPage() {
                           setExternalJoinUrl(String(event.currentTarget.value));
                           setSubmitError(null);
                         }}
-                        placeholder="https://us02web.zoom.us/j/..."
+                        placeholder={t("configure.zoomMeetingUrlPlaceholder")}
                         className="w-full rounded-xl border border-line bg-panel px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                       />
                       <p className="text-xs text-ink-muted">
-                        Required for Zoom meetings. The room cannot start until
-                        a valid Zoom link is provided.
+                        {t("configure.zoomMeetingUrlHint")}
                       </p>
                     </label>
                   ) : null}
@@ -170,10 +175,10 @@ export function ConfigureMeetingPage() {
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Translation Setup
+                      {t("configure.translationSetup")}
                     </p>
                     <h2 className="mt-1 text-lg font-semibold text-ink">
-                      Pick mode and languages
+                      {t("configure.pickModeAndLanguages")}
                     </h2>
                   </div>
                 </div>
@@ -189,11 +194,10 @@ export function ConfigureMeetingPage() {
                     }`}
                   >
                     <p className="text-sm font-semibold text-ink">
-                      One-way translation
+                      {t("configure.oneWay")}
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
-                      Choose up to five spoken languages, viewers can view
-                      translations in any target language they wish.
+                      {t("configure.oneWayDescription")}
                     </p>
                   </button>
 
@@ -207,11 +211,10 @@ export function ConfigureMeetingPage() {
                     }`}
                   >
                     <p className="text-sm font-semibold text-ink">
-                      Two-way translation
+                      {t("configure.twoWay")}
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
-                      Open a bilingual room that only translates between two
-                      selected spoken languages.
+                      {t("configure.twoWayDescription")}
                     </p>
                   </button>
                 </div>
@@ -220,16 +223,16 @@ export function ConfigureMeetingPage() {
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                        Languages
+                        {t("configure.languages")}
                       </p>
                       <p className="mt-1 text-xs text-ink-muted">
                         {method === "two_way"
-                          ? "Select the two spoken languages people will use in the room."
-                          : "Select up to five spoken languages people will use in the room."}
+                          ? t("configure.languagesTwoWay")
+                          : t("configure.languagesOneWay")}
                       </p>
                     </div>
                     <div className="rounded-full border border-line bg-canvas px-3 py-1 text-xs font-semibold text-ink-muted">
-                      {selectedSpokenLanguages.length} selected
+                      {t("configure.selectedCount", { count: selectedSpokenLanguages.length })}
                     </div>
                   </div>
 
@@ -256,15 +259,15 @@ export function ConfigureMeetingPage() {
 
                   <label className="mb-4 block space-y-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                      Search languages
-                    </span>
+                       {t("configure.searchLanguages")}
+                     </span>
                     <input
                       type="search"
                       value={languageQuery}
                       onChange={(event: any) =>
                         setLanguageQuery(String(event.currentTarget.value))
                       }
-                      placeholder="Search by language or code"
+                      placeholder={t("configure.searchLanguagesPlaceholder")}
                       className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                     />
                   </label>
@@ -315,7 +318,7 @@ export function ConfigureMeetingPage() {
 
                     {filteredLanguageOptions.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-line bg-canvas px-4 py-6 text-sm text-ink-muted sm:col-span-2 xl:col-span-3">
-                        No languages match "{languageQuery.trim()}".
+                        {t("configure.noLanguagesMatch", { query: languageQuery.trim() })}
                       </div>
                     ) : null}
                   </div>
@@ -335,8 +338,8 @@ export function ConfigureMeetingPage() {
                   className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting
-                    ? "Creating meeting..."
-                    : "Create meeting and enter room"}
+                    ? t("configure.creatingMeeting")
+                    : t("configure.createMeeting")}
                 </button>
 
                 <button
@@ -344,7 +347,7 @@ export function ConfigureMeetingPage() {
                   onClick={() => navigateTo("home")}
                   className="rounded-xl border border-line px-5 py-3 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>

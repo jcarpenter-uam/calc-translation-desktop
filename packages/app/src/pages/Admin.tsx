@@ -4,10 +4,12 @@ import { ServerLogsModal } from "../admin/ServerLogsModal";
 import { TenantSettingsPanel } from "../admin/TenantSettingsPanel";
 import { UserSettingsPanel } from "../admin/UserSettingsPanel";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useTenants } from "../hooks/tenants";
 
 export function AdminPage() {
   const { user, tenantName, tenantId } = useAuth();
+  const { t } = useI18n();
   const isSuperAdmin = user?.role === "super_admin";
   const isTenantAdmin = user?.role === "tenant_admin";
   const { data: tenantData } = useTenants(isSuperAdmin || isTenantAdmin);
@@ -46,15 +48,17 @@ export function AdminPage() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-                {isSuperAdmin ? "Super Admin Console" : "Tenant Admin Console"}
+                {isSuperAdmin ? t("admin.page.superConsole") : t("admin.page.tenantConsole")}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight">
-                {isSuperAdmin ? "Application Overview" : "Tenant Overview"}
+                {isSuperAdmin ? t("admin.page.appOverview") : t("admin.page.tenantOverview")}
               </h1>
               <p className="mt-2 text-sm text-ink-muted">
                 {isSuperAdmin
-                  ? "Start broad with all tenants, or narrow the page to one tenant when you need details."
-                  : `Manage users, domains, and sign-in settings for ${tenantName || tenantId || "your tenant"}.`}
+                  ? t("admin.page.superSubtitle")
+                  : t("admin.page.tenantSubtitle", {
+                      tenant: tenantName || tenantId || t("admin.tenants.currentTenant"),
+                    })}
               </p>
             </div>
 
@@ -65,7 +69,7 @@ export function AdminPage() {
                   onClick={() => setIsServerLogsOpen(true)}
                   className="rounded-xl border border-line bg-canvas px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
                 >
-                  View Server Logs
+                  {t("admin.logs.view")}
                 </button>
               </div>
             ) : null}
@@ -77,8 +81,8 @@ export function AdminPage() {
               <div className="flex min-w-[17rem] flex-col gap-3">
                 <label className="space-y-1">
                   <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                    Focus Tenant
-                  </span>
+                     {t("admin.page.focusTenant")}
+                   </span>
                   <select
                     value={selectedScope}
                     onChange={(event: any) =>
@@ -86,7 +90,7 @@ export function AdminPage() {
                     }
                     className="w-full rounded-xl border border-line bg-canvas px-3 py-2 text-sm text-ink focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                   >
-                    <option value="all">All tenants</option>
+                    <option value="all">{t("admin.page.allTenants")}</option>
                     {(tenantData?.tenants || []).map((tenant) => (
                       <option key={tenant.id} value={tenant.id}>
                         {tenant.name || tenant.id}

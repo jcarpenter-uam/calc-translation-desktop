@@ -7,6 +7,7 @@ import {
   startLogin,
   type LoginChoiceOption,
 } from "../hooks/auth";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useNotifications } from "../contexts/NotificationContext";
 
 /**
@@ -14,6 +15,7 @@ import { useNotifications } from "../contexts/NotificationContext";
  */
 export function Login() {
   const { notify } = useNotifications();
+  const { t } = useI18n();
   const [email, setEmail] = useState("");
   const [providerOptions, setProviderOptions] = useState<LoginChoiceOption[]>([]);
   const [submittedEmail, setSubmittedEmail] = useState("");
@@ -38,8 +40,8 @@ export function Login() {
       }
     } catch (err: any) {
       notify({
-        title: "Login Failed",
-        message: err?.message || "Failed to start login.",
+        title: t("auth.loginFailed"),
+        message: err?.message || t("auth.startLoginFailed"),
         variant: "error",
       });
     } finally {
@@ -101,14 +103,14 @@ export function Login() {
       >
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-            Choose Sign-In Method
-          </p>
-          <h3 className="text-2xl font-semibold text-ink">Select a provider</h3>
+              {t("auth.chooseSignInMethod")}
+            </p>
+          <h3 className="text-2xl font-semibold text-ink">{t("auth.selectProvider")}</h3>
           <p className="text-sm text-ink-muted">
-            `{submittedEmail}` can sign in with more than one provider for this domain.
+            {t("auth.multiProviderIntro", { email: submittedEmail })}
           </p>
           <p className="text-sm text-ink-muted">
-            Your organization supports multiple identity providers for this email domain. Choose the account system you normally use to continue.
+            {t("auth.multiProviderDetail")}
           </p>
         </div>
 
@@ -140,15 +142,15 @@ export function Login() {
                 </span>
                 <span>
                   <span className="block font-semibold text-ink">
-                    {option.providerType === "entra" ? "Microsoft Entra" : "Google"}
-                  </span>
+                     {option.providerType === "entra" ? t("auth.microsoftEntra") : t("auth.google")}
+                   </span>
                   <span className="block text-xs text-ink-muted">
                     {option.tenantName || option.tenantId}
                   </span>
                 </span>
               </span>
               <span className="text-xs uppercase tracking-[0.12em] text-ink-muted">
-                Continue
+                {t("common.continue")}
               </span>
             </button>
           ))}
@@ -163,7 +165,7 @@ export function Login() {
             }}
             className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime"
           >
-            Use Different Email
+            {t("auth.useDifferentEmail")}
           </button>
         </div>
       </div>
@@ -175,32 +177,32 @@ export function Login() {
       <main className="box-border flex min-h-[calc(100dvh-3rem)] items-center justify-center px-6 py-8 text-ink">
         <section className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl">
         <div className="px-6 py-5 text-center sm:px-8 md:px-10">
-          <h1 className="text-3xl font-bold uppercase tracking-[0.2em] text-accent">
-            CALC-Translation
-          </h1>
+            <h1 className="text-3xl font-bold uppercase tracking-[0.2em] text-accent">
+            {t("app.name")}
+           </h1>
         </div>
 
         <div className="p-6 sm:p-8 md:p-10">
           <div className="mx-auto flex w-full max-w-xl flex-col justify-center rounded-2xl border border-line/70 bg-panel/80 p-6 md:p-7">
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-              Account access
+              {t("auth.accountAccess")}
             </p>
-            <h2 className="mb-2 text-2xl font-semibold">Sign in</h2>
+            <h2 className="mb-2 text-2xl font-semibold">{t("auth.signIn")}</h2>
             <p className="mb-6 text-sm text-ink-muted">
-              Enter your work email to continue.
+              {t("auth.enterWorkEmail")}
             </p>
 
             <form className="space-y-4" onSubmit={onSubmit}>
               <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-                  Work email
-                </span>
+                   {t("auth.workEmail")}
+                 </span>
                 <input
                   required
                   type="email"
                   value={email}
                   onChange={(event: any) => setEmail(String(event.target.value))}
-                  placeholder="you@company.com"
+                  placeholder={t("auth.workEmailPlaceholder")}
                   className="w-full rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-ink-muted transition focus:border-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
                 />
               </label>
@@ -209,8 +211,8 @@ export function Login() {
                 disabled={isSubmitting}
                 className="w-full rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isSubmitting ? "Working..." : "Login"}
-              </button>
+                  {isSubmitting ? t("common.working") : t("auth.login")}
+                </button>
             </form>
           </div>
         </div>

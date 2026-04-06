@@ -1,5 +1,4 @@
-import { apiRequest, ApiError, buildApiUrl } from "./api";
-import type { AuthUser, TenantInfo } from "./user";
+import { apiRequest, buildApiUrl } from "./api";
 
 export type LoginChoiceOption = {
   tenantId: string;

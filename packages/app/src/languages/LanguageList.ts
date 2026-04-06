@@ -76,7 +76,8 @@ export const LANGUAGE_OPTIONS = [
 export type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["value"];
 export type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
 
-export const DEFAULT_LANGUAGE_OPTION: LanguageOption = LANGUAGE_OPTIONS[0];
+export const DEFAULT_LANGUAGE_OPTION: LanguageOption =
+  LANGUAGE_OPTIONS.find((option) => option.value === "en") || LANGUAGE_OPTIONS[0];
 export const DEFAULT_LANGUAGE_CODE = DEFAULT_LANGUAGE_OPTION.value;
 
 export const LanguageList = LANGUAGE_OPTIONS;
@@ -101,8 +102,25 @@ export function getLanguageOption(code: string | null | undefined) {
 /**
  * Resolves a language code to its display label.
  */
-export function getLanguageLabel(code: string | null | undefined) {
-  return getLanguageOption(code).label;
+export function getLanguageLabel(
+  code: string | null | undefined,
+  locale?: string,
+) {
+  const option = getLanguageOption(code);
+
+  if (!locale) {
+    return option.label;
+  }
+
+  try {
+    const displayNames = new Intl.DisplayNames([locale], {
+      type: "language",
+    });
+    const localizedLabel = displayNames.of(option.value);
+    return localizedLabel || option.label;
+  } catch {
+    return option.label;
+  }
 }
 
 /**

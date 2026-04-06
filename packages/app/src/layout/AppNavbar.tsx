@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useI18n } from "../contexts/UiI18nContext";
 import { useAppRoute } from "../contexts/RouteContext";
 
 type NavItem = {
@@ -13,6 +14,7 @@ type NavItem = {
 export function AppNavbar() {
   const { status, user } = useAuth();
   const { route, navigateTo } = useAppRoute();
+  const { t } = useI18n();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const containerRef = useRef<any>(null);
 
@@ -20,14 +22,14 @@ export function AppNavbar() {
     user?.role === "tenant_admin" || user?.role === "super_admin";
 
   const items: NavItem[] = [
-    { label: "Dashboard", route: "home" },
-    { label: "Calendar", route: "calendar" },
-    ...(isAdmin ? [{ label: "Admin", route: "admin" } as const] : []),
+    { label: t("nav.dashboard"), route: "home" },
+    { label: t("nav.calendar"), route: "calendar" },
+    ...(isAdmin ? [{ label: t("nav.admin"), route: "admin" } as const] : []),
   ];
 
   const activeLabel = useMemo(() => {
-    return items.find((item) => item.route === route)?.label || "Pages";
-  }, [items, route]);
+    return items.find((item) => item.route === route)?.label || t("nav.pages");
+  }, [items, route, t]);
 
   useEffect(() => {
     setIsMobileOpen(false);
@@ -66,7 +68,7 @@ export function AppNavbar() {
     <div ref={containerRef} className="relative">
       <nav
         className="hidden items-center gap-2 rounded-full border border-line bg-panel/90 px-2 py-2 shadow-panel backdrop-blur-sm sm:flex"
-        aria-label="Primary"
+        aria-label={t("nav.primary")}
       >
         {items.map((item) => {
           const isActive = route === item.route;
@@ -96,7 +98,7 @@ export function AppNavbar() {
           className="rounded-full border border-line bg-panel/90 px-3 py-2 text-xs font-semibold text-ink shadow-panel backdrop-blur-sm transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
           aria-haspopup="menu"
           aria-expanded={isMobileOpen}
-          aria-label="Open page navigation"
+          aria-label={t("nav.openPageNavigation")}
         >
           {activeLabel}
         </button>
@@ -105,7 +107,7 @@ export function AppNavbar() {
           <div
             className="absolute left-0 top-12 w-40 rounded-xl border border-line bg-panel/95 p-2 shadow-panel backdrop-blur-sm"
             role="menu"
-            aria-label="Page navigation"
+            aria-label={t("nav.pageNavigation")}
           >
             {items.map((item) => {
               const isActive = route === item.route;
