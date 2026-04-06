@@ -47,7 +47,8 @@ type MeetingDetailsResponse = {
     topic: string | null;
     integration: string | null;
     method: "one_way" | "two_way" | null;
-    languages: string[] | null;
+    spoken_languages: string[] | null;
+    viewer_languages: string[] | null;
     transcript_languages: string[] | null;
     scheduled_time: string | null;
     started_at: string | null;
@@ -119,7 +120,7 @@ export function useQuickCreateMeeting() {
 export function useCreateMeeting() {
   return async (payload: {
     topic?: string;
-    languages?: string[];
+    spoken_languages?: string[];
     method?: "one_way" | "two_way";
     integration?: string;
     join_url?: string;

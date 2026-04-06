@@ -12,7 +12,7 @@ export type IntegrationOption = {
   description: string;
 };
 
-export const MAX_ONE_WAY_LANGUAGES = 5;
+export const MAX_ONE_WAY_SPOKEN_LANGUAGES = 5;
 
 export const INTEGRATION_OPTIONS: IntegrationOption[] = [
   {
@@ -37,7 +37,7 @@ export function useMeetingConfigurationForm() {
 
   const [topic, setTopic] = useState("");
   const [method, setMethod] = useState<MeetingMethod>("one_way");
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedSpokenLanguages, setSelectedSpokenLanguages] = useState<string[]>([]);
   const [languageQuery, setLanguageQuery] = useState("");
   const [integration, setIntegration] = useState("native");
   const [externalJoinUrl, setExternalJoinUrl] = useState("");
@@ -45,9 +45,9 @@ export function useMeetingConfigurationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const selectedLanguageOptions = useMemo(() => {
-    return LanguageList.filter((option) => selectedLanguages.includes(option.value));
-  }, [selectedLanguages]);
+  const selectedSpokenLanguageOptions = useMemo(() => {
+    return LanguageList.filter((option) => selectedSpokenLanguages.includes(option.value));
+  }, [selectedSpokenLanguages]);
 
   const filteredLanguageOptions = useMemo(() => {
     const query = languageQuery.trim().toLowerCase();
@@ -86,41 +86,41 @@ export function useMeetingConfigurationForm() {
     }
 
     if (method === "two_way") {
-      return selectedLanguages.length === 2 && hasValidZoomJoinUrl;
+      return selectedSpokenLanguages.length === 2 && hasValidZoomJoinUrl;
     }
 
     return (
-      selectedLanguages.length > 0 &&
-      selectedLanguages.length <= MAX_ONE_WAY_LANGUAGES &&
+      selectedSpokenLanguages.length > 0 &&
+      selectedSpokenLanguages.length <= MAX_ONE_WAY_SPOKEN_LANGUAGES &&
       hasValidZoomJoinUrl
     );
-  }, [hasValidZoomJoinUrl, isSubmitting, method, selectedLanguages.length]);
+  }, [hasValidZoomJoinUrl, isSubmitting, method, selectedSpokenLanguages.length]);
 
   const toggleLanguage = (languageCode: string) => {
     if (
       method === "two_way" &&
-      !selectedLanguages.includes(languageCode) &&
-      selectedLanguages.length >= 2
+      !selectedSpokenLanguages.includes(languageCode) &&
+      selectedSpokenLanguages.length >= 2
     ) {
       setSubmitError(
-        "Two-way meetings need exactly two languages. Deselect one to choose another.",
+        "Two-way meetings need exactly two spoken languages. Deselect one to choose another.",
       );
       return;
     }
 
     if (
       method === "one_way" &&
-      !selectedLanguages.includes(languageCode) &&
-      selectedLanguages.length >= MAX_ONE_WAY_LANGUAGES
+      !selectedSpokenLanguages.includes(languageCode) &&
+      selectedSpokenLanguages.length >= MAX_ONE_WAY_SPOKEN_LANGUAGES
     ) {
       setSubmitError(
-        `One-way meetings can include at most ${MAX_ONE_WAY_LANGUAGES} spoken languages.`,
+        `One-way meetings can include at most ${MAX_ONE_WAY_SPOKEN_LANGUAGES} spoken languages.`,
       );
       return;
     }
 
     setSubmitError(null);
-    setSelectedLanguages((current) => {
+    setSelectedSpokenLanguages((current) => {
       const alreadySelected = current.includes(languageCode);
       if (method === "two_way") {
         return alreadySelected
@@ -137,7 +137,7 @@ export function useMeetingConfigurationForm() {
   const handleMethodChange = (nextMethod: MeetingMethod) => {
     setMethod(nextMethod);
     setSubmitError(null);
-    setSelectedLanguages((current) =>
+    setSelectedSpokenLanguages((current) =>
       nextMethod === "two_way" ? current.slice(0, 2) : current,
     );
   };
@@ -145,19 +145,19 @@ export function useMeetingConfigurationForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (method === "two_way" && selectedLanguages.length !== 2) {
-      setSubmitError("Two-way meetings need exactly two languages before you can start.");
+    if (method === "two_way" && selectedSpokenLanguages.length !== 2) {
+      setSubmitError("Two-way meetings need exactly two spoken languages before you can start.");
       return;
     }
 
-    if (method === "one_way" && selectedLanguages.length > MAX_ONE_WAY_LANGUAGES) {
+    if (method === "one_way" && selectedSpokenLanguages.length > MAX_ONE_WAY_SPOKEN_LANGUAGES) {
       setSubmitError(
-        `One-way meetings can include at most ${MAX_ONE_WAY_LANGUAGES} spoken languages.`,
+        `One-way meetings can include at most ${MAX_ONE_WAY_SPOKEN_LANGUAGES} spoken languages.`,
       );
       return;
     }
 
-    if (method === "one_way" && selectedLanguages.length === 0) {
+    if (method === "one_way" && selectedSpokenLanguages.length === 0) {
       setSubmitError("One-way meetings need at least one spoken language before you can start.");
       return;
     }
@@ -182,7 +182,7 @@ export function useMeetingConfigurationForm() {
       const createdMeeting = await createMeeting({
         topic: topic.trim() || undefined,
         method,
-        languages: selectedLanguages,
+        spoken_languages: selectedSpokenLanguages,
         integration,
         join_url: integration === "zoom" ? externalJoinUrl.trim() : undefined,
         scheduled_time: scheduledTime ? new Date(scheduledTime).toISOString() : undefined,
@@ -213,8 +213,8 @@ export function useMeetingConfigurationForm() {
     setTopic,
     method,
     handleMethodChange,
-    selectedLanguages,
-    selectedLanguageOptions,
+    selectedSpokenLanguages,
+    selectedSpokenLanguageOptions,
     filteredLanguageOptions,
     languageQuery,
     setLanguageQuery,

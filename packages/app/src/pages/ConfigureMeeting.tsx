@@ -1,7 +1,7 @@
 import { useAppRoute } from "../contexts/RouteContext";
 import {
   INTEGRATION_OPTIONS,
-  MAX_ONE_WAY_LANGUAGES,
+  MAX_ONE_WAY_SPOKEN_LANGUAGES,
   useMeetingConfigurationForm,
 } from "../hooks/useMeetingConfigurationForm";
 
@@ -15,8 +15,8 @@ export function ConfigureMeetingPage() {
     setTopic,
     method,
     handleMethodChange,
-    selectedLanguages,
-    selectedLanguageOptions,
+    selectedSpokenLanguages,
+    selectedSpokenLanguageOptions,
     filteredLanguageOptions,
     languageQuery,
     setLanguageQuery,
@@ -193,7 +193,7 @@ export function ConfigureMeetingPage() {
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
                       Choose up to five spoken languages, viewers can view
-                      translations in any language they wish.
+                      translations in any target language they wish.
                     </p>
                   </button>
 
@@ -211,7 +211,7 @@ export function ConfigureMeetingPage() {
                     </p>
                     <p className="mt-1 text-xs text-ink-muted">
                       Open a bilingual room that only translates between two
-                      selected languages.
+                      selected spoken languages.
                     </p>
                   </button>
                 </div>
@@ -224,18 +224,18 @@ export function ConfigureMeetingPage() {
                       </p>
                       <p className="mt-1 text-xs text-ink-muted">
                         {method === "two_way"
-                          ? "Select the two languages people will speak in the room."
-                          : "Select up to five languages that people will speak in the room."}
+                          ? "Select the two spoken languages people will use in the room."
+                          : "Select up to five spoken languages people will use in the room."}
                       </p>
                     </div>
                     <div className="rounded-full border border-line bg-canvas px-3 py-1 text-xs font-semibold text-ink-muted">
-                      {selectedLanguages.length} selected
+                      {selectedSpokenLanguages.length} selected
                     </div>
                   </div>
 
-                  {selectedLanguageOptions.length > 0 ? (
+                  {selectedSpokenLanguageOptions.length > 0 ? (
                     <div className="mb-4 flex flex-wrap gap-2">
-                      {selectedLanguageOptions.map((option) => (
+                      {selectedSpokenLanguageOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
@@ -271,15 +271,13 @@ export function ConfigureMeetingPage() {
 
                   <div className="app-scrollbar-language grid max-h-[20rem] gap-2 overflow-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
                     {filteredLanguageOptions.map((option) => {
-                      const isSelected = selectedLanguages.includes(
-                        option.value,
-                      );
+                      const isSelected = selectedSpokenLanguages.includes(option.value);
                       const isDisabled =
                         !isSelected &&
                         ((method === "one_way" &&
-                          selectedLanguages.length >= MAX_ONE_WAY_LANGUAGES) ||
+                          selectedSpokenLanguages.length >= MAX_ONE_WAY_SPOKEN_LANGUAGES) ||
                           (method === "two_way" &&
-                            selectedLanguages.length >= 2));
+                            selectedSpokenLanguages.length >= 2));
 
                       return (
                         <button

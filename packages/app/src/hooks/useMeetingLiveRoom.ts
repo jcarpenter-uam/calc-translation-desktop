@@ -1181,7 +1181,7 @@ export function useMeetingLiveRoom() {
   }, [participants]);
 
   const transcriptLanguageLabel = useMemo(() => {
-    const meetingLanguages = meetingDetailsData?.meeting.languages || [];
+    const meetingLanguages = meetingDetailsData?.meeting.spoken_languages || [];
     const uniqueMeetingLanguages = Array.from(new Set(meetingLanguages));
 
     if (meetingDetailsData?.meeting.method === "two_way") {
@@ -1207,7 +1207,7 @@ export function useMeetingLiveRoom() {
     }
 
     return "Live";
-  }, [meetingDetailsData?.meeting.languages, meetingDetailsData?.meeting.method, user?.languageCode]);
+  }, [meetingDetailsData?.meeting.method, meetingDetailsData?.meeting.spoken_languages, user?.languageCode]);
 
   const downloadableTranscriptLanguages = useMemo(() => {
     return Array.from(new Set(availableTranscriptLanguages.filter(Boolean)));
