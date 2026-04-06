@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { Login } from "../pages/Login";
 import { useAuth } from "../contexts/AuthContext";
+import { RequiredLanguageModal } from "./RequiredLanguageModal";
 
 type AuthGateProps = {
   children: ReactNode;
 };
 
 export function AuthGate({ children }: AuthGateProps) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
 
   if (status === "loading") {
     return (
@@ -23,5 +24,10 @@ export function AuthGate({ children }: AuthGateProps) {
     return <Login />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <RequiredLanguageModal isOpen={user?.languageCode === null} />
+    </>
+  );
 }
