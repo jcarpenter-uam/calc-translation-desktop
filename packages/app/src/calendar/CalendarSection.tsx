@@ -79,7 +79,10 @@ export function CalendarSection() {
   };
 
   return (
-    <section className="mt-8 rounded-2xl border border-line/70 bg-canvas p-5">
+    <section
+      id="tour-calendar-sync-section"
+      className="mt-8 rounded-2xl border border-line/70 bg-canvas p-5"
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
@@ -113,6 +116,7 @@ export function CalendarSection() {
             </label>
           </div>
           <button
+            id="tour-calendar-manual-sync"
             type="button"
             onClick={() => {
               void onSync();

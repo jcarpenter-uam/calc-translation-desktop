@@ -76,6 +76,7 @@ export function AppNavbar() {
           return (
             <button
               key={item.route}
+              id={item.route === "calendar" ? "tour-nav-calendar" : undefined}
               type="button"
               onClick={() => navigateTo(item.route)}
               className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-4 focus:ring-lime/20 ${
@@ -115,6 +116,7 @@ export function AppNavbar() {
               return (
                 <button
                   key={item.route}
+                  id={item.route === "calendar" ? "tour-nav-calendar-mobile" : undefined}
                   type="button"
                   onClick={() => navigateTo(item.route)}
                   className={`mb-1 w-full rounded-lg border px-3 py-2 text-left text-xs font-semibold transition last:mb-0 focus:outline-none focus:ring-4 focus:ring-lime/20 ${

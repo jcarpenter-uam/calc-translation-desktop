@@ -55,6 +55,7 @@ export function ConfigureMeetingPage() {
             </div>
 
             <button
+              id="tour-configure-back"
               type="button"
               onClick={() => navigateTo("home")}
               className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
@@ -65,7 +66,10 @@ export function ConfigureMeetingPage() {
 
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <section className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6">
+              <section
+                id="tour-configure-basics"
+                className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6"
+              >
                 <div className="mb-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
                     {t("configure.meetingBasics")}
@@ -171,7 +175,10 @@ export function ConfigureMeetingPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6">
+              <section
+                id="tour-configure-translation"
+                className="rounded-2xl border border-line/70 bg-canvas/70 p-5 sm:p-6"
+              >
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
@@ -262,6 +269,7 @@ export function ConfigureMeetingPage() {
                        {t("configure.searchLanguages")}
                      </span>
                     <input
+                      id="tour-configure-language-search"
                       type="search"
                       value={languageQuery}
                       onChange={(event: any) =>
@@ -333,6 +341,7 @@ export function ConfigureMeetingPage() {
 
               <div className="flex flex-wrap gap-3">
                 <button
+                  id="tour-configure-create-meeting"
                   type="submit"
                   disabled={!canSubmit}
                   className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60"

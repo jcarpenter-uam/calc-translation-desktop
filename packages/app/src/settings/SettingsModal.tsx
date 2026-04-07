@@ -2,6 +2,7 @@ import { LanguageSelect } from "./LanguageSelect";
 import { ThemeToggle } from "./ThemeToggle";
 import { useI18n } from "../contexts/UiI18nContext";
 import { getLanguageLabel } from "../languages/LanguageList";
+import { dispatchTourUiEvent, TOUR_RESTART_DASHBOARD_EVENT } from "../tour/events";
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export function SettingsModal({
                   </p>
                 </div>
                 <button
+                  id="tour-ui-translation-toggle"
                   type="button"
                   role="switch"
                   aria-checked={isUiTranslationEnabled}
@@ -91,6 +93,29 @@ export function SettingsModal({
                       language: getLanguageLabel(language, locale),
                     })}
               </p>
+            </div>
+            <div className="rounded-xl border border-line bg-canvas p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                    {t("settings.productTour")}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    {t("settings.productTourHint")}
+                  </p>
+                </div>
+                <button
+                  id="tour-restart-dashboard"
+                  type="button"
+                  onClick={() => {
+                    dispatchTourUiEvent(TOUR_RESTART_DASHBOARD_EVENT);
+                    onClose();
+                  }}
+                  className="rounded-lg border border-line bg-panel px-3 py-2 text-xs font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
+                >
+                  {t("settings.restartTour")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

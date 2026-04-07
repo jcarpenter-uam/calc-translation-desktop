@@ -8,6 +8,11 @@ import {
   readInitialLanguage,
 } from "../settings/LanguageSelect";
 import { SettingsModal } from "../settings/SettingsModal";
+import {
+  TOUR_CLOSE_SHELL_OVERLAYS_EVENT,
+  TOUR_OPEN_SETTINGS_EVENT,
+  TOUR_OPEN_USER_MENU_EVENT,
+} from "../tour/events";
 
 /**
  * Top-level settings menu for account actions, language preference, and bug reporting.
@@ -55,6 +60,38 @@ export function UserMenu() {
   }, []);
 
   useEffect(() => {
+    const browser = globalThis as typeof globalThis & {
+      addEventListener?: (name: string, listener: EventListener) => void;
+      removeEventListener?: (name: string, listener: EventListener) => void;
+    };
+
+    const openUserMenu = () => {
+      setIsOpen(true);
+      setIsSettingsOpen(false);
+    };
+
+    const openSettings = () => {
+      setIsOpen(false);
+      setIsSettingsOpen(true);
+    };
+
+    const closeOverlays = () => {
+      setIsOpen(false);
+      setIsSettingsOpen(false);
+    };
+
+    browser.addEventListener?.(TOUR_OPEN_USER_MENU_EVENT, openUserMenu);
+    browser.addEventListener?.(TOUR_OPEN_SETTINGS_EVENT, openSettings);
+    browser.addEventListener?.(TOUR_CLOSE_SHELL_OVERLAYS_EVENT, closeOverlays);
+
+    return () => {
+      browser.removeEventListener?.(TOUR_OPEN_USER_MENU_EVENT, openUserMenu);
+      browser.removeEventListener?.(TOUR_OPEN_SETTINGS_EVENT, openSettings);
+      browser.removeEventListener?.(TOUR_CLOSE_SHELL_OVERLAYS_EVENT, closeOverlays);
+    };
+  }, []);
+
+  useEffect(() => {
     const browser = globalThis as any;
     browser?.localStorage?.setItem?.(LANGUAGE_STORAGE_KEY, language);
   }, [language]);
@@ -92,6 +129,7 @@ export function UserMenu() {
     <>
       <div ref={menuRef} className="relative" onKeyDown={onMenuKeyDown}>
         <button
+          id="tour-user-menu-trigger"
           type="button"
           onClick={() => setIsOpen((value) => !value)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-panel/90 text-ink shadow-panel transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
@@ -114,6 +152,7 @@ export function UserMenu() {
               aria-label={t("settings.userMenu")}
           >
             <button
+              id="tour-open-settings"
               type="button"
               onClick={() => {
                 setIsSettingsOpen(true);

@@ -22,6 +22,7 @@ export function CalendarPage() {
             </div>
 
             <button
+              id="tour-calendar-back"
               type="button"
               onClick={() => navigateTo("home")}
               className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-ink transition hover:border-lime hover:text-lime focus:outline-none focus:ring-4 focus:ring-lime/20"
@@ -30,7 +31,9 @@ export function CalendarPage() {
             </button>
           </div>
 
-          <CalendarSection />
+          <div id="tour-calendar-page">
+            <CalendarSection />
+          </div>
         </div>
       </section>
     </main>

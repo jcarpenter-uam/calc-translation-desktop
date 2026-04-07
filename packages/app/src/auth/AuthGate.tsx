@@ -3,6 +3,7 @@ import { Login } from "../pages/Login";
 import { useAuth } from "../contexts/AuthContext";
 import { useI18n } from "../contexts/UiI18nContext";
 import { RequiredLanguageModal } from "./RequiredLanguageModal";
+import { AppTourManager } from "../tour/AppTourManager";
 
 type AuthGateProps = {
   children: ReactNode;
@@ -29,6 +30,7 @@ export function AuthGate({ children }: AuthGateProps) {
   return (
     <>
       {children}
+      <AppTourManager />
       <RequiredLanguageModal isOpen={user?.languageCode === null} />
     </>
   );

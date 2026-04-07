@@ -21,6 +21,7 @@ export function HostMeeting() {
       </div>
 
       <button
+        id="tour-configure-meeting"
         type="button"
         onClick={() => navigateTo("configure")}
         className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-contrast transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-accent/25"

@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { apiRequest, ApiError, buildApiUrl } from "./api";
 
@@ -7,6 +8,8 @@ export type AuthUser = {
   email: string | null;
   role: string;
   languageCode: string | null;
+  hasCompletedDashboardTour: boolean;
+  hasCompletedMeetingTour: boolean;
   tenantId?: string | null;
   tenantName?: string | null;
 };
@@ -24,6 +27,12 @@ export type MeResponse = {
 type UpdateMeResponse = {
   message: string;
   user: AuthUser;
+};
+
+type UpdateMePayload = {
+  languageCode?: string;
+  hasCompletedDashboardTour?: boolean;
+  hasCompletedMeetingTour?: boolean;
 };
 
 export type CalendarEvent = {
@@ -99,12 +108,16 @@ export function useCurrentUser() {
 /**
  * Optimistically updates the current user's language preference.
  */
-export function useUpdateMyLanguage() {
+export function useUpdateMyProfile() {
   const { cache, mutate } = useSWRConfig();
 
-  return async (languageCode: string) => {
+  return useCallback(async (payload: UpdateMePayload) => {
     const cacheKey = currentUserKey();
     const snapshot = cache.get(cacheKey)?.data as MeResponse | undefined;
+
+    if (Object.keys(payload).length === 0) {
+      return;
+    }
 
     if (snapshot) {
       await mutate<MeResponse>(
@@ -113,7 +126,7 @@ export function useUpdateMyLanguage() {
           ...snapshot,
           user: {
             ...snapshot.user,
-            languageCode,
+            ...payload,
           },
         },
         { revalidate: false },
@@ -123,7 +136,7 @@ export function useUpdateMyLanguage() {
     try {
       const response = await apiRequest<UpdateMeResponse>("/user/me", {
         method: "PATCH",
-        body: JSON.stringify({ languageCode }),
+        body: JSON.stringify(payload),
       });
 
       const latest = (cache.get(cacheKey)?.data || snapshot) as MeResponse | undefined;
@@ -143,7 +156,18 @@ export function useUpdateMyLanguage() {
       }
       throw error;
     }
-  };
+  }, [cache, mutate]);
+}
+
+/**
+ * Optimistically updates the current user's language preference.
+ */
+export function useUpdateMyLanguage() {
+  const updateMyProfile = useUpdateMyProfile();
+
+  return useCallback(async (languageCode: string) => {
+    await updateMyProfile({ languageCode });
+  }, [updateMyProfile]);
 }
 
 /**

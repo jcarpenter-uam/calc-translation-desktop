@@ -1,0 +1,62 @@
+.calc-tour-dialog {
+  border: 1px solid rgb(var(--color-line) / 0.85);
+  border-radius: 24px;
+  background: rgb(var(--color-panel) / 0.96);
+  color: rgb(var(--color-ink));
+  box-shadow: 0 24px 70px rgb(var(--color-shadow) / 0.22);
+  backdrop-filter: blur(18px);
+}
+
+.calc-tour-dialog .tg-dialog-header,
+.calc-tour-dialog .tg-dialog-body,
+.calc-tour-dialog .tg-dialog-footer {
+  background: transparent;
+}
+
+.calc-tour-dialog .tg-dialog-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgb(var(--color-ink));
+}
+
+.calc-tour-dialog .tg-dialog-body {
+  color: rgb(var(--color-ink-muted));
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.calc-tour-copy {
+  max-width: 22rem;
+  white-space: normal;
+}
+
+.calc-tour-dialog .tg-dialog-close-btn {
+  color: rgb(var(--color-ink-muted));
+}
+
+.calc-tour-dialog .tg-dialog-btn {
+  border-radius: 999px;
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(var(--color-canvas));
+  color: rgb(var(--color-ink));
+  font-weight: 600;
+}
+
+.calc-tour-dialog #tg-dialog-next-btn {
+  border-color: rgb(var(--color-accent));
+  background: rgb(var(--color-accent));
+  color: rgb(var(--color-accent-contrast));
+}
+
+.calc-tour-dialog #tg-dialog-next-btn:hover {
+  background: rgb(var(--color-accent-hover));
+}
+
+.calc-tour-dialog .tg-dot {
+  background: rgb(var(--color-line));
+}
+
+.calc-tour-dialog .tg-dot-active,
+.calc-tour-dialog .tg-bar {
+  background: rgb(var(--color-lime));
+}

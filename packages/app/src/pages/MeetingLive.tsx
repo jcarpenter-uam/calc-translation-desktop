@@ -92,7 +92,10 @@ export function MeetingLivePage() {
                 </h1>
                 <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
                   <div className="group relative z-30">
-                    <span className="inline-flex rounded-full border border-line/70 bg-canvas/80 px-3 py-1.5">
+                    <span
+                      id="tour-meeting-participants"
+                      className="inline-flex rounded-full border border-line/70 bg-canvas/80 px-3 py-1.5"
+                    >
                       {connectedCount} {t("meeting.participants")}
                     </span>
                     <div className="pointer-events-none absolute left-0 top-full z-[70] mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line/80 bg-panel/95 p-3 opacity-0 shadow-panel backdrop-blur-xl transition duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
@@ -135,6 +138,7 @@ export function MeetingLivePage() {
 
             {!isHostView ? (
               <button
+                id="tour-meeting-viewer-leave"
                 type="button"
                 onClick={() => {
                   void handleLeaveMeeting();
@@ -272,6 +276,7 @@ export function MeetingLivePage() {
             </div>
 
             <div
+              id="tour-meeting-transcript"
               ref={transcriptContainerRef}
               className={
                 "h-[min(62vh,640px)] app-scrollbar overflow-auto rounded-[24px] border border-line/70 bg-canvas/90 p-3 sm:p-4"
@@ -320,6 +325,7 @@ export function MeetingLivePage() {
                 className={`flex flex-col items-center gap-2 transition-all duration-300 ${areHostControlsVisible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
               >
                 <button
+                  id="tour-meeting-show-controls"
                   type="button"
                   onClick={() => showHostControls()}
                   className={`pointer-events-auto rounded-full border border-line/70 bg-panel/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-muted shadow-panel backdrop-blur-xl transition ${areHostControlsVisible ? "opacity-0" : "opacity-100 hover:border-lime hover:text-lime"}`}
@@ -328,6 +334,7 @@ export function MeetingLivePage() {
                 </button>
 
                 <div
+                  id="tour-meeting-host-controls"
                   className={`rounded-[28px] border border-line/80 bg-panel/85 p-3 shadow-panel backdrop-blur-xl sm:p-4 ${areHostControlsVisible ? "pointer-events-auto" : "pointer-events-none"}`}
                 >
                   <div className="flex flex-col gap-3">
@@ -340,6 +347,7 @@ export function MeetingLivePage() {
 
                       <div className="flex flex-wrap items-center gap-2">
                         <button
+                          id="tour-meeting-mic-check"
                           type="button"
                           onClick={() => {
                             void handleMicCheck();
@@ -354,6 +362,7 @@ export function MeetingLivePage() {
                               : t("meeting.checkMic")}
                         </button>
                         <button
+                          id="tour-meeting-invite"
                           type="button"
                           onClick={() => {
                             void handleCopyJoinUrl();
@@ -366,6 +375,7 @@ export function MeetingLivePage() {
                             : t("meeting.invite")}
                         </button>
                         <button
+                          id="tour-meeting-end"
                           type="button"
                           onClick={() => {
                             void handleEndMeeting();
@@ -385,6 +395,7 @@ export function MeetingLivePage() {
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div className="flex flex-1 flex-wrap items-center gap-2">
                         <select
+                          id="tour-meeting-device-select"
                           value={selectedDeviceId}
                           onChange={(event: any) =>
                             setSelectedDeviceId(String(event.target.value))
@@ -403,6 +414,7 @@ export function MeetingLivePage() {
 
                       <div className="flex items-center justify-center gap-2 self-end md:self-auto">
                         <button
+                          id="tour-meeting-mute"
                           type="button"
                           onClick={() => {
                             void handleStopAudio();
@@ -413,6 +425,7 @@ export function MeetingLivePage() {
                            {t("meeting.mute")}
                         </button>
                         <button
+                          id="tour-meeting-host-leave"
                           type="button"
                           onClick={() => {
                             void handleLeaveMeeting();
@@ -423,6 +436,7 @@ export function MeetingLivePage() {
                            {t("meeting.leave")}
                         </button>
                         <button
+                          id="tour-meeting-join-audio"
                           type="button"
                           onClick={() => {
                             void handleStartAudio();
